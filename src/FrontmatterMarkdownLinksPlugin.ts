@@ -23,17 +23,22 @@ import {
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
+import { getPrototypeOf } from 'obsidian-dev-utils/Object';
 
 interface LinkComponent extends Component {
   inputEl: HTMLElement;
   linkEl: HTMLElement;
   linkTextEl: HTMLElement;
+  render(): void;
+  ctx: PropertyRenderContext;
+  value: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 type RenderTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext) => Component | void;
 
 export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
+  private isPropertyWidgetComponentProtoPatched = false;
   protected override createDefaultPluginSettings(): object {
     return {};
   }
@@ -105,16 +110,12 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  private renderTextPropertyWidget(el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext, next: RenderTextPropertyWidgetFn): Component | void {
-    const component = next(el, data, ctx) as LinkComponent | undefined;
-    if (!component) {
-      return;
-    }
+  private renderTextPropertyWidgetInternal(next: () => void, component: LinkComponent): void {
+    next.call(component);
 
-    const parseLinkResult = parseLink(data.value);
+    const parseLinkResult = parseLink(component.value);
     if (!parseLinkResult || parseLinkResult.isWikilink) {
-      return component;
+      return;
     }
 
     let isUnresolved = false;
@@ -122,8 +123,8 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     if (!parseLinkResult.isExternal) {
       const resolvedFile = extractLinkFile(this.app, {
         link: parseLinkResult.url,
-        original: data.value
-      }, ctx.sourcePath);
+        original: component.value
+      }, component.ctx.sourcePath);
       isUnresolved = !resolvedFile;
     }
 
@@ -136,11 +137,31 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
 
     component.linkTextEl.onClickEvent(convertAsyncToSync(async (e) => {
       if (!parseLinkResult.isExternal) {
-        await this.app.workspace.openLinkText(parseLinkResult.url, ctx.sourcePath, Keymap.isModEvent(e));
+        await this.app.workspace.openLinkText(parseLinkResult.url, component.ctx.sourcePath, Keymap.isModEvent(e));
       } else {
         window.open(parseLinkResult.url, '_blank');
       }
     }));
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  private renderTextPropertyWidget(el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext, next: RenderTextPropertyWidgetFn): Component | void {
+    const component = next(el, data, ctx) as LinkComponent | undefined;
+    if (!component || this.isPropertyWidgetComponentProtoPatched) {
+      return component;
+    }
+
+    const componentProto = getPrototypeOf(component);
+    const self = this;
+    this.register(around(componentProto, {
+      render: (next) => {
+        return function (this: LinkComponent): void {
+          self.renderTextPropertyWidgetInternal(next, this);
+        };
+      }
+    }));
+
+    this.isPropertyWidgetComponentProtoPatched = true;
     return component;
   }
 }
