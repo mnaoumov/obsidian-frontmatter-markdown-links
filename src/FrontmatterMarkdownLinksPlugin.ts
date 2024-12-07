@@ -152,11 +152,11 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     }
 
     const linkComponentProto = getPrototypeOf(linkComponent);
-    const self = this;
+    const plugin = this;
     this.register(around(linkComponentProto, {
       render: (next) => {
         return function (this: LinkComponent): void {
-          self.renderTextPropertyWidgetInternal(next, this);
+          plugin.renderTextPropertyWidgetInternal(next, this);
         };
       }
     }));
