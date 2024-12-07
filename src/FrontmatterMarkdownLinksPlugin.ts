@@ -146,14 +146,14 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
 
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   private renderTextPropertyWidget(el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext, next: RenderTextPropertyWidgetFn): Component | void {
-    const component = next(el, data, ctx) as LinkComponent | undefined;
-    if (!component || this.isPropertyWidgetComponentProtoPatched) {
-      return component;
+    const linkComponent = next(el, data, ctx) as LinkComponent | undefined;
+    if (!linkComponent || this.isPropertyWidgetComponentProtoPatched) {
+      return linkComponent;
     }
 
-    const componentProto = getPrototypeOf(component);
+    const linkComponentProto = getPrototypeOf(linkComponent);
     const self = this;
-    this.register(around(componentProto, {
+    this.register(around(linkComponentProto, {
       render: (next) => {
         return function (this: LinkComponent): void {
           self.renderTextPropertyWidgetInternal(next, this);
@@ -162,6 +162,6 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     }));
 
     this.isPropertyWidgetComponentProtoPatched = true;
-    return component;
+    return linkComponent;
   }
 }
