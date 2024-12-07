@@ -1,0 +1,20 @@
+{
+  "version": "0.2",
+  "ignorePaths": [
+    "dist",
+    "node_modules",
+    "tsconfig.tsbuildinfo"
+  ],
+  "dictionaryDefinitions": [],
+  "dictionaries": [],
+  "words": [
+    "frontmatter",
+    "Keymap",
+    "mnaoumov",
+    "tsbuildinfo",
+    "Wikilink"
+  ],
+  "ignoreWords": [],
+  "import": [],
+  "enabled": true
+}
