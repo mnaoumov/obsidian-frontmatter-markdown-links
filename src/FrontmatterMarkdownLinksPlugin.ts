@@ -11,34 +11,24 @@ import type {
 import { around } from 'monkey-around';
 import {
 
-  Keymap,
   PluginSettingTab,
   TFile
 } from 'obsidian';
-import { convertAsyncToSync } from 'obsidian-dev-utils/Async';
-import {
-  extractLinkFile,
-  parseLink
-} from 'obsidian-dev-utils/obsidian/Link';
+import { getPrototypeOf } from 'obsidian-dev-utils/Object';
+import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
-import { getPrototypeOf } from 'obsidian-dev-utils/Object';
 
-interface LinkComponent extends Component {
-  inputEl: HTMLElement;
-  linkEl: HTMLElement;
-  linkTextEl: HTMLElement;
-  render(): void;
-  ctx: PropertyRenderContext;
-  value: string;
-}
+import type { LinkComponent } from './LinkComponent.ts';
+
+import { patchLinkComponentProto } from './LinkComponent.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 type RenderTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext) => Component | void;
 
 export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
-  private isPropertyWidgetComponentProtoPatched = false;
+  private isLinkComponentProtoPatched = false;
   protected override createDefaultPluginSettings(): object {
     return {};
   }
@@ -110,58 +100,16 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     }
   }
 
-  private renderTextPropertyWidgetInternal(next: () => void, component: LinkComponent): void {
-    next.call(component);
-
-    const parseLinkResult = parseLink(component.value);
-    if (!parseLinkResult || parseLinkResult.isWikilink) {
-      return;
-    }
-
-    let isUnresolved = false;
-
-    if (!parseLinkResult.isExternal) {
-      const resolvedFile = extractLinkFile(this.app, {
-        link: parseLinkResult.url,
-        original: component.value
-      }, component.ctx.sourcePath);
-      isUnresolved = !resolvedFile;
-    }
-
-    component.inputEl.hide();
-    component.linkEl.show();
-    component.linkTextEl.textContent = parseLinkResult.alias ?? parseLinkResult.url;
-    component.linkTextEl.toggleClass('internal-link', !parseLinkResult.isExternal);
-    component.linkTextEl.toggleClass('external-link', parseLinkResult.isExternal ?? false);
-    component.linkTextEl.toggleClass('is-unresolved', isUnresolved);
-
-    component.linkTextEl.onClickEvent(convertAsyncToSync(async (e) => {
-      if (!parseLinkResult.isExternal) {
-        await this.app.workspace.openLinkText(parseLinkResult.url, component.ctx.sourcePath, Keymap.isModEvent(e));
-      } else {
-        window.open(parseLinkResult.url, '_blank');
-      }
-    }));
-  }
-
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   private renderTextPropertyWidget(el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext, next: RenderTextPropertyWidgetFn): Component | void {
     const linkComponent = next(el, data, ctx) as LinkComponent | undefined;
-    if (!linkComponent || this.isPropertyWidgetComponentProtoPatched) {
+    if (!linkComponent || this.isLinkComponentProtoPatched) {
       return linkComponent;
     }
 
     const linkComponentProto = getPrototypeOf(linkComponent);
-    const plugin = this;
-    this.register(around(linkComponentProto, {
-      render: (next) => {
-        return function (this: LinkComponent): void {
-          plugin.renderTextPropertyWidgetInternal(next, this);
-        };
-      }
-    }));
-
-    this.isPropertyWidgetComponentProtoPatched = true;
+    this.register(patchLinkComponentProto(linkComponentProto));
+    this.isLinkComponentProtoPatched = true;
     return linkComponent;
   }
 }
