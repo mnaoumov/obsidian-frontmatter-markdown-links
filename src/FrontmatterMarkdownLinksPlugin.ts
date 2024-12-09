@@ -28,7 +28,9 @@ import { patchLinkComponentProto } from './LinkComponent.ts';
 type RenderTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext) => Component | void;
 
 export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
+  private readonly currentlyProcessingFiles = new Set<string>();
   private isLinkComponentProtoPatched = false;
+
   protected override createDefaultPluginSettings(): object {
     return {};
   }
@@ -38,6 +40,25 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
   }
 
   protected override async onLayoutReady(): Promise<void> {
+    await this.processAllNotes();
+  }
+
+  protected override onloadComplete(): void {
+    this.registerEvent(this.app.metadataCache.on('changed', this.onMetadataCacheChanged.bind(this)));
+
+    const textPropertyWidget = this.app.metadataTypeManager.registeredTypeWidgets['text'] as PropertyWidget<string>;
+
+    this.register(around(textPropertyWidget, {
+      // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+      render: (next: RenderTextPropertyWidgetFn) => (el, data, ctx): Component | void => this.renderTextPropertyWidget(el, data, ctx, next)
+    }));
+  }
+
+  private onMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): void {
+    this.processFrontMatterLinksInFile(file, data, cache);
+  }
+
+  private async processAllNotes(): Promise<void> {
     const noteFiles = getMarkdownFilesSorted(this.app);
 
     const notice = new Notice('', 0);
@@ -52,33 +73,22 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       notice.setMessage(message);
 
       const cache = await getCacheSafe(this.app, noteFile);
-      if (cache) {
-        this.processFrontMatterLinks(cache.frontmatter, '', cache);
+
+      if (!cache) {
+        continue;
       }
+
+      const data = await this.app.vault.read(noteFile);
+      this.processFrontMatterLinksInFile(noteFile, data, cache);
     }
     notice.hide();
   }
 
-  protected override onloadComplete(): void {
-    this.registerEvent(this.app.metadataCache.on('changed', this.onMetadataCacheChanged.bind(this)));
-
-    const textPropertyWidget = this.app.metadataTypeManager.registeredTypeWidgets['text'] as PropertyWidget<string>;
-
-    this.register(around(textPropertyWidget, {
-      // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-      render: (next: RenderTextPropertyWidgetFn) => (el, data, ctx): Component | void => this.renderTextPropertyWidget(el, data, ctx, next)
-    }));
-  }
-
-  private onMetadataCacheChanged(_file: TFile, _data: string, cache: CachedMetadata): void {
-    this.processFrontMatterLinks(cache.frontmatter, '', cache);
-  }
-
-  private processFrontMatterLinks(value: unknown, key: string, cache: CachedMetadata): void {
+  private processFrontMatterLinks(value: unknown, key: string, cache: CachedMetadata): boolean {
     if (typeof value == 'string') {
       const parseLinkResult = parseLink(value);
       if (!parseLinkResult || parseLinkResult.isWikilink || parseLinkResult.isExternal) {
-        return;
+        return false;
       }
 
       cache.frontmatterLinks ??= [];
@@ -88,15 +98,33 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
         original: value
       });
 
-      return;
+      return true;
     }
 
     if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+
+    let hasFrontMatterLinks = false;
+
+    for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
+      const hasChildFrontMatterLinks = this.processFrontMatterLinks(childValue, key ? `${key}.${childKey}` : childKey, cache);
+      hasFrontMatterLinks ||= hasChildFrontMatterLinks;
+    }
+
+    return hasFrontMatterLinks;
+  }
+
+  private processFrontMatterLinksInFile(file: TFile, data: string, cache: CachedMetadata): void {
+    if (this.currentlyProcessingFiles.has(file.path)) {
       return;
     }
 
-    for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
-      this.processFrontMatterLinks(childValue, key ? `${key}.${childKey}` : childKey, cache);
+    const hasFrontMatterLinks = this.processFrontMatterLinks(cache.frontmatter, '', cache);
+    if (hasFrontMatterLinks) {
+      this.currentlyProcessingFiles.add(file.path);
+      this.app.metadataCache.trigger('changed', file, data, cache);
+      this.currentlyProcessingFiles.delete(file.path);
     }
   }
 
