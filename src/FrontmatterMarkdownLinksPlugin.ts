@@ -1,6 +1,7 @@
 import type {
   CachedMetadata,
-  Component
+  Component,
+  TAbstractFile
 } from 'obsidian';
 import type {
   PropertyEntryData,
@@ -28,6 +29,7 @@ import { patchLinkComponentProto } from './LinkComponent.ts';
 type RenderTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext) => Component | void;
 
 export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
+  private readonly addedFrontMatterMarkdownLinks = new Map<string, Set<string>>();
   private readonly currentlyProcessingFiles = new Set<string>();
   private isLinkComponentProtoPatched = false;
 
@@ -44,7 +46,9 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
   }
 
   protected override onloadComplete(): void {
-    this.registerEvent(this.app.metadataCache.on('changed', this.onMetadataCacheChanged.bind(this)));
+    this.registerEvent(this.app.metadataCache.on('changed', this.handleMetadataCacheChanged.bind(this)));
+    this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
+    this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
 
     const textPropertyWidget = this.app.metadataTypeManager.registeredTypeWidgets['text'] as PropertyWidget<string>;
 
@@ -52,10 +56,39 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
       render: (next: RenderTextPropertyWidgetFn) => (el, data, ctx): Component | void => this.renderTextPropertyWidget(el, data, ctx, next)
     }));
+
+    this.register(this.clearMetadataCache.bind(this));
   }
 
-  private onMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): void {
+  private clearMetadataCache(): void {
+    for (const [filePath, keys] of this.addedFrontMatterMarkdownLinks.entries()) {
+      const cache = this.app.metadataCache.getCache(filePath);
+      if (!cache?.frontmatterLinks) {
+        continue;
+      }
+
+      cache.frontmatterLinks = cache.frontmatterLinks.filter((link) => !keys.has(link.key));
+      if (cache.frontmatterLinks.length === 0) {
+        delete cache.frontmatterLinks;
+      }
+    }
+  }
+
+  private handleDelete(file: TAbstractFile): void {
+    this.addedFrontMatterMarkdownLinks.delete(file.path);
+  }
+
+  private handleMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): void {
     this.processFrontMatterLinksInFile(file, data, cache);
+  }
+
+  private handleRename(file: TAbstractFile, oldPath: string): void {
+    const keys = this.addedFrontMatterMarkdownLinks.get(oldPath);
+    if (keys) {
+      this.addedFrontMatterMarkdownLinks.set(file.path, keys);
+    }
+
+    this.addedFrontMatterMarkdownLinks.delete(oldPath);
   }
 
   private async processAllNotes(): Promise<void> {
@@ -84,7 +117,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     notice.hide();
   }
 
-  private processFrontMatterLinks(value: unknown, key: string, cache: CachedMetadata): boolean {
+  private processFrontMatterLinks(value: unknown, key: string, cache: CachedMetadata, filePath: string): boolean {
     if (typeof value == 'string') {
       const parseLinkResult = parseLink(value);
       if (!parseLinkResult || parseLinkResult.isWikilink || parseLinkResult.isExternal) {
@@ -92,12 +125,27 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       }
 
       cache.frontmatterLinks ??= [];
-      cache.frontmatterLinks.push({
-        key,
-        link: parseLinkResult.url,
-        original: value
-      });
+      let link = cache.frontmatterLinks.find((link) => link.key === key);
 
+      if (!link) {
+        link = {
+          key,
+          link: '',
+          original: ''
+        };
+        cache.frontmatterLinks.push(link);
+      }
+
+      link.link = parseLinkResult.url;
+      link.original = value;
+
+      let keys = this.addedFrontMatterMarkdownLinks.get(filePath);
+      if (!keys) {
+        keys = new Set<string>();
+        this.addedFrontMatterMarkdownLinks.set(filePath, keys);
+      }
+
+      keys.add(key);
       return true;
     }
 
@@ -108,7 +156,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     let hasFrontMatterLinks = false;
 
     for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
-      const hasChildFrontMatterLinks = this.processFrontMatterLinks(childValue, key ? `${key}.${childKey}` : childKey, cache);
+      const hasChildFrontMatterLinks = this.processFrontMatterLinks(childValue, key ? `${key}.${childKey}` : childKey, cache, filePath);
       hasFrontMatterLinks ||= hasChildFrontMatterLinks;
     }
 
@@ -120,7 +168,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       return;
     }
 
-    const hasFrontMatterLinks = this.processFrontMatterLinks(cache.frontmatter, '', cache);
+    const hasFrontMatterLinks = this.processFrontMatterLinks(cache.frontmatter, '', cache, file.path);
     if (hasFrontMatterLinks) {
       this.currentlyProcessingFiles.add(file.path);
       this.app.metadataCache.trigger('changed', file, data, cache);
