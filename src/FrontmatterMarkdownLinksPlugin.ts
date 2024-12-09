@@ -29,7 +29,7 @@ import { patchLinkComponentProto } from './LinkComponent.ts';
 type RenderTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext) => Component | void;
 
 export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
-  private readonly addedFrontMatterMarkdownLinks = new Map<string, Set<string>>();
+  private readonly addedFrontmatterMarkdownLinks = new Map<string, Set<string>>();
   private readonly currentlyProcessingFiles = new Set<string>();
   private isLinkComponentProtoPatched = false;
 
@@ -61,7 +61,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
   }
 
   private clearMetadataCache(): void {
-    for (const [filePath, keys] of this.addedFrontMatterMarkdownLinks.entries()) {
+    for (const [filePath, keys] of this.addedFrontmatterMarkdownLinks.entries()) {
       const cache = this.app.metadataCache.getCache(filePath);
       if (!cache?.frontmatterLinks) {
         continue;
@@ -75,20 +75,20 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
   }
 
   private handleDelete(file: TAbstractFile): void {
-    this.addedFrontMatterMarkdownLinks.delete(file.path);
+    this.addedFrontmatterMarkdownLinks.delete(file.path);
   }
 
   private handleMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): void {
-    this.processFrontMatterLinksInFile(file, data, cache);
+    this.processFrontmatterLinksInFile(file, data, cache);
   }
 
   private handleRename(file: TAbstractFile, oldPath: string): void {
-    const keys = this.addedFrontMatterMarkdownLinks.get(oldPath);
+    const keys = this.addedFrontmatterMarkdownLinks.get(oldPath);
     if (keys) {
-      this.addedFrontMatterMarkdownLinks.set(file.path, keys);
+      this.addedFrontmatterMarkdownLinks.set(file.path, keys);
     }
 
-    this.addedFrontMatterMarkdownLinks.delete(oldPath);
+    this.addedFrontmatterMarkdownLinks.delete(oldPath);
   }
 
   private async processAllNotes(): Promise<void> {
@@ -112,12 +112,12 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       }
 
       const data = await this.app.vault.read(noteFile);
-      this.processFrontMatterLinksInFile(noteFile, data, cache);
+      this.processFrontmatterLinksInFile(noteFile, data, cache);
     }
     notice.hide();
   }
 
-  private processFrontMatterLinks(value: unknown, key: string, cache: CachedMetadata, filePath: string): boolean {
+  private processFrontmatterLinks(value: unknown, key: string, cache: CachedMetadata, filePath: string): boolean {
     if (typeof value == 'string') {
       const parseLinkResult = parseLink(value);
       if (!parseLinkResult || parseLinkResult.isWikilink || parseLinkResult.isExternal) {
@@ -139,10 +139,10 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       link.link = parseLinkResult.url;
       link.original = value;
 
-      let keys = this.addedFrontMatterMarkdownLinks.get(filePath);
+      let keys = this.addedFrontmatterMarkdownLinks.get(filePath);
       if (!keys) {
         keys = new Set<string>();
-        this.addedFrontMatterMarkdownLinks.set(filePath, keys);
+        this.addedFrontmatterMarkdownLinks.set(filePath, keys);
       }
 
       keys.add(key);
@@ -153,23 +153,23 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       return false;
     }
 
-    let hasFrontMatterLinks = false;
+    let hasFrontmatterLinks = false;
 
     for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
-      const hasChildFrontMatterLinks = this.processFrontMatterLinks(childValue, key ? `${key}.${childKey}` : childKey, cache, filePath);
-      hasFrontMatterLinks ||= hasChildFrontMatterLinks;
+      const hasChildFrontmatterLinks = this.processFrontmatterLinks(childValue, key ? `${key}.${childKey}` : childKey, cache, filePath);
+      hasFrontmatterLinks ||= hasChildFrontmatterLinks;
     }
 
-    return hasFrontMatterLinks;
+    return hasFrontmatterLinks;
   }
 
-  private processFrontMatterLinksInFile(file: TFile, data: string, cache: CachedMetadata): void {
+  private processFrontmatterLinksInFile(file: TFile, data: string, cache: CachedMetadata): void {
     if (this.currentlyProcessingFiles.has(file.path)) {
       return;
     }
 
-    const hasFrontMatterLinks = this.processFrontMatterLinks(cache.frontmatter, '', cache, file.path);
-    if (hasFrontMatterLinks) {
+    const hasFrontmatterLinks = this.processFrontmatterLinks(cache.frontmatter, '', cache, file.path);
+    if (hasFrontmatterLinks) {
       this.currentlyProcessingFiles.add(file.path);
       this.app.metadataCache.trigger('changed', file, data, cache);
       this.currentlyProcessingFiles.delete(file.path);
