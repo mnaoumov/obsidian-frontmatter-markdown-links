@@ -9,7 +9,7 @@ export interface MultiSelectComponent extends Component {
   values: string[];
 }
 
-export interface MultiTextComponent extends Component {
+export interface MultiTextPropertyComponent extends Component {
   containerEl: HTMLElement;
   multiselect: MultiSelectComponent;
 }

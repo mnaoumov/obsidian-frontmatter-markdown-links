@@ -24,10 +24,10 @@ import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
 
 import type { TextPropertyComponent } from './TextPropertyComponent.ts';
-import type { MultiTextComponent } from './MultiTextComponent.ts';
+import type { MultiTextPropertyComponent } from './MultiTextPropertyComponent.ts';
 
 import { patchTextPropertyComponentProto } from './TextPropertyComponent.ts';
-import { patchMultiSelectComponentProto } from './MultiTextComponent.ts';
+import { patchMultiSelectComponentProto } from './MultiTextPropertyComponent.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 type RenderMultiTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<string[]>, ctx: PropertyRenderContext) => Component | void;
@@ -206,16 +206,16 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
 
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   private renderMultiTextPropertyWidget(el: HTMLElement, data: PropertyEntryData<string[]>, ctx: PropertyRenderContext, next: RenderMultiTextPropertyWidgetFn): Component | void {
-    const multiTextComponent = next(el, data, ctx) as MultiTextComponent | undefined;
-    if (!multiTextComponent || this.isMultiSelectComponentProtoPatched) {
-      return multiTextComponent;
+    const multiTextPropertyComponent = next(el, data, ctx) as MultiTextPropertyComponent | undefined;
+    if (!multiTextPropertyComponent || this.isMultiSelectComponentProtoPatched) {
+      return multiTextPropertyComponent;
     }
 
-    const multiSelectComponentProto = getPrototypeOf(multiTextComponent.multiselect);
+    const multiSelectComponentProto = getPrototypeOf(multiTextPropertyComponent.multiselect);
     this.register(patchMultiSelectComponentProto(multiSelectComponentProto));
     this.isMultiSelectComponentProtoPatched = true;
 
-    multiTextComponent.multiselect.rootEl.remove();
+    multiTextPropertyComponent.multiselect.rootEl.remove();
     return this.renderMultiTextPropertyWidget(el, data, ctx, next);
   }
 
