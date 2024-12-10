@@ -23,10 +23,10 @@ import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
 
-import type { LinkComponent } from './LinkComponent.ts';
+import type { TextPropertyComponent } from './TextPropertyComponent.ts';
 import type { MultiTextComponent } from './MultiTextComponent.ts';
 
-import { patchLinkComponentProto } from './LinkComponent.ts';
+import { patchTextPropertyComponentProto } from './TextPropertyComponent.ts';
 import { patchMultiSelectComponentProto } from './MultiTextComponent.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
@@ -38,7 +38,7 @@ type RenderTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<stri
 export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
   private readonly addedFrontmatterMarkdownLinks = new Map<string, Set<string>>();
   private readonly currentlyProcessingFiles = new Set<string>();
-  private isLinkComponentProtoPatched = false;
+  private isTextPropertyComponentProtoPatched = false;
   private isMultiSelectComponentProtoPatched = false;
 
   protected override createDefaultPluginSettings(): object {
@@ -221,17 +221,17 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
 
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   private renderTextPropertyWidget(el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext, next: RenderTextPropertyWidgetFn): Component | void {
-    const linkComponent = next(el, data, ctx) as LinkComponent | undefined;
-    if (!linkComponent || this.isLinkComponentProtoPatched) {
-      return linkComponent;
+    const textPropertyComponent = next(el, data, ctx) as TextPropertyComponent | undefined;
+    if (!textPropertyComponent || this.isTextPropertyComponentProtoPatched) {
+      return textPropertyComponent;
     }
 
-    const linkComponentProto = getPrototypeOf(linkComponent);
-    this.register(patchLinkComponentProto(linkComponentProto));
-    this.isLinkComponentProtoPatched = true;
+    const textPropertyComponentProto = getPrototypeOf(textPropertyComponent);
+    this.register(patchTextPropertyComponentProto(textPropertyComponentProto));
+    this.isTextPropertyComponentProtoPatched = true;
 
-    linkComponent.inputEl.remove();
-    linkComponent.linkEl.remove();
+    textPropertyComponent.inputEl.remove();
+    textPropertyComponent.linkEl.remove();
     return this.renderTextPropertyWidget(el, data, ctx, next);
   }
 }
