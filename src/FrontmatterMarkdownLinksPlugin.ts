@@ -229,6 +229,9 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     const linkComponentProto = getPrototypeOf(linkComponent);
     this.register(patchLinkComponentProto(linkComponentProto));
     this.isLinkComponentProtoPatched = true;
-    return linkComponent;
+
+    linkComponent.inputEl.remove();
+    linkComponent.linkEl.remove();
+    return this.renderTextPropertyWidget(el, data, ctx, next);
   }
 }
