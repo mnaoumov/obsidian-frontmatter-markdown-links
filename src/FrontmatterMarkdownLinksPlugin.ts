@@ -12,6 +12,8 @@ import type {
 import { around } from 'monkey-around';
 import {
 
+  MarkdownView,
+  parseYaml,
   PluginSettingTab,
   TFile
 } from 'obsidian';
@@ -70,6 +72,8 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     }));
 
     this.register(this.clearMetadataCache.bind(this));
+    this.register(this.refreshMarkdownViews.bind(this));
+    this.refreshMarkdownViews();
   }
 
   private clearMetadataCache(): void {
@@ -185,6 +189,17 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       this.currentlyProcessingFiles.add(file.path);
       this.app.metadataCache.trigger('changed', file, data, cache);
       this.currentlyProcessingFiles.delete(file.path);
+    }
+  }
+
+  private refreshMarkdownViews(): void {
+    for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
+      if (!(leaf.view instanceof MarkdownView)) {
+        continue;
+      }
+
+      const frontmatter = parseYaml(leaf.view.rawFrontmatter) as Record<string, unknown>;
+      leaf.view.metadataEditor.synchronize(frontmatter);
     }
   }
 
