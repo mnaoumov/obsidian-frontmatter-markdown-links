@@ -199,6 +199,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       }
 
       const frontmatter = parseYaml(leaf.view.rawFrontmatter) as Record<string, unknown>;
+      leaf.view.metadataEditor.synchronize({});
       leaf.view.metadataEditor.synchronize(frontmatter);
     }
   }
