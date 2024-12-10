@@ -10,6 +10,7 @@ import {
   TFile
 } from 'obsidian';
 import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
+import { loop } from 'obsidian-dev-utils/obsidian/Loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
@@ -77,29 +78,20 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
   }
 
   private async processAllNotes(): Promise<void> {
-    const noteFiles = getMarkdownFilesSorted(this.app);
-
-    const notice = new Notice('', 0);
-    let i = 0;
-    for (const noteFile of noteFiles) {
-      if (this.abortSignal.aborted) {
-        break;
+    await loop({
+      abortSignal: this.abortSignal,
+      buildNoticeMessage: (note, iterationStr) => `Processing frontmatter links ${iterationStr} - ${note.path}`,
+      continueOnError: true,
+      items: getMarkdownFilesSorted(this.app),
+      processItem: async (note) => {
+        const cache = await getCacheSafe(this.app, note);
+        if (!cache) {
+          return;
+        }
+        const data = await this.app.vault.read(note);
+        this.processFrontmatterLinksInFile(note, data, cache);
       }
-      i++;
-      const message = `Processing frontmatter links # ${i.toString()} / ${noteFiles.length.toString()} - ${noteFile.path}`;
-      console.debug(message);
-      notice.setMessage(message);
-
-      const cache = await getCacheSafe(this.app, noteFile);
-
-      if (!cache) {
-        continue;
-      }
-
-      const data = await this.app.vault.read(noteFile);
-      this.processFrontmatterLinksInFile(noteFile, data, cache);
-    }
-    notice.hide();
+    });
   }
 
   private processFrontmatterLinks(value: unknown, key: string, cache: CachedMetadata, filePath: string): boolean {
