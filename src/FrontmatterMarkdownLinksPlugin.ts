@@ -1,45 +1,25 @@
 import type {
   CachedMetadata,
-  Component,
   TAbstractFile
 } from 'obsidian';
-import type {
-  PropertyEntryData,
-  PropertyRenderContext,
-  PropertyWidget
-} from 'obsidian-typings';
 
-import { around } from 'monkey-around';
 import {
-
   MarkdownView,
   parseYaml,
   PluginSettingTab,
   TFile
 } from 'obsidian';
-import { getPrototypeOf } from 'obsidian-dev-utils/Object';
 import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
 
-import type { TextPropertyComponent } from './TextPropertyComponent.ts';
-import type { MultiTextPropertyComponent } from './MultiTextPropertyComponent.ts';
-
-import { patchTextPropertyComponentProto } from './TextPropertyComponent.ts';
-import { patchMultiSelectComponentProto } from './MultiTextPropertyComponent.ts';
-
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-type RenderMultiTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<string[]>, ctx: PropertyRenderContext) => Component | void;
-
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-type RenderTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext) => Component | void;
+import { patchMultiTextPropertyComponent } from './MultiTextPropertyComponent.ts';
+import { patchTextPropertyComponent } from './TextPropertyComponent.ts';
 
 export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
   private readonly addedFrontmatterMarkdownLinks = new Map<string, Set<string>>();
   private readonly currentlyProcessingFiles = new Set<string>();
-  private isTextPropertyComponentProtoPatched = false;
-  private isMultiSelectComponentProtoPatched = false;
 
   protected override createDefaultPluginSettings(): object {
     return {};
@@ -58,19 +38,8 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
 
-    const textPropertyWidget = this.app.metadataTypeManager.registeredTypeWidgets['text'] as PropertyWidget<string>;
-    const multiTextPropertyWidget = this.app.metadataTypeManager.registeredTypeWidgets['multitext'] as PropertyWidget<string[]>;
-
-    this.register(around(textPropertyWidget, {
-      // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-      render: (next: RenderTextPropertyWidgetFn) => (el, data, ctx): Component | void => this.renderTextPropertyWidget(el, data, ctx, next)
-    }));
-
-    this.register(around(multiTextPropertyWidget, {
-      // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-      render: (next: RenderMultiTextPropertyWidgetFn) => (el, data, ctx): Component | void => this.renderMultiTextPropertyWidget(el, data, ctx, next)
-    }));
-
+    patchTextPropertyComponent(this);
+    patchMultiTextPropertyComponent(this);
     this.register(this.clearMetadataCache.bind(this));
     this.register(this.refreshMarkdownViews.bind(this));
     this.refreshMarkdownViews();
@@ -202,36 +171,5 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       leaf.view.metadataEditor.synchronize({});
       leaf.view.metadataEditor.synchronize(frontmatter);
     }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  private renderMultiTextPropertyWidget(el: HTMLElement, data: PropertyEntryData<string[]>, ctx: PropertyRenderContext, next: RenderMultiTextPropertyWidgetFn): Component | void {
-    const multiTextPropertyComponent = next(el, data, ctx) as MultiTextPropertyComponent | undefined;
-    if (!multiTextPropertyComponent || this.isMultiSelectComponentProtoPatched) {
-      return multiTextPropertyComponent;
-    }
-
-    const multiSelectComponentProto = getPrototypeOf(multiTextPropertyComponent.multiselect);
-    this.register(patchMultiSelectComponentProto(multiSelectComponentProto));
-    this.isMultiSelectComponentProtoPatched = true;
-
-    multiTextPropertyComponent.multiselect.rootEl.remove();
-    return this.renderMultiTextPropertyWidget(el, data, ctx, next);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  private renderTextPropertyWidget(el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext, next: RenderTextPropertyWidgetFn): Component | void {
-    const textPropertyComponent = next(el, data, ctx) as TextPropertyComponent | undefined;
-    if (!textPropertyComponent || this.isTextPropertyComponentProtoPatched) {
-      return textPropertyComponent;
-    }
-
-    const textPropertyComponentProto = getPrototypeOf(textPropertyComponent);
-    this.register(patchTextPropertyComponentProto(textPropertyComponentProto));
-    this.isTextPropertyComponentProtoPatched = true;
-
-    textPropertyComponent.inputEl.remove();
-    textPropertyComponent.linkEl.remove();
-    return this.renderTextPropertyWidget(el, data, ctx, next);
   }
 }
