@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.3.0
+
+- Refresh markdown views on load/unload
+- Render lists
+
 ## 1.2.0
 
 - Clear on unload
