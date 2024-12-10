@@ -22,8 +22,13 @@ import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
 
 import type { LinkComponent } from './LinkComponent.ts';
+import type { MultiTextComponent } from './MultiTextComponent.ts';
 
 import { patchLinkComponentProto } from './LinkComponent.ts';
+import { patchMultiSelectComponentProto } from './MultiTextComponent.ts';
+
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+type RenderMultiTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<string[]>, ctx: PropertyRenderContext) => Component | void;
 
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 type RenderTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext) => Component | void;
@@ -32,6 +37,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
   private readonly addedFrontmatterMarkdownLinks = new Map<string, Set<string>>();
   private readonly currentlyProcessingFiles = new Set<string>();
   private isLinkComponentProtoPatched = false;
+  private isMultiSelectComponentProtoPatched = false;
 
   protected override createDefaultPluginSettings(): object {
     return {};
@@ -51,10 +57,16 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
 
     const textPropertyWidget = this.app.metadataTypeManager.registeredTypeWidgets['text'] as PropertyWidget<string>;
+    const multiTextPropertyWidget = this.app.metadataTypeManager.registeredTypeWidgets['multitext'] as PropertyWidget<string[]>;
 
     this.register(around(textPropertyWidget, {
       // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
       render: (next: RenderTextPropertyWidgetFn) => (el, data, ctx): Component | void => this.renderTextPropertyWidget(el, data, ctx, next)
+    }));
+
+    this.register(around(multiTextPropertyWidget, {
+      // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+      render: (next: RenderMultiTextPropertyWidgetFn) => (el, data, ctx): Component | void => this.renderMultiTextPropertyWidget(el, data, ctx, next)
     }));
 
     this.register(this.clearMetadataCache.bind(this));
@@ -174,6 +186,21 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       this.app.metadataCache.trigger('changed', file, data, cache);
       this.currentlyProcessingFiles.delete(file.path);
     }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  private renderMultiTextPropertyWidget(el: HTMLElement, data: PropertyEntryData<string[]>, ctx: PropertyRenderContext, next: RenderMultiTextPropertyWidgetFn): Component | void {
+    const multiTextComponent = next(el, data, ctx) as MultiTextComponent | undefined;
+    if (!multiTextComponent || this.isMultiSelectComponentProtoPatched) {
+      return multiTextComponent;
+    }
+
+    const multiSelectComponentProto = getPrototypeOf(multiTextComponent.multiselect);
+    this.register(patchMultiSelectComponentProto(multiSelectComponentProto));
+    this.isMultiSelectComponentProtoPatched = true;
+
+    multiTextComponent.multiselect.rootEl.remove();
+    return this.renderMultiTextPropertyWidget(el, data, ctx, next);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
