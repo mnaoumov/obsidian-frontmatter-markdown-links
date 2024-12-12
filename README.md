@@ -20,8 +20,8 @@ markdownLinkWithAngleBrackets: "[Alias with space](<MarkdownLink with space.md>)
 externalUrlWithAlias: "[Alias](https://example.com)"
 externalUrlWithAngleBrackets: "<https://example.com>"
 embeddedWikilink: "![[EmbeddedWikilink]]"
-embeddedMarkdownLink: "![EmbeddedMarkdownLink](EmbeddedMarkdownLink.md)"
-embeddedExternalUrl: "![EmbeddedExternalUrl](https://picsum.photos/600)"
+embeddedMarkdownLink: "![Alias](EmbeddedMarkdownLink.md)"
+embeddedExternalUrl: "![Alias](https://picsum.photos/600)"
 ---
 ```
 
@@ -63,8 +63,8 @@ inlineList: ["Non-clickable", "[[Wikilink]]", "[Alias](MarkdownLink.md)", "https
 
 # Embeds
 embeddedWikilink: "![[EmbeddedWikilink]]"
-embeddedMarkdownLink: "![EmbeddedMarkdownLink](EmbeddedMarkdownLink.md)"
-embeddedExternalUrl: "![EmbeddedExternalUrl](https://picsum.photos/600)"
+embeddedMarkdownLink: "![Alias](EmbeddedMarkdownLink.md)"
+embeddedExternalUrl: "![Alias](https://picsum.photos/600)"
 ---
 ```
 
