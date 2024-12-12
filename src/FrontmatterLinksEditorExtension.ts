@@ -38,7 +38,7 @@ class FrontMatterLinksViewPlugin implements PluginValue {
   private _decorations: DecorationSet;
 
   public constructor(view: EditorView) {
-    this._decorations = this.buildDecorations(view);
+    this._decorations = FrontMatterLinksViewPlugin.buildDecorations(view);
   }
 
   public update(update: ViewUpdate): void {
@@ -46,43 +46,95 @@ class FrontMatterLinksViewPlugin implements PluginValue {
       return;
     }
 
-    this._decorations = this.buildDecorations(update.view);
+    this._decorations = FrontMatterLinksViewPlugin.buildDecorations(update.view);
   }
 
-  private buildDecorations(view: EditorView): DecorationSet {
+  private static buildDecorations(view: EditorView): DecorationSet {
     const builder = new RangeSetBuilder<Decoration>();
+
+    let previousLineNumber = -1;
+    let wasColonProcessed = false;
+    let startIndex = -1;
+    let endIndex = -1;
+    let hasQuotes = false;
+    let hasComment = false;
 
     for (const { from, to } of view.visibleRanges) {
       syntaxTree(view.state).iterate({
         enter: (node) => {
-          if (node.name === 'hmd-frontmatter_string') {
-            const QUOTE = '"';
-            const value = view.state.doc.sliceString(node.from + QUOTE.length, node.to - QUOTE.length);
-            const parseLinkResult = parseLink(value);
-            if (!parseLinkResult) {
-              return;
-            }
+          const lineNumber = view.state.doc.lineAt(node.from).number;
+          if (lineNumber !== previousLineNumber) {
+            handleNewLine();
+            previousLineNumber = lineNumber;
+            wasColonProcessed = false;
+            startIndex = -1;
+            endIndex = -1;
+            hasQuotes = false;
+            hasComment = false;
+          }
 
-            for (const linkStylingInfo of getLinkStylingInfos(value)) {
-              builder.add(node.from + QUOTE.length + linkStylingInfo.from, node.from + QUOTE.length + linkStylingInfo.to, Decoration.mark({
-                attributes: linkStylingInfo.isClickable
-                  ? {
-                    'data-frontmatter-markdown-link-clickable': '',
-                    'data-is-external-url': parseLinkResult.isExternal ? 'true' : 'false',
-                    'data-url': parseLinkResult.url
-                  }
-                  : {},
-                class: linkStylingInfo.cssClass
-              }));
+          if (node.name === 'comment_hmd-frontmatter') {
+            hasComment = true;
+            return;
+          }
+
+          if (node.name === 'hmd-frontmatter_meta' && !wasColonProcessed) {
+            wasColonProcessed = true;
+            return;
+          }
+
+          if (wasColonProcessed) {
+            if (startIndex === -1) {
+              startIndex = node.from;
             }
+            endIndex = node.to;
+          }
+
+          if (node.name === 'hmd-frontmatter_string') {
+            hasQuotes = true;
           }
         },
         from,
         to
       });
+
+      handleNewLine();
     }
 
     return builder.finish();
+
+    function handleNewLine(): void {
+      if (wasColonProcessed) {
+        let value = view.state.doc.sliceString(startIndex, endIndex);
+        if (hasComment) {
+          value = value.trimEnd();
+        }
+
+        if (hasQuotes) {
+          value = value.slice(1, -1);
+          startIndex++;
+          endIndex--;
+        }
+
+        const parseLinkResult = parseLink(value);
+        if (!parseLinkResult) {
+          return;
+        }
+
+        for (const linkStylingInfo of getLinkStylingInfos(value)) {
+          builder.add(startIndex + linkStylingInfo.from, startIndex + linkStylingInfo.to, Decoration.mark({
+            attributes: linkStylingInfo.isClickable
+              ? {
+                'data-frontmatter-markdown-link-clickable': '',
+                'data-is-external-url': parseLinkResult.isExternal ? 'true' : 'false',
+                'data-url': parseLinkResult.url
+              }
+              : {},
+            class: linkStylingInfo.cssClass
+          }));
+        }
+      }
+    }
   }
 }
 
