@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.4.0
+
+- Make frontmatter links clickable in source mode
+
 ## 1.3.0
 
 - Refresh markdown views on load/unload
