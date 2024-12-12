@@ -4,17 +4,20 @@ import type {
 } from 'obsidian';
 
 import {
+  Keymap,
   MarkdownView,
   parseYaml,
   PluginSettingTab,
   TFile
 } from 'obsidian';
+import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
 import { loop } from 'obsidian-dev-utils/obsidian/Loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
 
+import { registerFrontmatterLinksEditorExtension } from './FrontmatterLinksEditorExtension.ts';
 import { patchMultiTextPropertyComponent } from './MultiTextPropertyComponent.ts';
 import { patchTextPropertyComponent } from './TextPropertyComponent.ts';
 
@@ -38,9 +41,12 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     this.registerEvent(this.app.metadataCache.on('changed', this.handleMetadataCacheChanged.bind(this)));
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
+    this.registerDomEvent(document, 'click', this.handleClick.bind(this));
+    this.registerDomEvent(document, 'auxclick', this.handleClick.bind(this));
 
     patchTextPropertyComponent(this);
     patchMultiTextPropertyComponent(this);
+    registerFrontmatterLinksEditorExtension(this);
     this.register(this.clearMetadataCache.bind(this));
     this.register(this.refreshMarkdownViews.bind(this));
     this.refreshMarkdownViews();
@@ -57,6 +63,41 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
       if (cache.frontmatterLinks.length === 0) {
         delete cache.frontmatterLinks;
       }
+    }
+  }
+
+  private handleClick(evt: MouseEvent): void {
+    if (evt.button === 2) {
+      return;
+    }
+
+    if (!Keymap.isModEvent(evt)) {
+      return;
+    }
+
+    const target = evt.target as HTMLElement;
+    if (!target.matches('[data-frontmatter-markdown-link-clickable]')) {
+      return;
+    }
+
+    evt.preventDefault();
+
+    const url = target.getAttribute('data-url');
+    const isExternalUrl = target.getAttribute('data-is-external-url') === 'true';
+
+    if (!url) {
+      return;
+    }
+
+    if (isExternalUrl) {
+      window.open(url, evt.button === 1 ? 'tab' : '');
+    } else {
+      const activeFile = this.app.workspace.getActiveFile();
+      if (!activeFile) {
+        return;
+      }
+
+      invokeAsyncSafely(() => this.app.workspace.openLinkText(url, activeFile.path, Keymap.isModEvent(evt)));
     }
   }
 
