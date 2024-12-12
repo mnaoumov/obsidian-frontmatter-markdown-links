@@ -41,22 +41,14 @@ class FrontMatterLinksViewPlugin implements PluginValue {
     this._decorations = FrontMatterLinksViewPlugin.buildDecorations(view);
   }
 
-  public update(update: ViewUpdate): void {
-    if (!update.docChanged && !update.viewportChanged) {
-      return;
-    }
-
-    this._decorations = FrontMatterLinksViewPlugin.buildDecorations(update.view);
-  }
-
   private static buildDecorations(view: EditorView): DecorationSet {
     const builder = new RangeSetBuilder<Decoration>();
 
-    let previousLineNumber = -1;
+    const NO_INDEX = -1;
+    let previousLineNumber = NO_INDEX;
     let wasColonProcessed = false;
-    let startIndex = -1;
-    let endIndex = -1;
-    let hasQuotes = false;
+    let valueStartIndex = NO_INDEX;
+    let valueEndIndex = NO_INDEX;
     let hasComment = false;
 
     for (const { from, to } of view.visibleRanges) {
@@ -64,12 +56,11 @@ class FrontMatterLinksViewPlugin implements PluginValue {
         enter: (node) => {
           const lineNumber = view.state.doc.lineAt(node.from).number;
           if (lineNumber !== previousLineNumber) {
-            handleNewLine();
+            handleValue(valueStartIndex, valueEndIndex);
             previousLineNumber = lineNumber;
             wasColonProcessed = false;
-            startIndex = -1;
-            endIndex = -1;
-            hasQuotes = false;
+            valueStartIndex = NO_INDEX;
+            valueEndIndex = NO_INDEX;
             hasComment = false;
           }
 
@@ -84,57 +75,64 @@ class FrontMatterLinksViewPlugin implements PluginValue {
           }
 
           if (wasColonProcessed) {
-            if (startIndex === -1) {
-              startIndex = node.from;
+            if (valueStartIndex === NO_INDEX) {
+              valueStartIndex = node.from;
             }
-            endIndex = node.to;
+            valueEndIndex = node.to;
           }
 
           if (node.name === 'hmd-frontmatter_string') {
-            hasQuotes = true;
+            handleValue(node.from + 1, node.to - 1);
+            valueStartIndex = NO_INDEX;
+            valueEndIndex = NO_INDEX;
           }
         },
         from,
         to
       });
 
-      handleNewLine();
+      handleValue(valueStartIndex, valueEndIndex);
     }
 
     return builder.finish();
 
-    function handleNewLine(): void {
-      if (wasColonProcessed) {
-        let value = view.state.doc.sliceString(startIndex, endIndex);
-        if (hasComment) {
-          value = value.trimEnd();
-        }
+    function handleValue(startIndex: number, endIndex: number): void {
+      if (startIndex === NO_INDEX) {
+        return;
+      }
 
-        if (hasQuotes) {
-          value = value.slice(1, -1);
-          startIndex++;
-          endIndex--;
-        }
+      let value = view.state.doc.sliceString(startIndex, endIndex);
 
-        const parseLinkResult = parseLink(value);
-        if (!parseLinkResult) {
-          return;
-        }
+      if (hasComment) {
+        value = value.trimEnd();
+      }
 
-        for (const linkStylingInfo of getLinkStylingInfos(value)) {
-          builder.add(startIndex + linkStylingInfo.from, startIndex + linkStylingInfo.to, Decoration.mark({
-            attributes: linkStylingInfo.isClickable
-              ? {
+      const parseLinkResult = parseLink(value);
+      if (!parseLinkResult) {
+        return;
+      }
+
+      for (const linkStylingInfo of getLinkStylingInfos(value)) {
+        builder.add(startIndex + linkStylingInfo.from, startIndex + linkStylingInfo.to, Decoration.mark({
+          attributes: linkStylingInfo.isClickable
+            ? {
                 'data-frontmatter-markdown-link-clickable': '',
                 'data-is-external-url': parseLinkResult.isExternal ? 'true' : 'false',
                 'data-url': parseLinkResult.url
               }
-              : {},
-            class: linkStylingInfo.cssClass
-          }));
-        }
+            : {},
+          class: linkStylingInfo.cssClass
+        }));
       }
     }
+  }
+
+  public update(update: ViewUpdate): void {
+    if (!update.docChanged && !update.viewportChanged) {
+      return;
+    }
+
+    this._decorations = FrontMatterLinksViewPlugin.buildDecorations(update.view);
   }
 }
 
