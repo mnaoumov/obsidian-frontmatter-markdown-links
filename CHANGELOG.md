@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.4.1
+
+- Update libs
+
 ## 1.4.0
 
 - Make frontmatter links clickable in source mode
