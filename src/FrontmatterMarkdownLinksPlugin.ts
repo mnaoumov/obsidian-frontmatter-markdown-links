@@ -14,6 +14,7 @@ import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
 import { loop } from 'obsidian-dev-utils/obsidian/Loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
+import { EmptySettings } from 'obsidian-dev-utils/obsidian/Plugin/EmptySettings';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
 
@@ -21,12 +22,12 @@ import { registerFrontmatterLinksEditorExtension } from './FrontmatterLinksEdito
 import { patchMultiTextPropertyComponent } from './MultiTextPropertyComponent.ts';
 import { patchTextPropertyComponent } from './TextPropertyComponent.ts';
 
-export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
+export class FrontmatterMarkdownLinksPlugin extends PluginBase {
   private readonly addedFrontmatterMarkdownLinks = new Map<string, Set<string>>();
   private readonly currentlyProcessingFiles = new Set<string>();
 
-  protected override createDefaultPluginSettings(): object {
-    return {};
+  protected override createPluginSettings(): EmptySettings {
+    return new EmptySettings();
   }
 
   protected override createPluginSettingsTab(): null | PluginSettingTab {
@@ -122,7 +123,6 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
     await loop({
       abortSignal: this.abortSignal,
       buildNoticeMessage: (note, iterationStr) => `Processing frontmatter links ${iterationStr} - ${note.path}`,
-      continueOnError: true,
       items: getMarkdownFilesSorted(this.app),
       processItem: async (note) => {
         const cache = await getCacheSafe(this.app, note);
@@ -131,7 +131,8 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase<object> {
         }
         const data = await this.app.vault.read(note);
         this.processFrontmatterLinksInFile(note, data, cache);
-      }
+      },
+      shouldContinueOnError: true
     });
   }
 
