@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.4.2
+
+- Update libs
+
 ## 1.4.1
 
 - Update libs
