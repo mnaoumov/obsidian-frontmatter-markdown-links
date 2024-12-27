@@ -22,7 +22,7 @@
     "@types/node": "^22.10.2",
     "monkey-around": "^3.0.0",
     "obsidian": "^1.7.2",
-    "obsidian-dev-utils": "^9.0.0",
+    "obsidian-dev-utils": "^9.0.2",
     "obsidian-typings": "^2.7.0"
   },
   "type": "module"
