@@ -6,6 +6,7 @@ import type {
 import {
   Keymap,
   MarkdownView,
+  Menu,
   parseYaml,
   PluginSettingTab,
   TFile
@@ -44,6 +45,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
     this.registerDomEvent(document, 'click', this.handleClick.bind(this));
     this.registerDomEvent(document, 'auxclick', this.handleClick.bind(this));
+    this.registerDomEvent(document, 'contextmenu', this.handleContextMenu.bind(this), { capture: true });
 
     patchTextPropertyComponent(this);
     patchMultiTextPropertyComponent(this);
@@ -100,6 +102,26 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
 
       invokeAsyncSafely(() => this.app.workspace.openLinkText(url, activeFile.path, Keymap.isModEvent(evt)));
     }
+  }
+
+  private handleContextMenu(evt: MouseEvent): void {
+    const target = evt.target as HTMLElement;
+    if (!target.matches('[data-frontmatter-markdown-link-clickable]')) {
+      return;
+    }
+
+    evt.preventDefault();
+
+    const url = target.getAttribute('data-url') ?? '';
+    const isExternalUrl = target.getAttribute('data-is-external-url') === 'true';
+
+    const menu = new Menu();
+    if (isExternalUrl) {
+      this.app.workspace.handleExternalLinkContextMenu(menu, url);
+    } else {
+      this.app.workspace.handleLinkContextMenu(menu, url, this.app.workspace.getActiveFile()?.path ?? '');
+    }
+    menu.showAtMouseEvent(evt);
   }
 
   private handleDelete(file: TAbstractFile): void {
