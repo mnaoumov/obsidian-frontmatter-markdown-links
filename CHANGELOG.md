@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.5.0
+
+- Fix context menu in source mode
+
 ## 1.4.2
 
 - Update libs
