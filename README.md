@@ -71,7 +71,7 @@ embeddedExternalUrl: "![Alias](https://picsum.photos/600)"
 ## Installation
 
 - `Frontmatter Markdown Links` is not available in [the official Community Plugins repository](https://obsidian.md/plugins) yet.
-- Beta releases can be installed through [BRAT](https://github.com/TfTHacker/obsidian42-brat).
+- Beta releases can be installed through [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
 
 ## Support
 
