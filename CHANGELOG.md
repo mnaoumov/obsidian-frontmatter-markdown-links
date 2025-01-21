@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.5.1
+
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/15.0.0
+
 ## 1.5.0
 
 - Fix context menu in source mode
