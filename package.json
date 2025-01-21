@@ -16,14 +16,14 @@
   "license": "MIT",
   "devDependencies": {
     "@codemirror/language": "^6.10.8",
-    "@codemirror/state": "^6.5.0",
-    "@codemirror/view": "^6.36.1",
+    "@codemirror/state": "^6.5.1",
+    "@codemirror/view": "^6.36.2",
     "@tsconfig/strictest": "^2.0.5",
-    "@types/node": "^22.10.2",
+    "@types/node": "^22.10.7",
     "monkey-around": "^3.0.0",
     "obsidian": "^1.7.2",
-    "obsidian-dev-utils": "^9.0.2",
-    "obsidian-typings": "^2.7.0"
+    "obsidian-dev-utils": "^15.0.0",
+    "obsidian-typings": "^2.14.6"
   },
   "type": "module"
 }
