@@ -159,7 +159,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
   }
 
   private processFrontmatterLinks(value: unknown, key: string, cache: CachedMetadata, filePath: string): boolean {
-    if (typeof value == 'string') {
+    if (typeof value === 'string') {
       const parseLinkResult = parseLink(value);
       if (!parseLinkResult || parseLinkResult.isWikilink || parseLinkResult.isExternal) {
         return false;

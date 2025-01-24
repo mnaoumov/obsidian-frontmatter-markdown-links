@@ -6,10 +6,8 @@ import type {
 import { syntaxTree } from '@codemirror/language';
 import { RangeSetBuilder } from '@codemirror/state';
 import {
-
   Decoration,
-  EditorView
-  ,
+  EditorView,
   ViewPlugin,
   ViewUpdate
 } from '@codemirror/view';
@@ -113,16 +111,20 @@ class FrontMatterLinksViewPlugin implements PluginValue {
       }
 
       for (const linkStylingInfo of getLinkStylingInfos(value)) {
-        builder.add(startIndex + linkStylingInfo.from, startIndex + linkStylingInfo.to, Decoration.mark({
-          attributes: linkStylingInfo.isClickable
-            ? {
+        builder.add(
+          startIndex + linkStylingInfo.from,
+          startIndex + linkStylingInfo.to,
+          Decoration.mark({
+            attributes: linkStylingInfo.isClickable
+              ? {
                 'data-frontmatter-markdown-link-clickable': '',
                 'data-is-external-url': parseLinkResult.isExternal ? 'true' : 'false',
                 'data-url': parseLinkResult.url
               }
-            : {},
-          class: linkStylingInfo.cssClass
-        }));
+              : {},
+            class: linkStylingInfo.cssClass
+          })
+        );
       }
     }
   }

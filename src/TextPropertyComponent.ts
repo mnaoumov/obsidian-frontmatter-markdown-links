@@ -60,18 +60,22 @@ function isWikilink(textPropertyComponent: TextPropertyComponent): boolean {
 
 function patchTextPropertyComponentProto(textPropertyComponentProto: TextPropertyComponent): () => void {
   return around(textPropertyComponentProto, {
-    getDisplayText: () => function (this: TextPropertyComponent): string {
-      return getDisplayText(this);
-    },
-    getLinkText: () => function (this: TextPropertyComponent): string {
-      return getLinkText(this);
-    },
-    isWikilink: () => function (this: TextPropertyComponent): boolean {
-      return isWikilink(this);
-    },
-    render: (next: () => void) => function (this: TextPropertyComponent): void {
-      render(this, next);
-    }
+    getDisplayText: () =>
+      function (this: TextPropertyComponent): string {
+        return getDisplayText(this);
+      },
+    getLinkText: () =>
+      function (this: TextPropertyComponent): string {
+        return getLinkText(this);
+      },
+    isWikilink: () =>
+      function (this: TextPropertyComponent): boolean {
+        return isWikilink(this);
+      },
+    render: (next: () => void) =>
+      function (this: TextPropertyComponent): void {
+        render(this, next);
+      }
   });
 }
 
@@ -83,8 +87,14 @@ function render(textPropertyComponent: TextPropertyComponent, next: () => void):
   next.call(textPropertyComponent);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-function renderWidget(el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext, next: RenderTextPropertyWidgetFn, plugin: FrontmatterMarkdownLinksPlugin): Component | void {
+function renderWidget(
+  el: HTMLElement,
+  data: PropertyEntryData<string>,
+  ctx: PropertyRenderContext,
+  next: RenderTextPropertyWidgetFn,
+  plugin: FrontmatterMarkdownLinksPlugin
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+): Component | void {
   const textPropertyComponent = next(el, data, ctx) as TextPropertyComponent | undefined;
   if (!textPropertyComponent || isPatched) {
     return textPropertyComponent;
