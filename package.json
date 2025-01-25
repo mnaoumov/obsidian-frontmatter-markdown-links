@@ -24,7 +24,7 @@
     "@types/node": "^22.10.10",
     "monkey-around": "^3.0.0",
     "obsidian": "^1.7.2",
-    "obsidian-dev-utils": "^16.4.3",
+    "obsidian-dev-utils": "^16.5.0",
     "obsidian-typings": "^2.14.6"
   },
   "type": "module"
