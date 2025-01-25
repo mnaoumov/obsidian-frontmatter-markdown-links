@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.5.4
+
+- Fix for mobile
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/16.6.4
+
 ## 1.5.3
 
 - Format
