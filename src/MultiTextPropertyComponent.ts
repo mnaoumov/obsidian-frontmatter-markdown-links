@@ -38,7 +38,7 @@ export function patchMultiTextPropertyComponent(plugin: FrontmatterMarkdownLinks
 function patchMultiSelectComponentProto(multiSelectComponentProto: MultiSelectComponent): () => void {
   return around(multiSelectComponentProto, {
     renderValues: (next: () => void) =>
-      function (this: MultiSelectComponent) {
+      function renderValuesPatched(this: MultiSelectComponent) {
         renderValues(this, next);
       }
   });

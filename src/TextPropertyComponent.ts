@@ -61,19 +61,19 @@ function isWikilink(textPropertyComponent: TextPropertyComponent): boolean {
 function patchTextPropertyComponentProto(textPropertyComponentProto: TextPropertyComponent): () => void {
   return around(textPropertyComponentProto, {
     getDisplayText: () =>
-      function (this: TextPropertyComponent): string {
+      function getDisplayTextPatched(this: TextPropertyComponent): string {
         return getDisplayText(this);
       },
     getLinkText: () =>
-      function (this: TextPropertyComponent): string {
+      function getLinkTextPatched(this: TextPropertyComponent): string {
         return getLinkText(this);
       },
     isWikilink: () =>
-      function (this: TextPropertyComponent): boolean {
+      function isWikilinkPatched(this: TextPropertyComponent): boolean {
         return isWikilink(this);
       },
     render: (next: () => void) =>
-      function (this: TextPropertyComponent): void {
+      function renderPatched(this: TextPropertyComponent): void {
         render(this, next);
       }
   });

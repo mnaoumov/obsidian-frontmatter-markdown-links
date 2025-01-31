@@ -51,7 +51,8 @@ class FrontMatterLinksViewPlugin implements PluginValue {
 
     for (const { from, to } of view.visibleRanges) {
       syntaxTree(view.state).iterate({
-        enter: (node) => {
+        // eslint-disable-next-line no-loop-func
+        enter(node) {
           const lineNumber = view.state.doc.lineAt(node.from).number;
           if (lineNumber !== previousLineNumber) {
             handleValue(valueStartIndex, valueEndIndex);
@@ -154,7 +155,7 @@ function getLinkStylingInfos(value: string): LinkStylingInfo[] {
     [
       // [[ or ![[
       {
-        cssClass: 'cm-formatting-link cm-formatting-link-start' + (parseLinkResult.isEmbed ? ' cm-formatting-embed' : ''),
+        cssClass: `cm-formatting-link cm-formatting-link-start${parseLinkResult.isEmbed ? ' cm-formatting-embed' : ''}`,
         regExp: /!?\[\[/
       },
       // A
@@ -173,7 +174,7 @@ function getLinkStylingInfos(value: string): LinkStylingInfo[] {
     [
       // [[ or ![[
       {
-        cssClass: 'cm-formatting-link cm-formatting-link-start' + (parseLinkResult.isEmbed ? ' cm-formatting-embed' : ''),
+        cssClass: `cm-formatting-link cm-formatting-link-start${parseLinkResult.isEmbed ? ' cm-formatting-embed' : ''}`,
         regExp: /!?\[\[/
       },
       // A
@@ -315,7 +316,7 @@ function getLinkStylingInfos(value: string): LinkStylingInfo[] {
 }
 
 function tryGetLinkStylingInfos(value: string, groupDescriptions: GroupDescription[]): LinkStylingInfo[] | null {
-  const entireRegExpStr = `^${groupDescriptions.map((g) => '(' + g.regExp.source + ')').join('')}$`;
+  const entireRegExpStr = `^${groupDescriptions.map((g) => `(${g.regExp.source})`).join('')}$`;
   const regExp = new RegExp(entireRegExpStr);
 
   const match = regExp.exec(value);

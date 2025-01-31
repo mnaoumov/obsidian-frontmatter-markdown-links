@@ -70,7 +70,8 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
   }
 
   private handleClick(evt: MouseEvent): void {
-    if (evt.button === 2) {
+    const RIGHT_BUTTON = 2;
+    if (evt.button === RIGHT_BUTTON) {
       return;
     }
 
@@ -166,7 +167,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
       }
 
       cache.frontmatterLinks ??= [];
-      let link = cache.frontmatterLinks.find((link) => link.key === key);
+      let link = cache.frontmatterLinks.find((frontmatterLink) => frontmatterLink.key === key);
 
       if (!link) {
         link = {
