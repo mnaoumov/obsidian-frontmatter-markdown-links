@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.5.5
+
+- Lint
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/17.2.2
+
 ## 1.5.4
 
 - Fix for mobile
