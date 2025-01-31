@@ -4,7 +4,7 @@
   "description": "Adds support for markdown links in frontmatter",
   "scripts": {
     "build": "obsidian-dev-utils build",
-    "build:validate": "obsidian-dev-utils build:validate",
+    "build:compile": "obsidian-dev-utils build:compile",
     "dev": "obsidian-dev-utils dev",
     "format": "obsidian-dev-utils format",
     "format:check": "obsidian-dev-utils format:check",
@@ -21,11 +21,11 @@
     "@codemirror/state": "^6.5.1",
     "@codemirror/view": "^6.36.2",
     "@tsconfig/strictest": "^2.0.5",
-    "@types/node": "^22.10.10",
+    "@types/node": "^22.12.0",
     "monkey-around": "^3.0.0",
     "obsidian": "^1.7.2",
-    "obsidian-dev-utils": "^16.6.4",
-    "obsidian-typings": "^2.14.6"
+    "obsidian-dev-utils": "^17.2.2",
+    "obsidian-typings": "^2.15.0"
   },
   "type": "module"
 }
