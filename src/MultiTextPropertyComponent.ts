@@ -1,4 +1,7 @@
-import type { Component } from 'obsidian';
+import type {
+  App,
+  Component
+} from 'obsidian';
 import type {
   PropertyEntryData,
   PropertyRenderContext,
@@ -35,16 +38,16 @@ export function patchMultiTextPropertyComponent(plugin: FrontmatterMarkdownLinks
   }));
 }
 
-function patchMultiSelectComponentProto(multiSelectComponentProto: MultiSelectComponent): () => void {
+function patchMultiSelectComponentProto(app: App, multiSelectComponentProto: MultiSelectComponent): () => void {
   return around(multiSelectComponentProto, {
     renderValues: (next: () => void) =>
       function renderValuesPatched(this: MultiSelectComponent) {
-        renderValues(this, next);
+        renderValues(app, this, next);
       }
   });
 }
 
-function renderValues(multiSelectComponent: MultiSelectComponent, next: () => void): void {
+function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next: () => void): void {
   next.call(multiSelectComponent);
   const renderedItemEls = Array.from(multiSelectComponent.rootEl.querySelectorAll('.multi-select-pill-content'));
   for (let i = 0; i < renderedItemEls.length; i++) {
@@ -63,6 +66,12 @@ function renderValues(multiSelectComponent: MultiSelectComponent, next: () => vo
     }
     el.setText(parseLinkResult.alias ?? parseLinkResult.url);
     el.addClass(parseLinkResult.isExternal ? 'external-link' : 'internal-link');
+    if (!parseLinkResult.isExternal) {
+      const resolvedLink = app.metadataCache.getFirstLinkpathDest(parseLinkResult.url, app.workspace.getActiveFile()?.path ?? '');
+      if (!resolvedLink) {
+        el.addClass('is-unresolved');
+      }
+    }
     el.setAttribute('data-frontmatter-markdown-link-clickable', '');
     el.setAttribute('data-is-external-url', parseLinkResult.isExternal ? 'true' : 'false');
     el.setAttribute('data-url', parseLinkResult.url);
@@ -83,7 +92,7 @@ function renderWidget(
   }
 
   const multiSelectComponentProto = getPrototypeOf(multiTextPropertyComponent.multiselect);
-  plugin.register(patchMultiSelectComponentProto(multiSelectComponentProto));
+  plugin.register(patchMultiSelectComponentProto(plugin.app, multiSelectComponentProto));
   isPatched = true;
 
   multiTextPropertyComponent.multiselect.rootEl.remove();
