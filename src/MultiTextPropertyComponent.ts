@@ -75,6 +75,7 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
     el.setAttribute('data-frontmatter-markdown-link-clickable', '');
     el.setAttribute('data-is-external-url', parseLinkResult.isExternal ? 'true' : 'false');
     el.setAttribute('data-url', parseLinkResult.url);
+    el.setAttribute('title', parseLinkResult.url);
   }
 }
 
