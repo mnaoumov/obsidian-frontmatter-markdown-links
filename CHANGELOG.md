@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.6.0
+
+- Show url tooltip
+- Format unresolved links
+- Preserve value set in UI
+- Make links clickable in Live Preview mode
+
 ## 1.5.5
 
 - Lint
