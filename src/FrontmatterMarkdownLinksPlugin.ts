@@ -75,7 +75,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
       return;
     }
 
-    if (!Keymap.isModEvent(evt)) {
+    if (!Keymap.isModEvent(evt) && !this.isLivePreviewMode()) {
       return;
     }
 
@@ -140,6 +140,20 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
     }
 
     this.addedFrontmatterMarkdownLinks.delete(oldPath);
+  }
+
+  private isLivePreviewMode(): boolean {
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!view) {
+      return false;
+    }
+
+    if (view.getMode() !== 'source') {
+      return false;
+    }
+
+    const state = view.getState();
+    return !state['source'];
   }
 
   private async processAllNotes(): Promise<void> {
