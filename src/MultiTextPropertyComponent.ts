@@ -45,25 +45,27 @@ function patchMultiSelectComponentProto(multiSelectComponentProto: MultiSelectCo
 }
 
 function renderValues(multiSelectComponent: MultiSelectComponent, next: () => void): void {
-  const aliases: string[] = [];
-  multiSelectComponent.values = multiSelectComponent.values.map((value) => {
-    const parseLinkResult = parseLink(value);
-    aliases.push(parseLinkResult?.alias ?? parseLinkResult?.url ?? value);
-
-    if (!parseLinkResult || parseLinkResult.isWikilink) {
-      return value;
-    }
-
-    if (!parseLinkResult.isExternal) {
-      return `[[${parseLinkResult.url}]]`;
-    }
-
-    return parseLinkResult.url;
-  });
   next.call(multiSelectComponent);
   const renderedItemEls = Array.from(multiSelectComponent.rootEl.querySelectorAll('.multi-select-pill-content'));
   for (let i = 0; i < renderedItemEls.length; i++) {
-    renderedItemEls[i]?.setText(aliases[i] ?? '');
+    const value = multiSelectComponent.values[i];
+    if (!value) {
+      continue;
+    }
+    const parseLinkResult = parseLink(value);
+    if (!parseLinkResult) {
+      continue;
+    }
+
+    const el = renderedItemEls[i];
+    if (!el) {
+      continue;
+    }
+    el.setText(parseLinkResult.alias ?? parseLinkResult.url);
+    el.addClass(parseLinkResult.isExternal ? 'external-link' : 'internal-link');
+    el.setAttribute('data-frontmatter-markdown-link-clickable', '');
+    el.setAttribute('data-is-external-url', parseLinkResult.isExternal ? 'true' : 'false');
+    el.setAttribute('data-url', parseLinkResult.url);
   }
 }
 
