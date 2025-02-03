@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.7.0
+
+- Set displayText
+
 ## 1.6.0
 
 - Show url tooltip
