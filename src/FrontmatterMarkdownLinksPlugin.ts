@@ -194,6 +194,9 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
 
       link.link = parseLinkResult.url;
       link.original = value;
+      if (parseLinkResult.alias !== undefined) {
+        link.displayText = parseLinkResult.alias;
+      }
 
       let keys = this.addedFrontmatterMarkdownLinks.get(filePath);
       if (!keys) {
