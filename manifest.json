@@ -1,7 +1,7 @@
 {
   "id": "frontmatter-markdown-links",
   "name": "Frontmatter Markdown Links",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Adds support for markdown links in frontmatter",
   "author": "mnaoumov",
   "authorUrl": "https://github.com/mnaoumov/",
