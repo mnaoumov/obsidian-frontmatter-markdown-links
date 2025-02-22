@@ -20,6 +20,7 @@ import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
 
 import { registerFrontmatterLinksEditorExtension } from './FrontmatterLinksEditorExtension.ts';
+import { getLinkData } from './LinkData.ts';
 import { patchMultiTextPropertyComponent } from './MultiTextPropertyComponent.ts';
 import { patchTextPropertyComponent } from './TextPropertyComponent.ts';
 
@@ -81,47 +82,39 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
     }
 
     const target = evt.target as HTMLElement;
-    if (!target.matches('[data-frontmatter-markdown-link-clickable]')) {
+    const linkData = getLinkData(target);
+    if (!linkData) {
       return;
     }
 
     evt.preventDefault();
 
-    const url = target.getAttribute('data-url');
-    const isExternalUrl = target.getAttribute('data-is-external-url') === 'true';
-
-    if (!url) {
-      return;
-    }
-
-    if (isExternalUrl) {
-      window.open(url, evt.button === 1 ? 'tab' : '');
+    if (linkData.isExternalUrl) {
+      window.open(linkData.url, evt.button === 1 ? 'tab' : '');
     } else {
       const activeFile = this.app.workspace.getActiveFile();
       if (!activeFile) {
         return;
       }
 
-      invokeAsyncSafely(() => this.app.workspace.openLinkText(url, activeFile.path, Keymap.isModEvent(evt)));
+      invokeAsyncSafely(() => this.app.workspace.openLinkText(linkData.url, activeFile.path, Keymap.isModEvent(evt)));
     }
   }
 
   private handleContextMenu(evt: MouseEvent): void {
     const target = evt.target as HTMLElement;
-    if (!target.matches('[data-frontmatter-markdown-link-clickable]')) {
+    const linkData = getLinkData(target);
+    if (!linkData) {
       return;
     }
 
     evt.preventDefault();
 
-    const url = target.getAttribute('data-url') ?? '';
-    const isExternalUrl = target.getAttribute('data-is-external-url') === 'true';
-
     const menu = new Menu();
-    if (isExternalUrl) {
-      this.app.workspace.handleExternalLinkContextMenu(menu, url);
+    if (linkData.isExternalUrl) {
+      this.app.workspace.handleExternalLinkContextMenu(menu, linkData.url);
     } else {
-      this.app.workspace.handleLinkContextMenu(menu, url, this.app.workspace.getActiveFile()?.path ?? '');
+      this.app.workspace.handleLinkContextMenu(menu, linkData.url, this.app.workspace.getActiveFile()?.path ?? '');
     }
     menu.showAtMouseEvent(evt);
   }
@@ -141,24 +134,21 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
     }
 
     const target = evt.target as HTMLElement;
-    if (!target.matches('[data-frontmatter-markdown-link-clickable]')) {
+    const linkData = getLinkData(target);
+    if (!linkData) {
       return;
     }
 
-    const isExternalUrl = target.getAttribute('data-is-external-url') === 'true';
-
-    if (isExternalUrl) {
+    if (linkData.isExternalUrl) {
       return;
     }
 
     evt.preventDefault();
 
-    const url = target.getAttribute('data-url');
-
     this.app.workspace.trigger('hover-link', {
       event: evt,
       hoverParent: this,
-      linktext: url,
+      linktext: linkData.url,
       source: markdownView.getHoverSource(),
       targetEl: target
     });

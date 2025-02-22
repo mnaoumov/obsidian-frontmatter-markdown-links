@@ -14,6 +14,8 @@ import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
 
 import type { FrontmatterMarkdownLinksPlugin } from './FrontmatterMarkdownLinksPlugin.ts';
 
+import { attachLinkData } from './LinkData.ts';
+
 interface MultiSelectComponent extends Component {
   renderValues(): void;
   rootEl: HTMLElement;
@@ -49,7 +51,7 @@ function patchMultiSelectComponentProto(app: App, multiSelectComponentProto: Mul
 
 function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next: () => void): void {
   next.call(multiSelectComponent);
-  const renderedItemEls = Array.from(multiSelectComponent.rootEl.querySelectorAll('.multi-select-pill-content'));
+  const renderedItemEls: HTMLElement[] = Array.from(multiSelectComponent.rootEl.querySelectorAll('.multi-select-pill-content'));
   for (let i = 0; i < renderedItemEls.length; i++) {
     const value = multiSelectComponent.values[i];
     if (!value) {
@@ -72,10 +74,11 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
         el.addClass('is-unresolved');
       }
     }
-    el.setAttribute('data-frontmatter-markdown-link-clickable', '');
-    el.setAttribute('data-is-external-url', parseLinkResult.isExternal ? 'true' : 'false');
-    el.setAttribute('data-url', parseLinkResult.url);
     el.setAttribute('title', parseLinkResult.url);
+    attachLinkData(el, {
+      isExternalUrl: parseLinkResult.isExternal,
+      url: parseLinkResult.url
+    });
   }
 }
 

@@ -15,6 +15,8 @@ import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
 
 import type { FrontmatterMarkdownLinksPlugin } from './FrontmatterMarkdownLinksPlugin.ts';
 
+import { getDataAttributes } from './LinkData.ts';
+
 interface GroupDescription {
   cssClass: string;
   isClickable?: boolean;
@@ -116,13 +118,14 @@ class FrontMatterLinksViewPlugin implements PluginValue {
           startIndex + linkStylingInfo.from,
           startIndex + linkStylingInfo.to,
           Decoration.mark({
-            attributes: linkStylingInfo.isClickable
-              ? {
-                'data-frontmatter-markdown-link-clickable': '',
-                'data-is-external-url': parseLinkResult.isExternal ? 'true' : 'false',
-                'data-url': parseLinkResult.url
-              }
-              : {},
+            attributes: getDataAttributes(
+              linkStylingInfo.isClickable
+                ? {
+                  isExternalUrl: parseLinkResult.isExternal,
+                  url: parseLinkResult.url
+                }
+                : null
+            ),
             class: linkStylingInfo.cssClass
           })
         );
