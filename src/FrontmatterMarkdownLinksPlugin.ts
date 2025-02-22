@@ -46,6 +46,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
     this.registerDomEvent(document, 'click', this.handleClick.bind(this));
     this.registerDomEvent(document, 'auxclick', this.handleClick.bind(this));
     this.registerDomEvent(document, 'contextmenu', this.handleContextMenu.bind(this), { capture: true });
+    this.registerDomEvent(document, 'mouseover', this.handleMouseOver.bind(this), { capture: true });
 
     patchTextPropertyComponent(this);
     patchMultiTextPropertyComponent(this);
@@ -131,6 +132,36 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
 
   private handleMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): void {
     this.processFrontmatterLinksInFile(file, data, cache);
+  }
+
+  private handleMouseOver(evt: MouseEvent): void {
+    const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!markdownView) {
+      return;
+    }
+
+    const target = evt.target as HTMLElement;
+    if (!target.matches('[data-frontmatter-markdown-link-clickable]')) {
+      return;
+    }
+
+    const isExternalUrl = target.getAttribute('data-is-external-url') === 'true';
+
+    if (isExternalUrl) {
+      return;
+    }
+
+    evt.preventDefault();
+
+    const url = target.getAttribute('data-url');
+
+    this.app.workspace.trigger('hover-link', {
+      event: evt,
+      hoverParent: this,
+      linktext: url,
+      source: markdownView.getHoverSource(),
+      targetEl: target
+    });
   }
 
   private handleRename(file: TAbstractFile, oldPath: string): void {
