@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.8.0
+
+- Add hover preview
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/19.4.0
+
 ## 1.7.2
 
 - https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/19.2.1
