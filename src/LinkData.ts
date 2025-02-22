@@ -18,8 +18,7 @@ export function getDataAttributes(linkData: LinkData | null): Record<string, str
   }
 
   const div = createDiv();
-  const dataset = div.dataset as Partial<Dataset>;
-  dataset.frontmatterMarkdownLinksLinkData = JSON.stringify(linkData);
+  attachLinkData(div, linkData);
   const attr = div.attributes[0];
   if (!attr) {
     return {};
