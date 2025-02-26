@@ -52,12 +52,14 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
     patchTextPropertyComponent(this);
     patchMultiTextPropertyComponent(this);
     registerFrontmatterLinksEditorExtension(this);
-    this.register(this.clearMetadataCache.bind(this));
+    this.register(() => {
+      invokeAsyncSafely(this.clearMetadataCache.bind(this));
+    });
     this.register(this.refreshMarkdownViews.bind(this));
     this.refreshMarkdownViews();
   }
 
-  private clearMetadataCache(): void {
+  private async clearMetadataCache(): Promise<void> {
     for (const [filePath, keys] of this.addedFrontmatterMarkdownLinks.entries()) {
       const cache = this.app.metadataCache.getCache(filePath);
       if (!cache?.frontmatterLinks) {
@@ -68,6 +70,13 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
       if (cache.frontmatterLinks.length === 0) {
         delete cache.frontmatterLinks;
       }
+
+      const file = this.app.vault.getFileByPath(filePath);
+      if (!file) {
+        continue;
+      }
+      const data = await this.app.vault.read(file);
+      this.app.metadataCache.trigger('changed', file, data, cache);
     }
   }
 
