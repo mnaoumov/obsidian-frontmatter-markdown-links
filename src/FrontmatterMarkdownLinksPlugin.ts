@@ -12,6 +12,7 @@ import {
   TFile
 } from 'obsidian';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
+import { ensureLoaded } from 'obsidian-dev-utils/HTMLElement';
 import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
 import { loop } from 'obsidian-dev-utils/obsidian/Loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
@@ -44,10 +45,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
     this.registerEvent(this.app.metadataCache.on('changed', this.handleMetadataCacheChanged.bind(this)));
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
-    this.registerDomEvent(document, 'click', this.handleClick.bind(this));
-    this.registerDomEvent(document, 'auxclick', this.handleClick.bind(this));
-    this.registerDomEvent(document, 'contextmenu', this.handleContextMenu.bind(this), { capture: true });
-    this.registerDomEvent(document, 'mouseover', this.handleMouseOver.bind(this), { capture: true });
+    this.registerDomEvents(document);
 
     patchTextPropertyComponent(this);
     patchMultiTextPropertyComponent(this);
@@ -57,6 +55,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
     });
     this.register(this.refreshMarkdownViews.bind(this));
     this.refreshMarkdownViews();
+    this.registerIFrameEvents();
   }
 
   private async clearMetadataCache(): Promise<void> {
@@ -138,9 +137,6 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
 
   private handleMouseOver(evt: MouseEvent): void {
     const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (!markdownView) {
-      return;
-    }
 
     const target = evt.target as HTMLElement;
     const linkData = getLinkData(target);
@@ -158,7 +154,7 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
       event: evt,
       hoverParent: this,
       linktext: linkData.url,
-      source: markdownView.getHoverSource(),
+      source: markdownView?.getHoverSource() ?? 'source',
       targetEl: target
     });
   }
@@ -275,5 +271,41 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
       leaf.view.metadataEditor.synchronize({});
       leaf.view.metadataEditor.synchronize(frontmatter);
     }
+  }
+
+  private registerDomEvents(document: Document): void {
+    this.registerDomEvent(document, 'click', this.handleClick.bind(this));
+    this.registerDomEvent(document, 'auxclick', this.handleClick.bind(this));
+    this.registerDomEvent(document, 'contextmenu', this.handleContextMenu.bind(this), { capture: true });
+    this.registerDomEvent(document, 'mouseover', this.handleMouseOver.bind(this), { capture: true });
+  }
+
+  private registerIFrameEvents(): void {
+    const observer = new MutationObserver((mutationsList) => {
+      for (const mutation of mutationsList) {
+        if (mutation.type !== 'childList') {
+          continue;
+        }
+
+        for (const node of Array.from(mutation.addedNodes)) {
+          if (!(node instanceof HTMLIFrameElement)) {
+            continue;
+          }
+
+          invokeAsyncSafely(async () => {
+            await ensureLoaded(node);
+            if (node.contentDocument) {
+              this.registerDomEvents(node.contentDocument);
+            }
+          });
+        }
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    this.register(() => {
+      observer.disconnect();
+    });
   }
 }
