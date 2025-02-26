@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.9.0
+
+- Make links clickable in canvas iframes
+- Trigger metadata change on unload
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/19.7.0
+
 ## 1.8.0
 
 - Add hover preview
