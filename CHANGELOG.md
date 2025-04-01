@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.10.0
+
+- Show progress bar
+- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/21.1.0
+
 ## 1.9.0
 
 - Make links clickable in canvas iframes
