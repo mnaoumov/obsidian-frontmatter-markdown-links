@@ -195,7 +195,9 @@ export class FrontmatterMarkdownLinksPlugin extends PluginBase {
         const data = await this.app.vault.read(note);
         this.processFrontmatterLinksInFile(note, data, cache);
       },
-      shouldContinueOnError: true
+      progressBarTitle: 'Frontmatter Markdown Links: Initializing...',
+      shouldContinueOnError: true,
+      shouldShowProgressBar: true
     });
   }
 
