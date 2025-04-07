@@ -8,7 +8,6 @@ import {
   MarkdownView,
   Menu,
   parseYaml,
-  PluginSettingTab,
   TFile
 } from 'obsidian';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
@@ -16,32 +15,26 @@ import { ensureLoaded } from 'obsidian-dev-utils/HTMLElement';
 import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
 import { loop } from 'obsidian-dev-utils/obsidian/Loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
-import { EmptySettings } from 'obsidian-dev-utils/obsidian/Plugin/EmptySettings';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
+
+import type { PluginTypes } from './PluginTypes.ts';
 
 import { registerFrontmatterLinksEditorExtension } from './FrontmatterLinksEditorExtension.ts';
 import { getLinkData } from './LinkData.ts';
 import { patchMultiTextPropertyComponent } from './MultiTextPropertyComponent.ts';
 import { patchTextPropertyComponent } from './TextPropertyComponent.ts';
 
-export class FrontmatterMarkdownLinksPlugin extends PluginBase {
+export class Plugin extends PluginBase<PluginTypes> {
   private readonly addedFrontmatterMarkdownLinks = new Map<string, Set<string>>();
   private readonly currentlyProcessingFiles = new Set<string>();
-
-  protected override createPluginSettings(): EmptySettings {
-    return new EmptySettings();
-  }
-
-  protected override createPluginSettingsTab(): null | PluginSettingTab {
-    return null;
-  }
 
   protected override async onLayoutReady(): Promise<void> {
     await this.processAllNotes();
   }
 
-  protected override onloadComplete(): void {
+  protected override async onloadImpl(): Promise<void> {
+    await super.onloadImpl();
     this.registerEvent(this.app.metadataCache.on('changed', this.handleMetadataCacheChanged.bind(this)));
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));

@@ -1,21 +1,21 @@
 import type { Component } from 'obsidian';
 import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
+import type { MaybeReturn } from 'obsidian-dev-utils/Type';
 import type {
   PropertyEntryData,
   PropertyRenderContext,
   PropertyWidget
 } from 'obsidian-typings';
 
-import { around } from 'monkey-around';
 import { getPrototypeOf } from 'obsidian-dev-utils/Object';
 import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
+import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
-import type { FrontmatterMarkdownLinksPlugin } from './FrontmatterMarkdownLinksPlugin.ts';
+import type { Plugin } from './Plugin.ts';
 
 let isPatched = false;
 
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-type RenderTextPropertyWidgetFn = (el: HTMLElement, data: PropertyEntryData<string>, ctx: PropertyRenderContext) => Component | void;
+type RenderTextPropertyWidgetFn = PropertyWidget<string>['render'];
 
 interface TextPropertyComponent extends Component {
   ctx: PropertyRenderContext;
@@ -29,13 +29,12 @@ interface TextPropertyComponent extends Component {
   value: string | undefined;
 }
 
-export function patchTextPropertyComponent(plugin: FrontmatterMarkdownLinksPlugin): void {
+export function patchTextPropertyComponent(plugin: Plugin): void {
   const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['text'] as PropertyWidget<string>;
 
-  plugin.register(around(widget, {
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    render: (next: RenderTextPropertyWidgetFn) => (el, data, ctx): Component | void => renderWidget(el, data, ctx, next, plugin)
-  }));
+  registerPatch(plugin, widget, {
+    render: (next: RenderTextPropertyWidgetFn) => (el, data, ctx): MaybeReturn<Component> => renderWidget(el, data, ctx, next, plugin)
+  });
 }
 
 function getDisplayText(textPropertyComponent: TextPropertyComponent): string {
@@ -58,27 +57,6 @@ function isWikilink(textPropertyComponent: TextPropertyComponent): boolean {
   return !!parseLinkResult && (parseLinkResult.isWikilink || !parseLinkResult.isExternal);
 }
 
-function patchTextPropertyComponentProto(textPropertyComponentProto: TextPropertyComponent): () => void {
-  return around(textPropertyComponentProto, {
-    getDisplayText: () =>
-      function getDisplayTextPatched(this: TextPropertyComponent): string {
-        return getDisplayText(this);
-      },
-    getLinkText: () =>
-      function getLinkTextPatched(this: TextPropertyComponent): string {
-        return getLinkText(this);
-      },
-    isWikilink: () =>
-      function isWikilinkPatched(this: TextPropertyComponent): boolean {
-        return isWikilink(this);
-      },
-    render: (next: () => void) =>
-      function renderPatched(this: TextPropertyComponent): void {
-        render(this, next);
-      }
-  });
-}
-
 function render(textPropertyComponent: TextPropertyComponent, next: () => void): void {
   const parseLinkResult = getParseLinkResult(textPropertyComponent, true);
   if (parseLinkResult?.isExternal) {
@@ -92,7 +70,7 @@ function renderWidget(
   data: PropertyEntryData<string>,
   ctx: PropertyRenderContext,
   next: RenderTextPropertyWidgetFn,
-  plugin: FrontmatterMarkdownLinksPlugin
+  plugin: Plugin
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 ): Component | void {
   const textPropertyComponent = next(el, data, ctx) as TextPropertyComponent | undefined;
@@ -101,7 +79,24 @@ function renderWidget(
   }
 
   const textPropertyComponentProto = getPrototypeOf(textPropertyComponent);
-  plugin.register(patchTextPropertyComponentProto(textPropertyComponentProto));
+  registerPatch(plugin, textPropertyComponentProto, {
+    getDisplayText: () =>
+      function getDisplayTextPatched(this: TextPropertyComponent): string {
+        return getDisplayText(this);
+      },
+    getLinkText: () =>
+      function getLinkTextPatched(this: TextPropertyComponent): string {
+        return getLinkText(this);
+      },
+    isWikilink: () =>
+      function isWikilinkPatched(this: TextPropertyComponent): boolean {
+        return isWikilink(this);
+      },
+    render: (nextRender: () => void) =>
+      function renderPatched(this: TextPropertyComponent): void {
+        render(this, nextRender);
+      }
+  });
   isPatched = true;
 
   textPropertyComponent.inputEl.remove();

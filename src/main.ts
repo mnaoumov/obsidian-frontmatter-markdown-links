@@ -1,4 +1,4 @@
-import { FrontmatterMarkdownLinksPlugin } from './FrontmatterMarkdownLinksPlugin.ts';
+import { Plugin } from './Plugin.ts';
 
 // eslint-disable-next-line import-x/no-default-export
-export default FrontmatterMarkdownLinksPlugin;
+export default Plugin;

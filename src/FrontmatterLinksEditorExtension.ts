@@ -13,7 +13,7 @@ import {
 } from '@codemirror/view';
 import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
 
-import type { FrontmatterMarkdownLinksPlugin } from './FrontmatterMarkdownLinksPlugin.ts';
+import type { Plugin } from './Plugin.ts';
 
 import { getDataAttributes } from './LinkData.ts';
 
@@ -142,7 +142,7 @@ class FrontMatterLinksViewPlugin implements PluginValue {
   }
 }
 
-export function registerFrontmatterLinksEditorExtension(plugin: FrontmatterMarkdownLinksPlugin): void {
+export function registerFrontmatterLinksEditorExtension(plugin: Plugin): void {
   const viewPlugin = ViewPlugin.fromClass(FrontMatterLinksViewPlugin, { decorations: (value) => value.decorations });
   plugin.registerEditorExtension(viewPlugin);
 }
