@@ -125,7 +125,9 @@ export class Plugin extends PluginBase<PluginTypes> {
   }
 
   private handleMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): void {
-    this.processFrontmatterLinksInFile(file, data, cache);
+    invokeAsyncSafely(async () => {
+      await this.processFrontmatterLinksInFile(file, cache, data);
+    });
   }
 
   private handleMouseOver(evt: MouseEvent): void {
@@ -185,8 +187,7 @@ export class Plugin extends PluginBase<PluginTypes> {
         if (!cache) {
           return;
         }
-        const data = await this.app.vault.read(note);
-        this.processFrontmatterLinksInFile(note, data, cache);
+        await this.processFrontmatterLinksInFile(note, cache);
       },
       progressBarTitle: 'Frontmatter Markdown Links: Initializing...',
       shouldContinueOnError: true,
@@ -243,17 +244,20 @@ export class Plugin extends PluginBase<PluginTypes> {
     return hasFrontmatterLinks;
   }
 
-  private processFrontmatterLinksInFile(file: TFile, data: string, cache: CachedMetadata): void {
+  private async processFrontmatterLinksInFile(file: TFile, cache: CachedMetadata, data?: string): Promise<void> {
     if (this.currentlyProcessingFiles.has(file.path)) {
       return;
     }
 
     const hasFrontmatterLinks = this.processFrontmatterLinks(cache.frontmatter, '', cache, file.path);
-    if (hasFrontmatterLinks) {
-      this.currentlyProcessingFiles.add(file.path);
-      this.app.metadataCache.trigger('changed', file, data, cache);
-      this.currentlyProcessingFiles.delete(file.path);
+    if (!hasFrontmatterLinks) {
+      return;
     }
+
+    this.currentlyProcessingFiles.add(file.path);
+    data ??= await this.app.vault.read(file);
+    this.app.metadataCache.trigger('changed', file, data, cache);
+    this.currentlyProcessingFiles.delete(file.path);
   }
 
   private refreshMarkdownViews(): void {
