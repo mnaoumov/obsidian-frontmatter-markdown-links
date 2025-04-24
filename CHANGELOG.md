@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.10.6
+
+- Read only when needed
+
 ## 1.10.5
 
 - Improve performance
