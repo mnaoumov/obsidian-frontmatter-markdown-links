@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.0.0
+
+- Cache links in IndexedDB
+
 ## 1.10.6
 
 - Read only when needed
