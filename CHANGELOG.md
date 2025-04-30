@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.0.1
+
+- Ensure events handled when data is ready
+
 ## 2.0.0
 
 - Cache links in IndexedDB
