@@ -32,14 +32,14 @@ export class Plugin extends PluginBase<PluginTypes> {
 
   protected override async onLayoutReady(): Promise<void> {
     await this.processAllNotes();
-  }
-
-  protected override async onloadImpl(): Promise<void> {
-    await super.onloadImpl();
     this.registerEvent(this.app.metadataCache.on('changed', this.handleMetadataCacheChanged.bind(this)));
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
     this.registerDomEvents(document);
+  }
+
+  protected override async onloadImpl(): Promise<void> {
+    await super.onloadImpl();
 
     patchTextPropertyComponent(this);
     patchMultiTextPropertyComponent(this);
