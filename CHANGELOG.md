@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.0.2
+
+- Add support for urls with spaces
+- Update libs
+
 ## 2.0.1
 
 - Ensure events handled when data is ready
