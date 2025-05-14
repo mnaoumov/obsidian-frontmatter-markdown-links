@@ -60,7 +60,7 @@ function isWikilink(textPropertyComponent: TextPropertyComponent): boolean {
 function render(textPropertyComponent: TextPropertyComponent, next: () => void): void {
   const parseLinkResult = getParseLinkResult(textPropertyComponent, true);
   if (parseLinkResult?.isExternal) {
-    textPropertyComponent.value = parseLinkResult.url;
+    textPropertyComponent.value = parseLinkResult.encodedUrl ?? parseLinkResult.url;
   }
   next.call(textPropertyComponent);
 }
