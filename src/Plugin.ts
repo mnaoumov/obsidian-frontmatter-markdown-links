@@ -10,6 +10,7 @@ import {
   parseYaml,
   TFile
 } from 'obsidian';
+import { filterInPlace } from 'obsidian-dev-utils/Array';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { ensureLoaded } from 'obsidian-dev-utils/HTMLElement';
 import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
@@ -196,6 +197,8 @@ export class Plugin extends PluginBase<PluginTypes> {
             const cache = await getCacheSafe(this.app, note);
             if (cache) {
               cache.frontmatterLinks ??= [];
+              const linkKeys = new Set(links.map((link) => link.key));
+              filterInPlace(cache.frontmatterLinks, (link) => !linkKeys.has(link.key));
               cache.frontmatterLinks.push(...links);
             }
           }
