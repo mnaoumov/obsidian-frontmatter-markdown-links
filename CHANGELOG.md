@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.0.4
+
+- Prevent restoring duplicated links
+
 ## 2.0.3
 
 - Avoid restoring duplicated entries
