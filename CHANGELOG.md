@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.0.3
+
+- Avoid restoring duplicated entries
+
 ## 2.0.2
 
 - Add support for urls with spaces
