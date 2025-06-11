@@ -67,6 +67,7 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
     el.setAttribute('title', parseLinkResult.url);
     attachLinkData(el, {
       isExternalUrl: parseLinkResult.isExternal,
+      isWikilink: parseLinkResult.isWikilink,
       url: parseLinkResult.url
     });
   }

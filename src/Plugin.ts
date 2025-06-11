@@ -91,6 +91,10 @@ export class Plugin extends PluginBase<PluginTypes> {
       return;
     }
 
+    if (linkData.isWikilink) {
+      return;
+    }
+
     evt.preventDefault();
 
     if (linkData.isExternalUrl) {

@@ -122,6 +122,7 @@ class FrontMatterLinksViewPlugin implements PluginValue {
               linkStylingInfo.isClickable
                 ? {
                   isExternalUrl: parseLinkResult.isExternal,
+                  isWikilink: parseLinkResult.isWikilink,
                   url: parseLinkResult.url
                 }
                 : null

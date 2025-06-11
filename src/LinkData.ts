@@ -1,5 +1,6 @@
 export interface LinkData {
   isExternalUrl: boolean;
+  isWikilink: boolean;
   url: string;
 }
 
