@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.0.8
+
+- Don't handle wikilink clicks
+- Update libs
+
 ## 2.0.7
 
 - Update libs
