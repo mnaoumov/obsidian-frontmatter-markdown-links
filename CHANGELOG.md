@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.1.0
+
+- shouldShowInitializationNotice
+- Update libs
+
 ## 2.0.8
 
 - Don't handle wikilink clicks
