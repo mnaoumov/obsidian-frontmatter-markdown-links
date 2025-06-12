@@ -25,11 +25,21 @@ import { registerFrontmatterLinksEditorExtension } from './FrontmatterLinksEdito
 import { FrontmatterMarkdownLinksCache } from './FrontmatterMarkdownLinksCache.ts';
 import { getLinkData } from './LinkData.ts';
 import { patchMultiTextPropertyComponent } from './MultiTextPropertyComponent.ts';
+import { PluginSettingsManager } from './PluginSettingsManager.ts';
+import { PluginSettingsTab } from './PluginSettingsTab.ts';
 import { patchTextPropertyComponent } from './TextPropertyComponent.ts';
 
 export class Plugin extends PluginBase<PluginTypes> {
   private readonly currentlyProcessingFiles = new Set<string>();
   private frontmatterMarkdownLinksCache!: FrontmatterMarkdownLinksCache;
+
+  protected override createSettingsManager(): PluginSettingsManager {
+    return new PluginSettingsManager(this);
+  }
+
+  protected override createSettingsTab(): PluginSettingsTab {
+    return new PluginSettingsTab(this);
+  }
 
   protected override async onLayoutReady(): Promise<void> {
     await this.processAllNotes();
@@ -217,7 +227,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       },
       progressBarTitle: 'Frontmatter Markdown Links: Initializing...',
       shouldContinueOnError: true,
-      shouldShowProgressBar: true
+      shouldShowProgressBar: this.settings.shouldShowInitializationNotice
     });
 
     for (const filePath of cachedFilePaths) {
