@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.1.1
+
+- Unify context menus
+- Update libs
+
 ## 2.1.0
 
 - shouldShowInitializationNotice
