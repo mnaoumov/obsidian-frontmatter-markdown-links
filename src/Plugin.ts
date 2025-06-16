@@ -92,7 +92,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       return;
     }
 
-    if (!Keymap.isModEvent(evt) && !this.isLivePreviewMode()) {
+    if (!Keymap.isModEvent(evt) && this.isSourceMode()) {
       return;
     }
 
@@ -182,7 +182,7 @@ export class Plugin extends PluginBase<PluginTypes> {
     this.frontmatterMarkdownLinksCache.rename(oldPath, file);
   }
 
-  private isLivePreviewMode(): boolean {
+  private isSourceMode(): boolean {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (!view) {
       return false;
@@ -193,7 +193,7 @@ export class Plugin extends PluginBase<PluginTypes> {
     }
 
     const state = view.getState();
-    return !state['source'];
+    return !!state['source'];
   }
 
   private async processAllNotes(): Promise<void> {
