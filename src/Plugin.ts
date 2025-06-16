@@ -1,5 +1,6 @@
 import type {
   CachedMetadata,
+  MenuItem,
   TAbstractFile
 } from 'obsidian';
 
@@ -128,13 +129,15 @@ export class Plugin extends PluginBase<PluginTypes> {
 
     evt.preventDefault();
 
-    const menu = new Menu();
+    const menu = Menu.forEvent(evt);
+    if (menu.items.some((menuItem: MenuItem) => menuItem.section === 'open')) {
+      return;
+    }
     if (linkData.isExternalUrl) {
       this.app.workspace.handleExternalLinkContextMenu(menu, linkData.url);
     } else {
       this.app.workspace.handleLinkContextMenu(menu, linkData.url, this.app.workspace.getActiveFile()?.path ?? '');
     }
-    menu.showAtMouseEvent(evt);
   }
 
   private handleDelete(file: TAbstractFile): void {
@@ -311,7 +314,7 @@ export class Plugin extends PluginBase<PluginTypes> {
   private registerDomEvents(document: Document): void {
     this.registerDomEvent(document, 'click', this.handleClick.bind(this));
     this.registerDomEvent(document, 'auxclick', this.handleClick.bind(this));
-    this.registerDomEvent(document, 'contextmenu', this.handleContextMenu.bind(this), { capture: true });
+    this.registerDomEvent(document, 'contextmenu', this.handleContextMenu.bind(this));
     this.registerDomEvent(document, 'mouseover', this.handleMouseOver.bind(this), { capture: true });
   }
 
