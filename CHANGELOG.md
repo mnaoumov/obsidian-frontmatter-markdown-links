@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.1.2
+
+- Fix click in preview mode
+
 ## 2.1.1
 
 - Unify context menus
