@@ -102,11 +102,8 @@ export class Plugin extends PluginBase<PluginTypes> {
       return;
     }
 
-    if (linkData.isWikilink) {
-      return;
-    }
-
     evt.preventDefault();
+    evt.stopImmediatePropagation();
 
     if (linkData.isExternalUrl) {
       window.open(linkData.url, evt.button === 1 ? 'tab' : '');
@@ -312,8 +309,8 @@ export class Plugin extends PluginBase<PluginTypes> {
   }
 
   private registerDomEvents(document: Document): void {
-    this.registerDomEvent(document, 'click', this.handleClick.bind(this));
-    this.registerDomEvent(document, 'auxclick', this.handleClick.bind(this));
+    this.registerDomEvent(document, 'click', this.handleClick.bind(this), { capture: true });
+    this.registerDomEvent(document, 'auxclick', this.handleClick.bind(this), { capture: true });
     this.registerDomEvent(document, 'contextmenu', this.handleContextMenu.bind(this));
     this.registerDomEvent(document, 'mouseover', this.handleMouseOver.bind(this), { capture: true });
   }
