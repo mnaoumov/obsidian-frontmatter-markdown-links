@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.1.3
+
+- Prevent double link open
+
 ## 2.1.2
 
 - Fix click in preview mode
