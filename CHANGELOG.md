@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.1.4
+
+- Update libs (for https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/9)
+
 ## 2.1.3
 
 - Prevent double link open
