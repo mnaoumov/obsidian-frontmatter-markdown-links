@@ -1,8 +1,11 @@
 import type {
   CachedMetadata,
+  Editor,
+  EditorPosition,
   MenuItem,
   TAbstractFile
 } from 'obsidian';
+import type { ClickableToken } from 'obsidian-typings';
 
 import {
   Keymap,
@@ -17,6 +20,7 @@ import { ensureLoaded } from 'obsidian-dev-utils/HTMLElement';
 import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
 import { loop } from 'obsidian-dev-utils/obsidian/Loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
+import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
 
@@ -30,9 +34,12 @@ import { PluginSettingsManager } from './PluginSettingsManager.ts';
 import { PluginSettingsTab } from './PluginSettingsTab.ts';
 import { patchTextPropertyComponent } from './TextPropertyComponent.ts';
 
+type GetClickableTokenAtFn = Editor['getClickableTokenAt'];
+
 export class Plugin extends PluginBase<PluginTypes> {
   private readonly currentlyProcessingFiles = new Set<string>();
   private frontmatterMarkdownLinksCache!: FrontmatterMarkdownLinksCache;
+  private isEditorPatched = false;
 
   protected override createSettingsManager(): PluginSettingsManager {
     return new PluginSettingsManager(this);
@@ -47,7 +54,9 @@ export class Plugin extends PluginBase<PluginTypes> {
     this.registerEvent(this.app.metadataCache.on('changed', this.handleMetadataCacheChanged.bind(this)));
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
+    this.registerEvent(this.app.workspace.on('file-open', this.handleFileOpen.bind(this)));
     this.registerDomEvents(document);
+    this.handleFileOpen();
   }
 
   protected override async onloadImpl(): Promise<void> {
@@ -84,6 +93,43 @@ export class Plugin extends PluginBase<PluginTypes> {
       const data = await this.app.vault.read(file);
       this.app.metadataCache.trigger('changed', file, data, cache);
     }
+  }
+
+  private getClickableTokenAt(next: GetClickableTokenAtFn, editor: Editor, pos: EditorPosition): ClickableToken | null {
+    let clickableToken = next.call(editor, pos);
+    if (clickableToken) {
+      return clickableToken;
+    }
+
+    const offset = editor.posToOffset(pos);
+    const { node } = editor.cm.domAtPos(offset);
+
+    const parentEl = node instanceof HTMLElement ? node : node.parentElement;
+    const frontmatterEl = parentEl?.closest('.cm-hmd-frontmatter');
+
+    if (!frontmatterEl) {
+      return null;
+    }
+
+    const linkEl = frontmatterEl.find('[data-frontmatter-markdown-links-link-data]') as HTMLElement;
+
+    if (!linkEl) {
+      return null;
+    }
+
+    const linkData = getLinkData(linkEl);
+
+    if (!linkData) {
+      return null;
+    }
+
+    clickableToken = {
+      end: pos,
+      start: pos,
+      text: linkData.url,
+      type: linkData.isExternalUrl ? 'external-link' : 'internal-link'
+    } as ClickableToken;
+    return clickableToken;
   }
 
   private handleClick(evt: MouseEvent): void {
@@ -139,6 +185,27 @@ export class Plugin extends PluginBase<PluginTypes> {
 
   private handleDelete(file: TAbstractFile): void {
     this.frontmatterMarkdownLinksCache.delete(file.path);
+  }
+
+  private handleFileOpen(): void {
+    if (this.isEditorPatched) {
+      return;
+    }
+
+    if (!this.app.workspace.activeEditor?.editor) {
+      return;
+    }
+
+    this.isEditorPatched = true;
+    const that = this;
+
+    registerPatch(this, this.app.workspace.activeEditor.editor.constructor.prototype, {
+      getClickableTokenAt: (next: GetClickableTokenAtFn): GetClickableTokenAtFn => {
+        return function getClickableTokenAtPatched(this: Editor, pos: EditorPosition): ClickableToken | null {
+          return that.getClickableTokenAt(next, this, pos);
+        };
+      }
+    });
   }
 
   private handleMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): void {
