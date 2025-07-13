@@ -111,7 +111,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       return null;
     }
 
-    const linkEl = frontmatterEl.find('[data-frontmatter-markdown-links-link-data]') as HTMLElement;
+    const linkEl = frontmatterEl.find('[data-frontmatter-markdown-links-link-data]') as HTMLElement | undefined;
 
     if (!linkEl) {
       return null;
