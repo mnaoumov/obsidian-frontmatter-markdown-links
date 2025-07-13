@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.2.0
+
+- Fix source mode context menu
+- Update libs
+
 ## 2.1.4
 
 - Update libs (for https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/9)
