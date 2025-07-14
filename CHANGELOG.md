@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.3.0
+
+- Handle all context menus
+- Fix middle click
+- Wrap links in widget in live preview mode
+
 ## 2.2.0
 
 - Fix source mode context menu
