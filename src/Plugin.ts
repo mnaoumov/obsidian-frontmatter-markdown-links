@@ -36,6 +36,7 @@ import { patchTextPropertyComponent } from './TextPropertyComponent.ts';
 import { isSourceMode } from './Utils.ts';
 
 type GetClickableTokenAtFn = Editor['getClickableTokenAt'];
+type ShowAtMouseEventFn = Menu['showAtMouseEvent'];
 
 export class Plugin extends PluginBase<PluginTypes> {
   private readonly currentlyProcessingFiles = new Set<string>();
@@ -58,6 +59,16 @@ export class Plugin extends PluginBase<PluginTypes> {
     this.registerEvent(this.app.workspace.on('file-open', this.handleFileOpen.bind(this)));
     this.registerDomEvents(document);
     this.handleFileOpen();
+
+    const that = this;
+
+    registerPatch(this, Menu.prototype, {
+      showAtMouseEvent: (next: ShowAtMouseEventFn): ShowAtMouseEventFn => {
+        return function showAtMouseEventPatched(this: Menu, evt: MouseEvent): Menu {
+          return that.showAtMouseEvent(next, this, evt);
+        };
+      }
+    });
   }
 
   protected override async onloadImpl(): Promise<void> {
@@ -133,57 +144,6 @@ export class Plugin extends PluginBase<PluginTypes> {
     return clickableToken;
   }
 
-  private handleClick(evt: MouseEvent): void {
-    const RIGHT_BUTTON = 2;
-    if (evt.button === RIGHT_BUTTON) {
-      return;
-    }
-
-    if (!Keymap.isModEvent(evt) && isSourceMode(this.app)) {
-      return;
-    }
-
-    const target = evt.target as HTMLElement;
-    const linkData = getLinkData(target);
-    if (!linkData) {
-      return;
-    }
-
-    evt.preventDefault();
-    evt.stopImmediatePropagation();
-
-    if (linkData.isExternalUrl) {
-      window.open(linkData.url, evt.button === 1 ? 'tab' : '');
-    } else {
-      const activeFile = this.app.workspace.getActiveFile();
-      if (!activeFile) {
-        return;
-      }
-
-      invokeAsyncSafely(() => this.app.workspace.openLinkText(linkData.url, activeFile.path, Keymap.isModEvent(evt)));
-    }
-  }
-
-  private handleContextMenu(evt: MouseEvent): void {
-    const target = evt.target as HTMLElement;
-    const linkData = getLinkData(target);
-    if (!linkData) {
-      return;
-    }
-
-    evt.preventDefault();
-
-    const menu = Menu.forEvent(evt);
-    if (menu.items.some((menuItem: MenuItem) => menuItem.section === 'open')) {
-      return;
-    }
-    if (linkData.isExternalUrl) {
-      this.app.workspace.handleExternalLinkContextMenu(menu, linkData.url);
-    } else {
-      this.app.workspace.handleLinkContextMenu(menu, linkData.url, this.app.workspace.getActiveFile()?.path ?? '');
-    }
-  }
-
   private handleDelete(file: TAbstractFile): void {
     this.frontmatterMarkdownLinksCache.delete(file.path);
   }
@@ -213,6 +173,37 @@ export class Plugin extends PluginBase<PluginTypes> {
     invokeAsyncSafely(async () => {
       await this.processFrontmatterLinksInFile(file, cache, data);
     });
+  }
+
+  private handleMouseDown(evt: MouseEvent): void {
+    const RIGHT_BUTTON = 2;
+    if (evt.button === RIGHT_BUTTON) {
+      return;
+    }
+
+    if (!Keymap.isModEvent(evt) && isSourceMode(this.app)) {
+      return;
+    }
+
+    const target = evt.target as HTMLElement;
+    const linkData = getLinkData(target);
+    if (!linkData) {
+      return;
+    }
+
+    evt.preventDefault();
+    evt.stopImmediatePropagation();
+
+    if (linkData.isExternalUrl) {
+      window.open(linkData.url, evt.button === 1 ? 'tab' : '');
+    } else {
+      const activeFile = this.app.workspace.getActiveFile();
+      if (!activeFile) {
+        return;
+      }
+
+      invokeAsyncSafely(() => this.app.workspace.openLinkText(linkData.url, activeFile.path, Keymap.isModEvent(evt)));
+    }
   }
 
   private handleMouseOver(evt: MouseEvent): void {
@@ -363,10 +354,7 @@ export class Plugin extends PluginBase<PluginTypes> {
   }
 
   private registerDomEvents(document: Document): void {
-    this.registerDomEvent(document, 'click', this.handleClick.bind(this), { capture: true });
-    this.registerDomEvent(document, 'mousedown', this.handleClick.bind(this), { capture: true });
-    this.registerDomEvent(document, 'auxclick', this.handleClick.bind(this), { capture: true });
-    this.registerDomEvent(document, 'contextmenu', this.handleContextMenu.bind(this));
+    this.registerDomEvent(document, 'mousedown', this.handleMouseDown.bind(this), { capture: true });
     this.registerDomEvent(document, 'mouseover', this.handleMouseOver.bind(this), { capture: true });
   }
 
@@ -397,5 +385,28 @@ export class Plugin extends PluginBase<PluginTypes> {
     this.register(() => {
       observer.disconnect();
     });
+  }
+
+  private showAtMouseEvent(next: ShowAtMouseEventFn, menu: Menu, evt: MouseEvent): Menu {
+    const target = evt.target as HTMLElement;
+    const linkData = getLinkData(target);
+    if (!linkData) {
+      return fallback();
+    }
+
+    if (menu.items.some((menuItem: MenuItem) => menuItem.section === 'open')) {
+      return fallback();
+    }
+    if (linkData.isExternalUrl) {
+      this.app.workspace.handleExternalLinkContextMenu(menu, linkData.url);
+    } else {
+      this.app.workspace.handleLinkContextMenu(menu, linkData.url, this.app.workspace.getActiveFile()?.path ?? '');
+    }
+
+    return fallback();
+
+    function fallback(): Menu {
+      return next.call(menu, evt);
+    }
   }
 }
