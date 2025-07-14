@@ -2,6 +2,8 @@ import type {
   DecorationSet,
   PluginValue
 } from '@codemirror/view';
+import type { App } from 'obsidian';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
 
 import { syntaxTree } from '@codemirror/language';
 import { RangeSetBuilder } from '@codemirror/state';
@@ -9,13 +11,15 @@ import {
   Decoration,
   EditorView,
   ViewPlugin,
-  ViewUpdate
+  ViewUpdate,
+  WidgetType
 } from '@codemirror/view';
 import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
 
 import type { Plugin } from './Plugin.ts';
 
 import { getDataAttributes } from './LinkData.ts';
+import { isSourceMode } from './Utils.ts';
 
 interface GroupDescription {
   cssClass: string;
@@ -36,12 +40,24 @@ class FrontMatterLinksViewPlugin implements PluginValue {
   }
 
   private _decorations: DecorationSet;
+  private isSourceMode: boolean;
 
-  public constructor(view: EditorView) {
-    this._decorations = FrontMatterLinksViewPlugin.buildDecorations(view);
+  public constructor(view: EditorView, private readonly app: App) {
+    this.isSourceMode = isSourceMode(this.app);
+    this._decorations = this.buildDecorations(view);
   }
 
-  private static buildDecorations(view: EditorView): DecorationSet {
+  public update(update: ViewUpdate): void {
+    const currentIsSourceMode = isSourceMode(this.app);
+    if (!update.docChanged && !update.viewportChanged && !update.selectionSet && currentIsSourceMode === this.isSourceMode) {
+      return;
+    }
+
+    this.isSourceMode = currentIsSourceMode;
+    this._decorations = this.buildDecorations(update.view);
+  }
+
+  private buildDecorations(view: EditorView): DecorationSet {
     const builder = new RangeSetBuilder<Decoration>();
 
     const NO_INDEX = -1;
@@ -50,6 +66,7 @@ class FrontMatterLinksViewPlugin implements PluginValue {
     let valueStartIndex = NO_INDEX;
     let valueEndIndex = NO_INDEX;
     let hasComment = false;
+    const that = this;
 
     for (const { from, to } of view.visibleRanges) {
       syntaxTree(view.state).iterate({
@@ -57,7 +74,7 @@ class FrontMatterLinksViewPlugin implements PluginValue {
         enter(node) {
           const lineNumber = view.state.doc.lineAt(node.from).number;
           if (lineNumber !== previousLineNumber) {
-            handleValue(valueStartIndex, valueEndIndex);
+            handleValue(valueStartIndex, valueEndIndex, false);
             previousLineNumber = lineNumber;
             wasColonProcessed = false;
             valueStartIndex = NO_INDEX;
@@ -83,7 +100,7 @@ class FrontMatterLinksViewPlugin implements PluginValue {
           }
 
           if (node.name === 'hmd-frontmatter_string') {
-            handleValue(node.from + 1, node.to - 1);
+            handleValue(node.from + 1, node.to - 1, true);
             valueStartIndex = NO_INDEX;
             valueEndIndex = NO_INDEX;
           }
@@ -92,12 +109,12 @@ class FrontMatterLinksViewPlugin implements PluginValue {
         to
       });
 
-      handleValue(valueStartIndex, valueEndIndex);
+      handleValue(valueStartIndex, valueEndIndex, false);
     }
 
     return builder.finish();
 
-    function handleValue(startIndex: number, endIndex: number): void {
+    function handleValue(startIndex: number, endIndex: number, isInQuotes: boolean): void {
       if (startIndex === NO_INDEX) {
         return;
       }
@@ -113,38 +130,69 @@ class FrontMatterLinksViewPlugin implements PluginValue {
         return;
       }
 
-      for (const linkStylingInfo of getLinkStylingInfos(value)) {
+      const isInSelection = view.state.selection.ranges.some((r) => (r.from <= startIndex && startIndex <= r.to) || (r.from <= endIndex && endIndex <= r.to));
+
+      if (isInSelection || that.isSourceMode) {
+        for (const linkStylingInfo of getLinkStylingInfos(value)) {
+          builder.add(
+            startIndex + linkStylingInfo.from,
+            startIndex + linkStylingInfo.to,
+            Decoration.mark({
+              attributes: getDataAttributes(
+                linkStylingInfo.isClickable
+                  ? {
+                    isExternalUrl: parseLinkResult.isExternal,
+                    isWikilink: parseLinkResult.isWikilink,
+                    url: parseLinkResult.url
+                  }
+                  : null
+              ),
+              class: linkStylingInfo.cssClass
+            })
+          );
+        }
+      } else {
         builder.add(
-          startIndex + linkStylingInfo.from,
-          startIndex + linkStylingInfo.to,
-          Decoration.mark({
-            attributes: getDataAttributes(
-              linkStylingInfo.isClickable
-                ? {
-                  isExternalUrl: parseLinkResult.isExternal,
-                  isWikilink: parseLinkResult.isWikilink,
-                  url: parseLinkResult.url
-                }
-                : null
-            ),
-            class: linkStylingInfo.cssClass
+          startIndex,
+          endIndex,
+          Decoration.replace({
+            inclusive: true,
+            widget: new LinkWidget(parseLinkResult, isInQuotes)
           })
         );
       }
     }
   }
+}
 
-  public update(update: ViewUpdate): void {
-    if (!update.docChanged && !update.viewportChanged) {
-      return;
-    }
+class LinkWidget extends WidgetType {
+  public constructor(private readonly parseLinkResult: ParseLinkResult, private readonly isInQuotes: boolean) {
+    super();
+  }
 
-    this._decorations = FrontMatterLinksViewPlugin.buildDecorations(update.view);
+  public override toDOM(): HTMLElement {
+    return createSpan({
+      cls: this.isInQuotes ? '' : 'cm-hmd-frontmatter cm-string'
+    }, (span) => {
+      span.createSpan({
+        cls: 'cm-hmd-internal-link'
+      }, (span2) => {
+        span2.createEl('a', {
+          attr: getDataAttributes({
+            isExternalUrl: this.parseLinkResult.isExternal,
+            isWikilink: this.parseLinkResult.isWikilink,
+            url: this.parseLinkResult.url
+          }),
+          cls: 'cm-underline',
+          text: this.parseLinkResult.alias ?? this.parseLinkResult.url
+        });
+      });
+    });
   }
 }
 
 export function registerFrontmatterLinksEditorExtension(plugin: Plugin): void {
-  const viewPlugin = ViewPlugin.fromClass(FrontMatterLinksViewPlugin, { decorations: (value) => value.decorations });
+  const viewPlugin = ViewPlugin.define((view) => new FrontMatterLinksViewPlugin(view, plugin.app), { decorations: (value) => value.decorations });
   plugin.registerEditorExtension(viewPlugin);
 }
 

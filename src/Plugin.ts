@@ -33,6 +33,7 @@ import { patchMultiTextPropertyComponent } from './MultiTextPropertyComponent.ts
 import { PluginSettingsManager } from './PluginSettingsManager.ts';
 import { PluginSettingsTab } from './PluginSettingsTab.ts';
 import { patchTextPropertyComponent } from './TextPropertyComponent.ts';
+import { isSourceMode } from './Utils.ts';
 
 type GetClickableTokenAtFn = Editor['getClickableTokenAt'];
 
@@ -138,7 +139,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       return;
     }
 
-    if (!Keymap.isModEvent(evt) && this.isSourceMode()) {
+    if (!Keymap.isModEvent(evt) && isSourceMode(this.app)) {
       return;
     }
 
@@ -244,20 +245,6 @@ export class Plugin extends PluginBase<PluginTypes> {
     }
 
     this.frontmatterMarkdownLinksCache.rename(oldPath, file);
-  }
-
-  private isSourceMode(): boolean {
-    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (!view) {
-      return false;
-    }
-
-    if (view.getMode() !== 'source') {
-      return false;
-    }
-
-    const state = view.getState();
-    return !!state['source'];
   }
 
   private async processAllNotes(): Promise<void> {
