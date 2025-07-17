@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.3.1
+
+- Fix double open (#8)
+
 ## 2.3.0
 
 - Handle all context menus
