@@ -194,6 +194,11 @@ export class Plugin extends PluginBase<PluginTypes> {
     evt.preventDefault();
     evt.stopImmediatePropagation();
 
+    target.addEventListener('click', (evt2) => {
+      evt2.preventDefault();
+      evt2.stopImmediatePropagation();
+    }, { capture: true, once: true });
+
     if (linkData.isExternalUrl) {
       window.open(linkData.url, evt.button === 1 ? 'tab' : '');
     } else {
