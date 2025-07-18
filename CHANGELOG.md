@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.3.2
+
+- Check for missing target (#11)
+
 ## 2.3.1
 
 - Fix double open (#8)
