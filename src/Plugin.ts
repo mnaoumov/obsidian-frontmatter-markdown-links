@@ -185,7 +185,11 @@ export class Plugin extends PluginBase<PluginTypes> {
       return;
     }
 
-    const target = evt.target as HTMLElement;
+    const target = evt.target as HTMLElement | undefined;
+    if (!target) {
+      return;
+    }
+
     const linkData = getLinkData(target);
     if (!linkData) {
       return;
@@ -393,7 +397,12 @@ export class Plugin extends PluginBase<PluginTypes> {
   }
 
   private showAtMouseEvent(next: ShowAtMouseEventFn, menu: Menu, evt: MouseEvent): Menu {
-    const target = evt.target as HTMLElement;
+    const target = evt.target as HTMLElement | undefined;
+
+    if (!target) {
+      return fallback();
+    }
+
     const linkData = getLinkData(target);
     if (!linkData) {
       return fallback();
