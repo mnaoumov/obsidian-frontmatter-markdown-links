@@ -130,7 +130,7 @@ class FrontMatterLinksViewPlugin implements PluginValue {
         return;
       }
 
-      const isInSelection = view.state.selection.ranges.some((r) => (r.from <= startIndex && startIndex <= r.to) || (r.from <= endIndex && endIndex <= r.to));
+      const isInSelection = view.state.selection.ranges.some((r) => Math.max(r.from, startIndex) <= Math.min(r.to, endIndex));
 
       if (isInSelection || that.isSourceMode) {
         for (const linkStylingInfo of getLinkStylingInfos(value)) {
