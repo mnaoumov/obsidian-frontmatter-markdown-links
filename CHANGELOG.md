@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.3.3
+
+- Fix selection check logic (#12)
+
 ## 2.3.2
 
 - Check for missing target (#11)
