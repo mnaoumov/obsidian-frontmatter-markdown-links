@@ -68,6 +68,14 @@ embeddedExternalUrl: "![Alias](https://picsum.photos/600)"
 ---
 ```
 
+### Multiple links per property
+
+The plugin allows to use multiple links (wikilinks, markdown links, external links) in one property.
+
+---
+foo: "[[bar]] baz [[qux]]"
+---
+
 ## Installation
 
 The plugin is available in [the official Community Plugins repository](https://obsidian.md/plugins?id=frontmatter-markdown-links).

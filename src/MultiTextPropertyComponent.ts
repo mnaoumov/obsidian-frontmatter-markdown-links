@@ -2,14 +2,15 @@ import type {
   App,
   Component
 } from 'obsidian';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
+import type { MaybeReturn } from 'obsidian-dev-utils/Type';
 import type {
-  PropertyEntryData,
   PropertyRenderContext,
   PropertyWidget
 } from 'obsidian-typings';
 
 import { getPrototypeOf } from 'obsidian-dev-utils/Object';
-import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
+import { parseLinks } from 'obsidian-dev-utils/obsidian/Link';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
 import type { Plugin } from './Plugin.ts';
@@ -27,15 +28,18 @@ interface MultiTextPropertyComponent extends Component {
   multiselect: MultiSelectComponent;
 }
 
-type RenderMultiTextPropertyWidgetFn = PropertyWidget<string[]>['render'];
+type RenderMultiTextPropertyWidgetFn = PropertyWidget['render'];
 
 let isPatched = false;
 
 export function patchMultiTextPropertyComponent(plugin: Plugin): void {
-  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['multitext'] as PropertyWidget<string[]>;
+  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['multitext'];
+  if (!widget) {
+    return;
+  }
+
   registerPatch(plugin, widget, {
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    render: (next: RenderMultiTextPropertyWidgetFn) => (el, data, ctx): Component | void => renderWidget(el, data, ctx, next, plugin)
+    render: (next: RenderMultiTextPropertyWidgetFn) => (el, value, ctx): MaybeReturn<Component> => renderWidget(el, value, ctx, next, plugin)
   });
 }
 
@@ -47,8 +51,8 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
     if (!value) {
       continue;
     }
-    const parseLinkResult = parseLink(value);
-    if (!parseLinkResult) {
+    const parseLinkResults = parseLinks(value);
+    if (parseLinkResults.length === 0) {
       continue;
     }
 
@@ -56,47 +60,84 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
     if (!el) {
       continue;
     }
-    el.setText(parseLinkResult.alias ?? parseLinkResult.url);
-    el.addClass(parseLinkResult.isExternal ? 'external-link' : 'internal-link');
-    if (!parseLinkResult.isExternal) {
-      const resolvedLink = app.metadataCache.getFirstLinkpathDest(parseLinkResult.url, app.workspace.getActiveFile()?.path ?? '');
-      if (!resolvedLink) {
-        el.addClass('is-unresolved');
-      }
+
+    if (parseLinkResults[0]?.raw === value) {
+      renderChild(el, parseLinkResults[0]);
+      continue;
     }
-    el.setAttribute('title', parseLinkResult.url);
-    attachLinkData(el, {
-      isExternalUrl: parseLinkResult.isExternal,
-      isWikilink: parseLinkResult.isWikilink,
-      url: parseLinkResult.url
-    });
+
+    el.empty();
+
+    const parentEl = el.parentElement;
+    if (!parentEl) {
+      continue;
+    }
+
+    for (const el2 of [el, parentEl]) {
+      el2.removeClass('internal-link', 'external-link', 'is-unresolved');
+    }
+
+    parentEl.addEventListener('mouseover', (evt) => {
+      evt.stopPropagation();
+    }, { capture: true });
+
+    let startOffset = 0;
+
+    for (const parseLinkResult of parseLinkResults) {
+      if (startOffset < parseLinkResult.startOffset) {
+        el.createDiv({ text: value.slice(startOffset, parseLinkResult.startOffset) });
+      }
+
+      const childEl = el.createDiv();
+      renderChild(childEl, parseLinkResult);
+      startOffset += parseLinkResult.endOffset;
+    }
+
+    if (startOffset < value.length) {
+      el.createDiv({ text: value.slice(startOffset) });
+    }
+
+    function renderChild(childEl: HTMLElement, parseLinkResult: ParseLinkResult): void {
+      childEl.setText(parseLinkResult.alias ?? parseLinkResult.url);
+      childEl.addClass(parseLinkResult.isExternal ? 'external-link' : 'internal-link');
+      if (!parseLinkResult.isExternal) {
+        const resolvedLink = app.metadataCache.getFirstLinkpathDest(parseLinkResult.url, app.workspace.getActiveFile()?.path ?? '');
+        if (!resolvedLink) {
+          childEl.addClass('is-unresolved');
+        }
+      }
+      childEl.setAttribute('title', parseLinkResult.url);
+      attachLinkData(childEl, {
+        isExternalUrl: parseLinkResult.isExternal,
+        isWikilink: parseLinkResult.isWikilink,
+        url: parseLinkResult.url
+      });
+    }
   }
 }
 
 function renderWidget(
   el: HTMLElement,
-  data: PropertyEntryData<string[]>,
+  value: unknown,
   ctx: PropertyRenderContext,
   next: RenderMultiTextPropertyWidgetFn,
   plugin: Plugin
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-): Component | void {
-  const multiTextPropertyComponent = next(el, data, ctx) as MultiTextPropertyComponent | undefined;
-  if (!multiTextPropertyComponent || isPatched) {
-    return multiTextPropertyComponent;
+): MaybeReturn<Component> {
+  if (!isPatched) {
+    const temp = el.createDiv();
+    const multiTextPropertyComponent = next(temp, [], ctx) as MultiTextPropertyComponent;
+    const multiSelectComponentProto = getPrototypeOf(multiTextPropertyComponent.multiselect);
+    registerPatch(plugin, multiSelectComponentProto, {
+      renderValues: (nextRenderValues: () => void) => {
+        return function renderValuesPatched(this: MultiSelectComponent): void {
+          renderValues(plugin.app, this, nextRenderValues);
+        };
+      }
+    });
+
+    isPatched = true;
+    temp.remove();
   }
 
-  const multiSelectComponentProto = getPrototypeOf(multiTextPropertyComponent.multiselect);
-  registerPatch(plugin, multiSelectComponentProto, {
-    renderValues: (nextRenderValues: () => void) => {
-      return function renderValuesPatched(this: MultiSelectComponent): void {
-        renderValues(plugin.app, this, nextRenderValues);
-      };
-    }
-  });
-
-  isPatched = true;
-
-  multiTextPropertyComponent.multiselect.rootEl.remove();
-  return renderWidget(el, data, ctx, next, plugin);
+  return next(el, value, ctx);
 }

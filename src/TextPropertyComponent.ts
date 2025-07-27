@@ -2,20 +2,22 @@ import type { Component } from 'obsidian';
 import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
 import type { MaybeReturn } from 'obsidian-dev-utils/Type';
 import type {
-  PropertyEntryData,
   PropertyRenderContext,
   PropertyWidget
 } from 'obsidian-typings';
 
 import { getPrototypeOf } from 'obsidian-dev-utils/Object';
-import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
+import {
+  parseLink,
+  parseLinks
+} from 'obsidian-dev-utils/obsidian/Link';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
 import type { Plugin } from './Plugin.ts';
 
 let isPatched = false;
 
-type RenderTextPropertyWidgetFn = PropertyWidget<string>['render'];
+type RenderTextPropertyWidgetFn = PropertyWidget['render'];
 
 interface TextPropertyComponent extends Component {
   ctx: PropertyRenderContext;
@@ -30,10 +32,14 @@ interface TextPropertyComponent extends Component {
 }
 
 export function patchTextPropertyComponent(plugin: Plugin): void {
-  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['text'] as PropertyWidget<string>;
+  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['text'];
+
+  if (!widget) {
+    return;
+  }
 
   registerPatch(plugin, widget, {
-    render: (next: RenderTextPropertyWidgetFn) => (el, data, ctx): MaybeReturn<Component> => renderWidget(el, data, ctx, next, plugin)
+    render: (next: RenderTextPropertyWidgetFn) => (el, value, ctx): MaybeReturn<Component> => renderWidget(el, value, ctx, next, plugin)
   });
 }
 
@@ -67,39 +73,108 @@ function render(textPropertyComponent: TextPropertyComponent, next: () => void):
 
 function renderWidget(
   el: HTMLElement,
-  data: PropertyEntryData<string>,
+  value: unknown,
   ctx: PropertyRenderContext,
   next: RenderTextPropertyWidgetFn,
   plugin: Plugin
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-): Component | void {
-  const textPropertyComponent = next(el, data, ctx) as TextPropertyComponent | undefined;
-  if (!textPropertyComponent || isPatched) {
-    return textPropertyComponent;
+): MaybeReturn<Component> {
+  if (!isPatched) {
+    const temp = el.createDiv();
+    const textPropertyComponent = next(temp, '', ctx) as TextPropertyComponent;
+    const textPropertyComponentProto = getPrototypeOf(textPropertyComponent);
+    registerPatch(plugin, textPropertyComponentProto, {
+      getDisplayText: () =>
+        function getDisplayTextPatched(this: TextPropertyComponent): string {
+          return getDisplayText(this);
+        },
+      getLinkText: () =>
+        function getLinkTextPatched(this: TextPropertyComponent): string {
+          return getLinkText(this);
+        },
+      isWikilink: () =>
+        function isWikilinkPatched(this: TextPropertyComponent): boolean {
+          return isWikilink(this);
+        },
+      render: (nextRender: () => void) =>
+        function renderPatched(this: TextPropertyComponent): void {
+          render(this, nextRender);
+        }
+    });
+    isPatched = true;
+    temp.remove();
   }
 
-  const textPropertyComponentProto = getPrototypeOf(textPropertyComponent);
-  registerPatch(plugin, textPropertyComponentProto, {
-    getDisplayText: () =>
-      function getDisplayTextPatched(this: TextPropertyComponent): string {
-        return getDisplayText(this);
-      },
-    getLinkText: () =>
-      function getLinkTextPatched(this: TextPropertyComponent): string {
-        return getLinkText(this);
-      },
-    isWikilink: () =>
-      function isWikilinkPatched(this: TextPropertyComponent): boolean {
-        return isWikilink(this);
-      },
-    render: (nextRender: () => void) =>
-      function renderPatched(this: TextPropertyComponent): void {
-        render(this, nextRender);
-      }
-  });
-  isPatched = true;
+  const ctxWithRerenderOnChange = {
+    ...ctx,
+    onChange: (widgetValue: unknown): void => {
+      ctx.onChange(widgetValue);
+      requestAnimationFrame(() => {
+        el.empty();
+        renderWidget(el, widgetValue, ctx, next, plugin);
+      });
+    }
+  };
 
-  textPropertyComponent.inputEl.remove();
-  textPropertyComponent.linkEl.remove();
-  return renderWidget(el, data, ctx, next, plugin);
+  if (typeof value !== 'string') {
+    return next(el, value, ctxWithRerenderOnChange);
+  }
+
+  const parseLinkResults = parseLinks(value);
+  if (parseLinkResults.length === 0 || parseLinkResults[0]?.raw === value) {
+    return next(el, value, ctxWithRerenderOnChange);
+  }
+
+  el.addClass('frontmatter-markdown-links', 'text-property-component');
+
+  let startOffset = 0;
+  const childWidgetValues: string[] = [];
+
+  for (const parseLinkResult of parseLinkResults) {
+    createChildWidget(startOffset, parseLinkResult.startOffset);
+    createChildWidget(parseLinkResult.startOffset, parseLinkResult.endOffset);
+    startOffset = parseLinkResult.endOffset;
+  }
+
+  createChildWidget(startOffset, value.length);
+
+  function createChildWidget(widgetStartOffset: number, widgetEndOffset: number): void {
+    if (widgetStartOffset >= widgetEndOffset) {
+      return;
+    }
+
+    const childWidgetValue = (value as string).slice(widgetStartOffset, widgetEndOffset);
+    childWidgetValues.push(childWidgetValue);
+    const index = childWidgetValues.length - 1;
+
+    let isAfterBlur = false;
+    const childCtx = {
+      ...ctx,
+      blur: (): void => {
+        isAfterBlur = true;
+        ctx.blur();
+      },
+      onChange: (widgetValue: unknown): void => {
+        if (isAfterBlur) {
+          isAfterBlur = false;
+          return;
+        }
+
+        widgetValue ??= '';
+        if (childWidgetValues[index] === widgetValue) {
+          return;
+        }
+
+        if (typeof widgetValue !== 'string') {
+          return;
+        }
+
+        childWidgetValues[index] = widgetValue;
+        const newValue = childWidgetValues.join('');
+        ctxWithRerenderOnChange.onChange(newValue);
+      }
+    };
+
+    const childEl = el.createDiv('metadata-property-value');
+    next(childEl, childWidgetValue, childCtx);
+  }
 }

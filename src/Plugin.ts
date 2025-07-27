@@ -2,9 +2,11 @@ import type {
   CachedMetadata,
   Editor,
   EditorPosition,
+  FrontmatterLinkCache,
   MenuItem,
   TAbstractFile
 } from 'obsidian';
+import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/FrontmatterLinkCacheWithOffsets';
 import type { ClickableToken } from 'obsidian-typings';
 
 import {
@@ -17,7 +19,11 @@ import {
 import { filterInPlace } from 'obsidian-dev-utils/Array';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { ensureLoaded } from 'obsidian-dev-utils/HTMLElement';
-import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
+import { isFrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/FrontmatterLinkCacheWithOffsets';
+import {
+  parseLinks,
+  splitSubpath
+} from 'obsidian-dev-utils/obsidian/Link';
 import { loop } from 'obsidian-dev-utils/obsidian/Loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
@@ -268,6 +274,10 @@ export class Plugin extends PluginBase<PluginTypes> {
               const linkKeys = new Set(links.map((link) => link.key));
               filterInPlace(cache.frontmatterLinks, (link) => !linkKeys.has(link.key));
               cache.frontmatterLinks.push(...links);
+
+              for (const link of links) {
+                this.updateResolvedOrUnresolvedLinksCache(link.link, note.path);
+              }
             }
           }
           return;
@@ -291,31 +301,52 @@ export class Plugin extends PluginBase<PluginTypes> {
 
   private processFrontmatterLinks(value: unknown, key: string, cache: CachedMetadata, filePath: string): boolean {
     if (typeof value === 'string') {
-      const parseLinkResult = parseLink(value);
-      if (!parseLinkResult || parseLinkResult.isWikilink || parseLinkResult.isExternal) {
-        return false;
-      }
+      const parseLinkResults = parseLinks(value);
+      const isSingleLink = parseLinkResults[0]?.raw === value;
 
-      cache.frontmatterLinks ??= [];
-      let link = cache.frontmatterLinks.find((frontmatterLink) => frontmatterLink.key === key);
+      let hasFrontmatterLinks = false;
 
-      if (!link) {
-        link = {
-          key,
-          link: '',
-          original: ''
-        };
+      filterInPlace(cache.frontmatterLinks ?? [], (link) => {
+        const cleanKey = isFrontmatterLinkCacheWithOffsets(link) ? link.cleanKey : link.key;
+        return cleanKey !== key;
+      });
+
+      for (const parseLinkResult of parseLinkResults) {
+        if (parseLinkResult.isExternal) {
+          continue;
+        }
+
+        cache.frontmatterLinks ??= [];
+
+        const link: FrontmatterLinkCache = isSingleLink
+          ? {
+            key,
+            link: parseLinkResult.url,
+            original: value
+          } as FrontmatterLinkCache
+          : {
+            cleanKey: key,
+            endOffset: parseLinkResult.endOffset,
+            key,
+            link: parseLinkResult.url,
+            original: value,
+            startOffset: parseLinkResult.startOffset
+          } as FrontmatterLinkCacheWithOffsets;
+
+        if (parseLinkResult.alias !== undefined) {
+          link.displayText = parseLinkResult.alias;
+        }
+
         cache.frontmatterLinks.push(link);
+
+        if (!isSingleLink || !parseLinkResult.isWikilink) {
+          hasFrontmatterLinks = true;
+          this.frontmatterMarkdownLinksCache.add(filePath, link);
+          this.updateResolvedOrUnresolvedLinksCache(link.link, filePath);
+        }
       }
 
-      link.link = parseLinkResult.url;
-      link.original = value;
-      if (parseLinkResult.alias !== undefined) {
-        link.displayText = parseLinkResult.alias;
-      }
-
-      this.frontmatterMarkdownLinksCache.add(filePath, link);
-      return true;
+      return hasFrontmatterLinks;
     }
 
     if (typeof value !== 'object' || value === null) {
@@ -422,5 +453,17 @@ export class Plugin extends PluginBase<PluginTypes> {
     function fallback(): Menu {
       return next.call(menu, evt);
     }
+  }
+
+  private updateResolvedOrUnresolvedLinksCache(link: string, notePath: string): void {
+    const { linkPath } = splitSubpath(link);
+    const resolvedFile = this.app.metadataCache.getFirstLinkpathDest(linkPath, notePath);
+    const linksCacheMap = resolvedFile ? this.app.metadataCache.resolvedLinks : this.app.metadataCache.unresolvedLinks;
+    linksCacheMap[notePath] ??= {};
+    const linksCacheForNote = linksCacheMap[notePath] ?? {};
+
+    const resolvedLinkPath = resolvedFile?.path ?? linkPath;
+    linksCacheForNote[resolvedLinkPath] ??= 0;
+    linksCacheForNote[resolvedLinkPath]++;
   }
 }

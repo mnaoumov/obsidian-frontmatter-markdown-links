@@ -14,7 +14,10 @@ import {
   ViewUpdate,
   WidgetType
 } from '@codemirror/view';
-import { parseLink } from 'obsidian-dev-utils/obsidian/Link';
+import {
+  parseLink,
+  parseLinks
+} from 'obsidian-dev-utils/obsidian/Link';
 
 import type { Plugin } from './Plugin.ts';
 
@@ -125,41 +128,41 @@ class FrontMatterLinksViewPlugin implements PluginValue {
         value = value.trimEnd();
       }
 
-      const parseLinkResult = parseLink(value);
-      if (!parseLinkResult) {
-        return;
-      }
+      const parseLinkResults = parseLinks(value);
+      for (const parseLinkResult of parseLinkResults) {
+        const linkStartIndex = startIndex + parseLinkResult.startOffset;
+        const linkEndIndex = startIndex + parseLinkResult.endOffset;
+        const isInSelection = view.state.selection.ranges.some((r) => Math.max(r.from, linkStartIndex) <= Math.min(r.to, linkEndIndex));
 
-      const isInSelection = view.state.selection.ranges.some((r) => Math.max(r.from, startIndex) <= Math.min(r.to, endIndex));
-
-      if (isInSelection || that.isSourceMode) {
-        for (const linkStylingInfo of getLinkStylingInfos(value)) {
+        if (isInSelection || that.isSourceMode) {
+          for (const linkStylingInfo of getLinkStylingInfos(parseLinkResult.raw)) {
+            builder.add(
+              linkStartIndex + linkStylingInfo.from,
+              linkStartIndex + linkStylingInfo.to,
+              Decoration.mark({
+                attributes: getDataAttributes(
+                  linkStylingInfo.isClickable
+                    ? {
+                      isExternalUrl: parseLinkResult.isExternal,
+                      isWikilink: parseLinkResult.isWikilink,
+                      url: parseLinkResult.url
+                    }
+                    : null
+                ),
+                class: linkStylingInfo.cssClass
+              })
+            );
+          }
+        } else {
           builder.add(
-            startIndex + linkStylingInfo.from,
-            startIndex + linkStylingInfo.to,
-            Decoration.mark({
-              attributes: getDataAttributes(
-                linkStylingInfo.isClickable
-                  ? {
-                    isExternalUrl: parseLinkResult.isExternal,
-                    isWikilink: parseLinkResult.isWikilink,
-                    url: parseLinkResult.url
-                  }
-                  : null
-              ),
-              class: linkStylingInfo.cssClass
+            linkStartIndex,
+            linkEndIndex,
+            Decoration.replace({
+              inclusive: true,
+              widget: new LinkWidget(parseLinkResult, isInQuotes)
             })
           );
         }
-      } else {
-        builder.add(
-          startIndex,
-          endIndex,
-          Decoration.replace({
-            inclusive: true,
-            widget: new LinkWidget(parseLinkResult, isInQuotes)
-          })
-        );
       }
     }
   }
