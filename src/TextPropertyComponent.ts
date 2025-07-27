@@ -156,7 +156,10 @@ function renderWidget(
       onChange: (widgetValue: unknown): void => {
         if (isAfterBlur) {
           isAfterBlur = false;
-          return;
+
+          if (widgetValue === childWidgetValues[index]?.trimEnd()) {
+            return;
+          }
         }
 
         widgetValue ??= '';
