@@ -33,7 +33,11 @@ type RenderMultiTextPropertyWidgetFn = PropertyWidget['render'];
 let isPatched = false;
 
 export function patchMultiTextPropertyComponent(plugin: Plugin): void {
-  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['multitext']!;
+  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['multitext'];
+  if (!widget) {
+    return;
+  }
+
   registerPatch(plugin, widget, {
     render: (next: RenderMultiTextPropertyWidgetFn) => (el, value, ctx): MaybeReturn<Component> => renderWidget(el, value, ctx, next, plugin)
   });
@@ -93,7 +97,7 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
       el.createDiv({ text: value.slice(startOffset) });
     }
 
-    function renderChild(childEl: HTMLElement, parseLinkResult: ParseLinkResult) {
+    function renderChild(childEl: HTMLElement, parseLinkResult: ParseLinkResult): void {
       childEl.setText(parseLinkResult.alias ?? parseLinkResult.url);
       childEl.addClass(parseLinkResult.isExternal ? 'external-link' : 'internal-link');
       if (!parseLinkResult.isExternal) {

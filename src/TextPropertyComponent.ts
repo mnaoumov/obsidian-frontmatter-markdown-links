@@ -32,7 +32,11 @@ interface TextPropertyComponent extends Component {
 }
 
 export function patchTextPropertyComponent(plugin: Plugin): void {
-  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['text']!;
+  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['text'];
+
+  if (!widget) {
+    return;
+  }
 
   registerPatch(plugin, widget, {
     render: (next: RenderTextPropertyWidgetFn) => (el, value, ctx): MaybeReturn<Component> => renderWidget(el, value, ctx, next, plugin)
@@ -102,11 +106,11 @@ function renderWidget(
 
   const ctxWithRerenderOnChange = {
     ...ctx,
-    onChange: (value: unknown): void => {
-      ctx.onChange(value);
+    onChange: (widgetValue: unknown): void => {
+      ctx.onChange(widgetValue);
       requestAnimationFrame(() => {
         el.empty();
-        renderWidget(el, value, ctx, next, plugin);
+        renderWidget(el, widgetValue, ctx, next, plugin);
       });
     }
   };
@@ -133,12 +137,12 @@ function renderWidget(
 
   createChildWidget(startOffset, value.length);
 
-  function createChildWidget(startOffset: number, endOffset: number) {
-    if (startOffset >= endOffset) {
+  function createChildWidget(widgetStartOffset: number, widgetEndOffset: number): void {
+    if (widgetStartOffset >= widgetEndOffset) {
       return;
     }
 
-    const childWidgetValue = (value as string).slice(startOffset, endOffset);
+    const childWidgetValue = (value as string).slice(widgetStartOffset, widgetEndOffset);
     childWidgetValues.push(childWidgetValue);
     const index = childWidgetValues.length - 1;
 
@@ -149,22 +153,22 @@ function renderWidget(
         isAfterBlur = true;
         ctx.blur();
       },
-      onChange: (value: unknown): void => {
+      onChange: (widgetValue: unknown): void => {
         if (isAfterBlur) {
           isAfterBlur = false;
           return;
         }
 
-        value ??= '';
-        if (childWidgetValues[index] === value) {
+        widgetValue ??= '';
+        if (childWidgetValues[index] === widgetValue) {
           return;
         }
 
-        if (typeof value !== 'string') {
+        if (typeof widgetValue !== 'string') {
           return;
         }
 
-        childWidgetValues[index] = value;
+        childWidgetValues[index] = widgetValue;
         const newValue = childWidgetValues.join('');
         ctxWithRerenderOnChange.onChange(newValue);
       }
