@@ -104,8 +104,10 @@ function renderWidget(
     ...ctx,
     onChange: (value: unknown): void => {
       ctx.onChange(value);
-      el.empty();
-      renderWidget(el, value, ctx, next, plugin);
+      requestAnimationFrame(() => {
+        el.empty();
+        renderWidget(el, value, ctx, next, plugin);
+      });
     }
   };
 
