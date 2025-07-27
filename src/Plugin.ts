@@ -19,7 +19,6 @@ import {
 import { filterInPlace } from 'obsidian-dev-utils/Array';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { ensureLoaded } from 'obsidian-dev-utils/HTMLElement';
-import { isFrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/FrontmatterLinkCacheWithOffsets';
 import {
   parseLinks,
   splitSubpath
@@ -307,8 +306,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       let hasFrontmatterLinks = false;
 
       filterInPlace(cache.frontmatterLinks ?? [], (link) => {
-        const cleanKey = isFrontmatterLinkCacheWithOffsets(link) ? link.cleanKey : link.key;
-        return cleanKey !== key;
+        return link.key !== key;
       });
 
       for (const parseLinkResult of parseLinkResults) {
