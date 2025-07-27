@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.4.2
+
+- Process blur changes if they are not trimming previous value (#14)
+
 ## 2.4.1
 
 - Update libs
