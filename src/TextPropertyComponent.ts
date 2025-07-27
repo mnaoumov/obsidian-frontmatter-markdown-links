@@ -140,9 +140,19 @@ function renderWidget(
     childWidgetValues.push(childWidgetValue);
     const index = childWidgetValues.length - 1;
 
+    let isAfterBlur = false;
     const childCtx = {
       ...ctx,
+      blur: (): void => {
+        isAfterBlur = true;
+        ctx.blur();
+      },
       onChange: (value: unknown): void => {
+        if (isAfterBlur) {
+          isAfterBlur = false;
+          return;
+        }
+
         value ??= '';
         if (childWidgetValues[index] === value) {
           return;
