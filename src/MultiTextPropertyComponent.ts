@@ -2,8 +2,8 @@ import type {
   App,
   Component
 } from 'obsidian';
+import type { MaybeReturn } from 'obsidian-dev-utils/Type';
 import type {
-  PropertyEntryData,
   PropertyRenderContext,
   PropertyWidget
 } from 'obsidian-typings';
@@ -27,15 +27,14 @@ interface MultiTextPropertyComponent extends Component {
   multiselect: MultiSelectComponent;
 }
 
-type RenderMultiTextPropertyWidgetFn = PropertyWidget<string[]>['render'];
+type RenderMultiTextPropertyWidgetFn = PropertyWidget['render'];
 
 let isPatched = false;
 
 export function patchMultiTextPropertyComponent(plugin: Plugin): void {
-  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['multitext'] as PropertyWidget<string[]>;
+  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['multitext']!;
   registerPatch(plugin, widget, {
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    render: (next: RenderMultiTextPropertyWidgetFn) => (el, data, ctx): Component | void => renderWidget(el, data, ctx, next, plugin)
+    render: (next: RenderMultiTextPropertyWidgetFn) => (el, value, ctx): MaybeReturn<Component> => renderWidget(el, value, ctx, next, plugin)
   });
 }
 
@@ -75,13 +74,12 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
 
 function renderWidget(
   el: HTMLElement,
-  data: PropertyEntryData<string[]>,
+  value: unknown,
   ctx: PropertyRenderContext,
   next: RenderMultiTextPropertyWidgetFn,
   plugin: Plugin
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-): Component | void {
-  const multiTextPropertyComponent = next(el, data, ctx) as MultiTextPropertyComponent | undefined;
+): MaybeReturn<Component> {
+  const multiTextPropertyComponent = next(el, value, ctx) as MultiTextPropertyComponent | undefined;
   if (!multiTextPropertyComponent || isPatched) {
     return multiTextPropertyComponent;
   }
@@ -98,5 +96,5 @@ function renderWidget(
   isPatched = true;
 
   multiTextPropertyComponent.multiselect.rootEl.remove();
-  return renderWidget(el, data, ctx, next, plugin);
+  return renderWidget(el, value, ctx, next, plugin);
 }
