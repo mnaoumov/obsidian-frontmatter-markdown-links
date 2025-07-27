@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.4.0
+
+- \[FR\] Support regular text and spaces? (#13)
+
 ## 2.3.3
 
 - Fix selection check logic (#12)
