@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.4.1
+
+- Update libs
+
 ## 2.4.0
 
 - \[FR\] Support regular text and spaces? (#13)
