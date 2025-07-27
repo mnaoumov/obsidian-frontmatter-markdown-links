@@ -1,5 +1,11 @@
 .frontmatter-markdown-links {
   &.text-property-component.metadata-property-value {
     flex: none;
+    gap: 0;
+
+    .metadata-link, .metadata-input-longtext {
+      padding-left: 0;
+      padding-right: 0;
+    }
   }
 }
