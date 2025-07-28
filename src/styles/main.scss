@@ -8,6 +8,11 @@
       padding-right: 0;
     }
 
+    .metadata-link-flair {
+      display: none;
+    }
+  }
+
   &.multi-text-property-component {
     display: flex;
     flex: none;
