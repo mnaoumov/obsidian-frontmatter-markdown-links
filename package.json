@@ -29,7 +29,7 @@
     "jiti": "^2.5.1",
     "obsidian": "^1.8.7",
     "obsidian-dev-utils": "^29.0.2",
-    "obsidian-typings": "^3.13.1"
+    "obsidian-typings": "^3.13.2"
   },
   "type": "module",
   "overrides": {
