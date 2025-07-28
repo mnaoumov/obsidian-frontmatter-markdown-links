@@ -5,6 +5,7 @@ import type {
 import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
 import type { MaybeReturn } from 'obsidian-dev-utils/Type';
 import type {
+  PropertyEntryData,
   PropertyRenderContext,
   PropertyWidget
 } from 'obsidian-typings';
@@ -28,7 +29,7 @@ interface MultiTextPropertyComponent extends Component {
   multiselect: MultiSelectComponent;
 }
 
-type RenderMultiTextPropertyWidgetFn = PropertyWidget['render'];
+type RenderMultiTextPropertyWidgetFn = PropertyWidget<null | string[]>['render'];
 
 let isPatched = false;
 
@@ -39,7 +40,7 @@ export function patchMultiTextPropertyComponent(plugin: Plugin): void {
   }
 
   registerPatch(plugin, widget, {
-    render: (next: RenderMultiTextPropertyWidgetFn) => (el, value, ctx): MaybeReturn<Component> => renderWidget(el, value, ctx, next, plugin)
+    render: (next: RenderMultiTextPropertyWidgetFn): RenderMultiTextPropertyWidgetFn => (el, data, ctx) => renderWidget(el, data, ctx, next, plugin)
   });
 }
 
@@ -118,7 +119,7 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
 
 function renderWidget(
   el: HTMLElement,
-  value: unknown,
+  data: (null | string[]) | PropertyEntryData<null | string[]>,
   ctx: PropertyRenderContext,
   next: RenderMultiTextPropertyWidgetFn,
   plugin: Plugin
@@ -139,5 +140,10 @@ function renderWidget(
     temp.remove();
   }
 
-  return next(el, value, ctx);
+  if (data === null || Array.isArray(data)) {
+    return next(el, data, ctx);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  return next(el, data, ctx);
 }

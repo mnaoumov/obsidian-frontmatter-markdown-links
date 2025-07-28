@@ -2,6 +2,7 @@ import type { Component } from 'obsidian';
 import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
 import type { MaybeReturn } from 'obsidian-dev-utils/Type';
 import type {
+  PropertyEntryData,
   PropertyRenderContext,
   PropertyWidget
 } from 'obsidian-typings';
@@ -17,7 +18,7 @@ import type { Plugin } from './Plugin.ts';
 
 let isPatched = false;
 
-type RenderTextPropertyWidgetFn = PropertyWidget['render'];
+type RenderTextPropertyWidgetFn = PropertyWidget<null | string>['render'];
 
 interface TextPropertyComponent extends Component {
   ctx: PropertyRenderContext;
@@ -39,7 +40,8 @@ export function patchTextPropertyComponent(plugin: Plugin): void {
   }
 
   registerPatch(plugin, widget, {
-    render: (next: RenderTextPropertyWidgetFn) => (el, value, ctx): MaybeReturn<Component> => renderWidget(el, value, ctx, next, plugin)
+    render: (next: RenderTextPropertyWidgetFn): RenderTextPropertyWidgetFn => (el, value, ctx): MaybeReturn<Component> =>
+      renderWidget(el, value, ctx, next, plugin)
   });
 }
 
@@ -58,9 +60,21 @@ function getParseLinkResult(textPropertyComponent: TextPropertyComponent, useVal
   return parseLink(text ?? '');
 }
 
+function isPropertyEntryData(data: null | PropertyEntryData<null | string> | string): data is PropertyEntryData<null | string> {
+  return (data as null | Partial<PropertyEntryData<null | string>>)?.value !== undefined;
+}
+
 function isWikilink(textPropertyComponent: TextPropertyComponent): boolean {
   const parseLinkResult = getParseLinkResult(textPropertyComponent);
   return !!parseLinkResult && (parseLinkResult.isWikilink || !parseLinkResult.isExternal);
+}
+
+function modifyData(data: null | PropertyEntryData<null | string> | string, newValue: null | string): null | PropertyEntryData<null | string> | string {
+  if (isPropertyEntryData(data)) {
+    return { ...data, value: newValue };
+  }
+
+  return newValue;
 }
 
 function render(textPropertyComponent: TextPropertyComponent, next: () => void): void {
@@ -73,14 +87,16 @@ function render(textPropertyComponent: TextPropertyComponent, next: () => void):
 
 function renderWidget(
   el: HTMLElement,
-  value: unknown,
+  data: null | PropertyEntryData<null | string> | string,
   ctx: PropertyRenderContext,
   next: RenderTextPropertyWidgetFn,
   plugin: Plugin
 ): MaybeReturn<Component> {
   if (!isPatched) {
     const temp = el.createDiv();
-    const textPropertyComponent = next(temp, '', ctx) as TextPropertyComponent;
+    const fakeData = modifyData(data, '');
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    const textPropertyComponent = (isPropertyEntryData(fakeData) ? next(temp, fakeData, ctx) : next(temp, fakeData, ctx)) as TextPropertyComponent;
     const textPropertyComponentProto = getPrototypeOf(textPropertyComponent);
     registerPatch(plugin, textPropertyComponentProto, {
       getDisplayText: () =>
@@ -106,22 +122,35 @@ function renderWidget(
 
   const ctxWithRerenderOnChange = {
     ...ctx,
-    onChange: (widgetValue: unknown): void => {
-      ctx.onChange(widgetValue);
+    onChange: (newValue: unknown): void => {
+      ctx.onChange(newValue);
+      const str = newValue as null | string;
       requestAnimationFrame(() => {
         el.empty();
-        renderWidget(el, widgetValue, ctx, next, plugin);
+        renderWidget(el, modifyData(data, str), ctx, next, plugin);
       });
     }
   };
 
-  if (typeof value !== 'string') {
-    return next(el, value, ctxWithRerenderOnChange);
+  const value = isPropertyEntryData(data) ? data.value : data;
+
+  if (value === null) {
+    if (isPropertyEntryData(data)) {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      return next(el, data, ctxWithRerenderOnChange);
+    }
+
+    return next(el, data, ctxWithRerenderOnChange);
   }
 
   const parseLinkResults = parseLinks(value);
   if (parseLinkResults.length === 0 || parseLinkResults[0]?.raw === value) {
-    return next(el, value, ctxWithRerenderOnChange);
+    if (isPropertyEntryData(data)) {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      return next(el, data, ctxWithRerenderOnChange);
+    }
+
+    return next(el, data, ctxWithRerenderOnChange);
   }
 
   el.addClass('frontmatter-markdown-links', 'text-property-component');
@@ -142,7 +171,7 @@ function renderWidget(
       return;
     }
 
-    const childWidgetValue = (value as string).slice(widgetStartOffset, widgetEndOffset);
+    const childWidgetValue = (value ?? '').slice(widgetStartOffset, widgetEndOffset);
     childWidgetValues.push(childWidgetValue);
     const index = childWidgetValues.length - 1;
 
@@ -153,31 +182,34 @@ function renderWidget(
         isAfterBlur = true;
         ctx.blur();
       },
-      onChange: (widgetValue: unknown): void => {
+      onChange: (newValue: unknown): void => {
+        const newValueStr = (newValue as null | string) ?? '';
+
         if (isAfterBlur) {
           isAfterBlur = false;
 
-          if (widgetValue === childWidgetValues[index]?.trimEnd()) {
+          if (newValueStr === childWidgetValues[index]?.trimEnd()) {
             return;
           }
         }
 
-        widgetValue ??= '';
-        if (childWidgetValues[index] === widgetValue) {
+        if (childWidgetValues[index] === newValueStr) {
           return;
         }
 
-        if (typeof widgetValue !== 'string') {
-          return;
-        }
-
-        childWidgetValues[index] = widgetValue;
-        const newValue = childWidgetValues.join('');
-        ctxWithRerenderOnChange.onChange(newValue);
+        childWidgetValues[index] = newValueStr;
+        const newFullValue = childWidgetValues.join('');
+        ctxWithRerenderOnChange.onChange(newFullValue);
       }
     };
 
     const childEl = el.createDiv('metadata-property-value');
-    next(childEl, childWidgetValue, childCtx);
+    const childWidgetData = modifyData(data, childWidgetValue);
+    if (isPropertyEntryData(childWidgetData)) {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      next(childEl, childWidgetData, childCtx);
+    } else {
+      next(childEl, childWidgetData, childCtx);
+    }
   }
 }
