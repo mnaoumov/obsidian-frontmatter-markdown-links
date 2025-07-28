@@ -82,6 +82,10 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
       evt.stopPropagation();
     }, { capture: true });
 
+    parentEl.addEventListener('click', (evt) => {
+      evt.stopPropagation();
+    }, { capture: true });
+
     let startOffset = 0;
 
     for (const parseLinkResult of parseLinkResults) {
