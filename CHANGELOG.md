@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.4.3
+
+- Hide link pencil
+- Make multi text in one line
+- Prevent click
+- Make widget working for 1.8.10 and 1.9.6
+- Update libs
+
 ## 2.4.2
 
 - Process blur changes if they are not trimming previous value (#14)
