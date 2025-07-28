@@ -86,6 +86,8 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
       evt.stopPropagation();
     }, { capture: true });
 
+    el.addClass('frontmatter-markdown-links', 'multi-text-property-component');
+
     let startOffset = 0;
 
     for (const parseLinkResult of parseLinkResults) {
