@@ -1,13 +1,12 @@
-import type { Component } from 'obsidian';
 import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
-import type { MaybeReturn } from 'obsidian-dev-utils/Type';
 import type {
+  MetadataTypeManagerRegisteredTypeWidgetsRecord,
   PropertyEntryData,
   PropertyRenderContext,
-  PropertyWidget
+  TextPropertyWidgetComponent
 } from 'obsidian-typings';
 
-import { getPrototypeOf } from 'obsidian-dev-utils/Object';
+import { getPrototypeOf } from 'obsidian-dev-utils/ObjectUtils';
 import {
   parseLink,
   parseLinks
@@ -16,46 +15,29 @@ import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
 import type { Plugin } from './Plugin.ts';
 
+type RenderTextPropertyWidgetComponentFn = MetadataTypeManagerRegisteredTypeWidgetsRecord['text']['render'];
+
 let isPatched = false;
 
-type RenderTextPropertyWidgetFn = PropertyWidget<null | string>['render'];
-
-interface TextPropertyComponent extends Component {
-  ctx: PropertyRenderContext;
-  getDisplayText(): string;
-  getLinkText(): string;
-  inputEl: HTMLElement;
-  isWikilink(): boolean;
-  linkEl: HTMLElement;
-  linkTextEl: HTMLElement;
-  render(): void;
-  value: string | undefined;
-}
-
-export function patchTextPropertyComponent(plugin: Plugin): void {
-  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['text'];
-
-  if (!widget) {
-    return;
-  }
+export function patchTextPropertyWidgetComponent(plugin: Plugin): void {
+  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets.text;
 
   registerPatch(plugin, widget, {
-    render: (next: RenderTextPropertyWidgetFn): RenderTextPropertyWidgetFn => (el, value, ctx): MaybeReturn<Component> =>
-      renderWidget(el, value, ctx, next, plugin)
+    render: (next: RenderTextPropertyWidgetComponentFn): RenderTextPropertyWidgetComponentFn => (el, value, ctx) => renderWidget(el, value, ctx, next, plugin)
   });
 }
 
-function getDisplayText(textPropertyComponent: TextPropertyComponent): string {
+function getDisplayText(textPropertyComponent: TextPropertyWidgetComponent): string {
   const parseLinkResult = getParseLinkResult(textPropertyComponent);
-  return parseLinkResult?.alias ?? parseLinkResult?.url ?? textPropertyComponent.value ?? '';
+  return parseLinkResult?.alias ?? parseLinkResult?.url ?? textPropertyComponent.value;
 }
 
-function getLinkText(textPropertyComponent: TextPropertyComponent): string {
+function getLinkText(textPropertyComponent: TextPropertyWidgetComponent): string {
   const parseLinkResult = getParseLinkResult(textPropertyComponent);
-  return parseLinkResult?.url ?? textPropertyComponent.value ?? '';
+  return parseLinkResult?.url ?? textPropertyComponent.value;
 }
 
-function getParseLinkResult(textPropertyComponent: TextPropertyComponent, useValue = false): null | ParseLinkResult {
+function getParseLinkResult(textPropertyComponent: TextPropertyWidgetComponent, useValue = false): null | ParseLinkResult {
   const text = useValue ? textPropertyComponent.value : textPropertyComponent.inputEl.textContent;
   return parseLink(text ?? '');
 }
@@ -64,7 +46,7 @@ function isPropertyEntryData(data: null | PropertyEntryData<null | string> | str
   return (data as null | Partial<PropertyEntryData<null | string>>)?.value !== undefined;
 }
 
-function isWikilink(textPropertyComponent: TextPropertyComponent): boolean {
+function isWikilink(textPropertyComponent: TextPropertyWidgetComponent): boolean {
   const parseLinkResult = getParseLinkResult(textPropertyComponent);
   return !!parseLinkResult && (parseLinkResult.isWikilink || !parseLinkResult.isExternal);
 }
@@ -77,7 +59,7 @@ function modifyData(data: null | PropertyEntryData<null | string> | string, newV
   return newValue;
 }
 
-function render(textPropertyComponent: TextPropertyComponent, next: () => void): void {
+function render(textPropertyComponent: TextPropertyWidgetComponent, next: () => void): void {
   const parseLinkResult = getParseLinkResult(textPropertyComponent, true);
   if (parseLinkResult?.isExternal) {
     textPropertyComponent.value = parseLinkResult.encodedUrl ?? parseLinkResult.url;
@@ -85,34 +67,48 @@ function render(textPropertyComponent: TextPropertyComponent, next: () => void):
   next.call(textPropertyComponent);
 }
 
+function renderTextPropertyWidgetComponent(
+  next: RenderTextPropertyWidgetComponentFn,
+  el: HTMLElement,
+  data: null | PropertyEntryData<null | string> | string,
+  ctx: PropertyRenderContext
+): TextPropertyWidgetComponent {
+  if (isPropertyEntryData(data)) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    return next(el, data as PropertyEntryData<string>, ctx);
+  }
+
+  return next(el, data, ctx);
+}
+
 function renderWidget(
   el: HTMLElement,
   data: null | PropertyEntryData<null | string> | string,
   ctx: PropertyRenderContext,
-  next: RenderTextPropertyWidgetFn,
+  next: RenderTextPropertyWidgetComponentFn,
   plugin: Plugin
-): MaybeReturn<Component> {
+): TextPropertyWidgetComponent {
   if (!isPatched) {
     const temp = el.createDiv();
     const fakeData = modifyData(data, '');
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    const textPropertyComponent = (isPropertyEntryData(fakeData) ? next(temp, fakeData, ctx) : next(temp, fakeData, ctx)) as TextPropertyComponent;
+
+    const textPropertyComponent = renderTextPropertyWidgetComponent(next, temp, fakeData, ctx);
     const textPropertyComponentProto = getPrototypeOf(textPropertyComponent);
     registerPatch(plugin, textPropertyComponentProto, {
       getDisplayText: () =>
-        function getDisplayTextPatched(this: TextPropertyComponent): string {
+        function getDisplayTextPatched(this: TextPropertyWidgetComponent): string {
           return getDisplayText(this);
         },
       getLinkText: () =>
-        function getLinkTextPatched(this: TextPropertyComponent): string {
+        function getLinkTextPatched(this: TextPropertyWidgetComponent): string {
           return getLinkText(this);
         },
       isWikilink: () =>
-        function isWikilinkPatched(this: TextPropertyComponent): boolean {
+        function isWikilinkPatched(this: TextPropertyWidgetComponent): boolean {
           return isWikilink(this);
         },
       render: (nextRender: () => void) =>
-        function renderPatched(this: TextPropertyComponent): void {
+        function renderPatched(this: TextPropertyWidgetComponent): void {
           render(this, nextRender);
         }
     });
@@ -135,22 +131,12 @@ function renderWidget(
   const value = isPropertyEntryData(data) ? data.value : data;
 
   if (value === null) {
-    if (isPropertyEntryData(data)) {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
-      return next(el, data, ctxWithRerenderOnChange);
-    }
-
-    return next(el, data, ctxWithRerenderOnChange);
+    return renderTextPropertyWidgetComponent(next, el, data, ctxWithRerenderOnChange);
   }
 
   const parseLinkResults = parseLinks(value);
   if (parseLinkResults.length === 0 || parseLinkResults[0]?.raw === value) {
-    if (isPropertyEntryData(data)) {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
-      return next(el, data, ctxWithRerenderOnChange);
-    }
-
-    return next(el, data, ctxWithRerenderOnChange);
+    return renderTextPropertyWidgetComponent(next, el, data, ctxWithRerenderOnChange);
   }
 
   el.addClass('frontmatter-markdown-links', 'text-property-component');
@@ -165,6 +151,11 @@ function renderWidget(
   }
 
   createChildWidget(startOffset, value.length);
+
+  const widget = renderTextPropertyWidgetComponent(next, el, data, ctx);
+  widget.inputEl.hide();
+  widget.linkEl.hide();
+  return widget;
 
   function createChildWidget(widgetStartOffset: number, widgetEndOffset: number): void {
     if (widgetStartOffset >= widgetEndOffset) {
@@ -205,11 +196,7 @@ function renderWidget(
 
     const childEl = el.createDiv('metadata-property-value');
     const childWidgetData = modifyData(data, childWidgetValue);
-    if (isPropertyEntryData(childWidgetData)) {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
-      next(childEl, childWidgetData, childCtx);
-    } else {
-      next(childEl, childWidgetData, childCtx);
-    }
+
+    renderTextPropertyWidgetComponent(next, childEl, childWidgetData, childCtx);
   }
 }

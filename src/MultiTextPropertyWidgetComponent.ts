@@ -3,14 +3,14 @@ import type {
   Component
 } from 'obsidian';
 import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
-import type { MaybeReturn } from 'obsidian-dev-utils/Type';
 import type {
+  MetadataTypeManagerRegisteredTypeWidgetsRecord,
+  MultitextPropertyWidgetComponent,
   PropertyEntryData,
-  PropertyRenderContext,
-  PropertyWidget
+  PropertyRenderContext
 } from 'obsidian-typings';
 
-import { getPrototypeOf } from 'obsidian-dev-utils/Object';
+import { getPrototypeOf } from 'obsidian-dev-utils/ObjectUtils';
 import { parseLinks } from 'obsidian-dev-utils/obsidian/Link';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
@@ -24,24 +24,31 @@ interface MultiSelectComponent extends Component {
   values: string[];
 }
 
-interface MultiTextPropertyComponent extends Component {
-  containerEl: HTMLElement;
-  multiselect: MultiSelectComponent;
-}
-
-type RenderMultiTextPropertyWidgetFn = PropertyWidget<null | string[]>['render'];
+type RenderMultiTextPropertyWidgetComponentFn = MetadataTypeManagerRegisteredTypeWidgetsRecord['multitext']['render'];
 
 let isPatched = false;
 
-export function patchMultiTextPropertyComponent(plugin: Plugin): void {
-  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets['multitext'];
-  if (!widget) {
-    return;
-  }
+export function patchMultiTextPropertyWidgetComponent(plugin: Plugin): void {
+  const widget = plugin.app.metadataTypeManager.registeredTypeWidgets.multitext;
 
   registerPatch(plugin, widget, {
-    render: (next: RenderMultiTextPropertyWidgetFn): RenderMultiTextPropertyWidgetFn => (el, data, ctx) => renderWidget(el, data, ctx, next, plugin)
+    render: (next: RenderMultiTextPropertyWidgetComponentFn): RenderMultiTextPropertyWidgetComponentFn => (el, data, ctx) =>
+      renderWidget(el, data, ctx, next, plugin)
   });
+}
+
+function renderMultiTextPropertyWidgetComponent(
+  next: RenderMultiTextPropertyWidgetComponentFn,
+  el: HTMLElement,
+  data: (null | string[]) | PropertyEntryData<null | string[]>,
+  ctx: PropertyRenderContext
+): MultitextPropertyWidgetComponent {
+  if (Array.isArray(data)) {
+    return next(el, data, ctx);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  return next(el, data as PropertyEntryData<string[]>, ctx);
 }
 
 function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next: () => void): void {
@@ -127,12 +134,12 @@ function renderWidget(
   el: HTMLElement,
   data: (null | string[]) | PropertyEntryData<null | string[]>,
   ctx: PropertyRenderContext,
-  next: RenderMultiTextPropertyWidgetFn,
+  next: RenderMultiTextPropertyWidgetComponentFn,
   plugin: Plugin
-): MaybeReturn<Component> {
+): MultitextPropertyWidgetComponent {
   if (!isPatched) {
     const temp = el.createDiv();
-    const multiTextPropertyComponent = next(temp, [], ctx) as MultiTextPropertyComponent;
+    const multiTextPropertyComponent = next(temp, [], ctx);
     const multiSelectComponentProto = getPrototypeOf(multiTextPropertyComponent.multiselect);
     registerPatch(plugin, multiSelectComponentProto, {
       renderValues: (nextRenderValues: () => void) => {
@@ -146,10 +153,5 @@ function renderWidget(
     temp.remove();
   }
 
-  if (data === null || Array.isArray(data)) {
-    return next(el, data, ctx);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  return next(el, data, ctx);
+  return renderMultiTextPropertyWidgetComponent(next, el, data, ctx);
 }

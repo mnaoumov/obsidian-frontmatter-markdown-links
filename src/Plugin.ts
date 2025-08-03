@@ -34,10 +34,10 @@ import type { PluginTypes } from './PluginTypes.ts';
 import { registerFrontmatterLinksEditorExtension } from './FrontmatterLinksEditorExtension.ts';
 import { FrontmatterMarkdownLinksCache } from './FrontmatterMarkdownLinksCache.ts';
 import { getLinkData } from './LinkData.ts';
-import { patchMultiTextPropertyComponent } from './MultiTextPropertyComponent.ts';
+import { patchMultiTextPropertyWidgetComponent } from './MultiTextPropertyWidgetComponent.ts';
 import { PluginSettingsManager } from './PluginSettingsManager.ts';
 import { PluginSettingsTab } from './PluginSettingsTab.ts';
-import { patchTextPropertyComponent } from './TextPropertyComponent.ts';
+import { patchTextPropertyWidgetComponent } from './TextPropertyWidgetComponent.ts';
 import { isSourceMode } from './Utils.ts';
 
 type GetClickableTokenAtFn = Editor['getClickableTokenAt'];
@@ -79,8 +79,8 @@ export class Plugin extends PluginBase<PluginTypes> {
   protected override async onloadImpl(): Promise<void> {
     await super.onloadImpl();
 
-    patchTextPropertyComponent(this);
-    patchMultiTextPropertyComponent(this);
+    patchTextPropertyWidgetComponent(this);
+    patchMultiTextPropertyWidgetComponent(this);
     registerFrontmatterLinksEditorExtension(this);
     this.register(() => {
       invokeAsyncSafely(this.clearMetadataCache.bind(this));
