@@ -1,3 +1,4 @@
+import type { SearchResult } from 'obsidian';
 import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
 import type {
   MetadataTypeManagerRegisteredTypeWidgetsRecord,
@@ -6,6 +7,7 @@ import type {
   TextPropertyWidgetComponent
 } from 'obsidian-typings';
 
+import { AbstractInputSuggest } from 'obsidian';
 import { getPrototypeOf } from 'obsidian-dev-utils/ObjectUtils';
 import {
   parseLink,
@@ -15,9 +17,23 @@ import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
 import type { Plugin } from './Plugin.ts';
 
+type GetValueFn = AbstractInputSuggest<MySearchResult>['getValue'];
 type RenderTextPropertyWidgetComponentFn = MetadataTypeManagerRegisteredTypeWidgetsRecord['text']['render'];
+type SelectSuggestionFn = AbstractInputSuggest<MySearchResult>['selectSuggestion'];
 
-let isPatched = false;
+let isTextPropertyWidgetComponentPatched = false;
+
+interface MySearchResult extends SearchResult {
+  text: string;
+  type: string;
+}
+
+interface Offset {
+  from: number;
+  to: number;
+}
+
+const patchedInputEls = new WeakMap<HTMLDivElement, Offset>();
 
 export function patchTextPropertyWidgetComponent(plugin: Plugin): void {
   const widget = plugin.app.metadataTypeManager.registeredTypeWidgets.text;
@@ -25,7 +41,17 @@ export function patchTextPropertyWidgetComponent(plugin: Plugin): void {
   registerPatch(plugin, widget, {
     render: (next: RenderTextPropertyWidgetComponentFn): RenderTextPropertyWidgetComponentFn => (el, value, ctx) => renderWidget(el, value, ctx, next, plugin)
   });
+
+  registerPatch(plugin, AbstractInputSuggest.prototype, {
+    getValue: (next: GetValueFn): GetValueFn => {
+      return function getValuePatched(this: AbstractInputSuggest<MySearchResult>): string {
+        return getValue(next, this, plugin);
+      };
+    }
+  });
 }
+
+let isCustomAbstractInputSuggestPatched = false;
 
 function getCaretCharacterOffset(): number {
   const sel = window.getSelection();
@@ -49,6 +75,36 @@ function getLinkText(textPropertyComponent: TextPropertyWidgetComponent): string
 function getParseLinkResult(textPropertyComponent: TextPropertyWidgetComponent, useValue = false): null | ParseLinkResult {
   const text = useValue ? textPropertyComponent.value : textPropertyComponent.inputEl.textContent;
   return parseLink(text ?? '');
+}
+
+function getValue(next: GetValueFn, suggest: AbstractInputSuggest<MySearchResult>, plugin: Plugin): string {
+  if (!isCustomAbstractInputSuggestPatched) {
+    const customAbstractInputSuggestProto = getPrototypeOf(suggest);
+    registerPatch(plugin, customAbstractInputSuggestProto, {
+      selectSuggestion: (nextSelectSuggestion: SelectSuggestionFn): SelectSuggestionFn => {
+        return function selectSuggestionPatched(this: AbstractInputSuggest<MySearchResult>, value: MySearchResult, evt: KeyboardEvent | MouseEvent): void {
+          selectSuggestion(nextSelectSuggestion, this, value, evt);
+        };
+      }
+    });
+    isCustomAbstractInputSuggestPatched = true;
+  }
+
+  const value = next.call(suggest);
+  if (!patchedInputEls.has(suggest.textInputEl)) {
+    return value;
+  }
+  const caretOffset = getCaretCharacterOffset();
+  const valueBeforeCaret = value.slice(0, caretOffset);
+  const openBracketBeforeCaretIndex = valueBeforeCaret.lastIndexOf('[[');
+  const closeBracketBeforeCaretIndex = valueBeforeCaret.lastIndexOf(']]');
+
+  if (openBracketBeforeCaretIndex < 0 || openBracketBeforeCaretIndex < closeBracketBeforeCaretIndex) {
+    return value;
+  }
+
+  patchedInputEls.set(suggest.textInputEl, { from: openBracketBeforeCaretIndex, to: caretOffset });
+  return value.slice(openBracketBeforeCaretIndex, caretOffset);
 }
 
 function isPropertyEntryData(data: null | PropertyEntryData<null | string> | string): data is PropertyEntryData<null | string> {
@@ -97,13 +153,13 @@ function renderWidget(
   next: RenderTextPropertyWidgetComponentFn,
   plugin: Plugin
 ): TextPropertyWidgetComponent {
-  if (!isPatched) {
+  if (!isTextPropertyWidgetComponentPatched) {
     const temp = el.createDiv();
     const fakeData = modifyData(data, '');
 
-    const textPropertyComponent = renderTextPropertyWidgetComponent(next, temp, fakeData, ctx);
-    const textPropertyComponentProto = getPrototypeOf(textPropertyComponent);
-    registerPatch(plugin, textPropertyComponentProto, {
+    const textPropertyWidgetComponent = renderTextPropertyWidgetComponent(next, temp, fakeData, ctx);
+    const textPropertyWidgetComponentProto = getPrototypeOf(textPropertyWidgetComponent);
+    registerPatch(plugin, textPropertyWidgetComponentProto, {
       getDisplayText: () =>
         function getDisplayTextPatched(this: TextPropertyWidgetComponent): string {
           return getDisplayText(this);
@@ -121,7 +177,7 @@ function renderWidget(
           render(this, nextRender);
         }
     });
-    isPatched = true;
+    isTextPropertyWidgetComponentPatched = true;
     temp.remove();
   }
 
@@ -137,18 +193,11 @@ function renderWidget(
     }
   };
 
-  const value = isPropertyEntryData(data) ? data.value : data;
-
-  if (value === null) {
-    return renderTextPropertyWidgetComponent(next, el, data, ctxWithRerenderOnChange);
-  }
+  const value = (isPropertyEntryData(data) ? data.value : data) ?? '';
 
   const parseLinkResults = parseLinks(value);
-  if (parseLinkResults.length === 0 || parseLinkResults[0]?.raw === value) {
-    return renderTextPropertyWidgetComponent(next, el, data, ctxWithRerenderOnChange);
-  }
 
-  el.addClass('frontmatter-markdown-links', 'text-property-component');
+  el.addClass('frontmatter-markdown-links', 'text-property-widget-component');
   const childWidgetsContainerEl = el.createDiv('metadata-property-value');
 
   let startOffset = 0;
@@ -161,6 +210,10 @@ function renderWidget(
 
   createChildWidget(startOffset, value.length);
 
+  if (value === '') {
+    createChildWidget(startOffset, 1);
+  }
+
   const widgetEl = el.createDiv('metadata-property-value');
   const widget = renderTextPropertyWidgetComponent(next, widgetEl, data, ctxWithRerenderOnChange);
   widgetEl.hide();
@@ -170,6 +223,7 @@ function renderWidget(
     childWidgetsContainerEl.show();
   });
 
+  patchedInputEls.set(widget.inputEl, { from: 0, to: 0 });
   return widget;
 
   function createChildWidget(widgetStartOffset: number, widgetEndOffset: number): void {
@@ -177,7 +231,7 @@ function renderWidget(
       return;
     }
 
-    const childWidgetValue = (value ?? '').slice(widgetStartOffset, widgetEndOffset);
+    const childWidgetValue = value.slice(widgetStartOffset, widgetEndOffset);
     const childEl = childWidgetsContainerEl.createDiv('metadata-property-value');
     const childWidgetData = modifyData(data, childWidgetValue);
 
@@ -202,4 +256,29 @@ function renderWidget(
       });
     });
   }
+}
+
+function selectSuggestion(
+  next: SelectSuggestionFn,
+  suggest: AbstractInputSuggest<MySearchResult>,
+  value: MySearchResult,
+  evt: KeyboardEvent | MouseEvent
+): void {
+  if (!patchedInputEls.has(suggest.textInputEl)) {
+    next.call(suggest, value, evt);
+    return;
+  }
+
+  const oldValue = suggest.textInputEl.textContent ?? '';
+  next.call(suggest, value, evt);
+  const newValue = suggest.textInputEl.textContent ?? '';
+  const { from, to } = patchedInputEls.get(suggest.textInputEl) ?? { from: 0, to: 0 };
+  patchedInputEls.set(suggest.textInputEl, { from: 0, to: 0 });
+
+  const fixedValue = oldValue.slice(0, from) + newValue + oldValue.slice(to);
+  next.call(suggest, {
+    ...value,
+    text: fixedValue,
+    type: 'text'
+  }, evt);
 }
