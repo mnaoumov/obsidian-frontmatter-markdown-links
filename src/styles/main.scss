@@ -3,12 +3,16 @@
     flex: none;
     gap: 0;
 
-    .metadata-link, .metadata-input-longtext {
-      &:not(:first-child) {
+    > .metadata-property-value > .metadata-property-value:not(:first-of-type) {
+      .metadata-link,
+      .metadata-input-longtext {
         padding-left: 0;
       }
+    }
 
-      &:not(:last-child) {
+    > .metadata-property-value > .metadata-property-value:not(:last-of-type) {
+      .metadata-link,
+      .metadata-input-longtext {
         padding-right: 0;
       }
     }
