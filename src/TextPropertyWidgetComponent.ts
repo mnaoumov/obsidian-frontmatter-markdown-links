@@ -246,10 +246,12 @@ function renderWidget(
         if (!sel) {
           return;
         }
-        const range = widget.inputEl.doc.createRange();
-        if (widget.inputEl.firstChild) {
-          range.setStart(widget.inputEl.firstChild, widgetStartOffset + caretOffset);
+        if (!widget.inputEl.firstChild) {
+          return;
         }
+
+        const range = widget.inputEl.doc.createRange();
+        range.setStart(widget.inputEl.firstChild, widgetStartOffset + caretOffset);
         range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
