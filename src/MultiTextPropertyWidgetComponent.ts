@@ -90,6 +90,12 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
     }, { capture: true });
 
     parentEl.addEventListener('click', (evt) => {
+      if (!(evt.target instanceof Element)) {
+        return;
+      }
+      if (evt.target.closest('.multi-select-pill-remove-button')) {
+        return;
+      }
       evt.stopPropagation();
     }, { capture: true });
 
