@@ -27,6 +27,15 @@ export function patchTextPropertyWidgetComponent(plugin: Plugin): void {
   });
 }
 
+function getCaretCharacterOffset(): number {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) {
+    return 0;
+  }
+  const range = sel.getRangeAt(0);
+  return range.startOffset;
+}
+
 function getDisplayText(textPropertyComponent: TextPropertyWidgetComponent): string {
   const parseLinkResult = getParseLinkResult(textPropertyComponent);
   return parseLinkResult?.alias ?? parseLinkResult?.url ?? textPropertyComponent.value;
@@ -140,9 +149,9 @@ function renderWidget(
   }
 
   el.addClass('frontmatter-markdown-links', 'text-property-component');
+  const childWidgetsContainerEl = el.createDiv('metadata-property-value');
 
   let startOffset = 0;
-  const childWidgetValues: string[] = [];
 
   for (const parseLinkResult of parseLinkResults) {
     createChildWidget(startOffset, parseLinkResult.startOffset);
@@ -152,9 +161,15 @@ function renderWidget(
 
   createChildWidget(startOffset, value.length);
 
-  const widget = renderTextPropertyWidgetComponent(next, el, data, ctx);
-  widget.inputEl.hide();
-  widget.linkEl.hide();
+  const widgetEl = el.createDiv('metadata-property-value');
+  const widget = renderTextPropertyWidgetComponent(next, widgetEl, data, ctxWithRerenderOnChange);
+  widgetEl.hide();
+
+  widget.inputEl.addEventListener('blur', () => {
+    widgetEl.hide();
+    childWidgetsContainerEl.show();
+  });
+
   return widget;
 
   function createChildWidget(widgetStartOffset: number, widgetEndOffset: number): void {
@@ -163,40 +178,28 @@ function renderWidget(
     }
 
     const childWidgetValue = (value ?? '').slice(widgetStartOffset, widgetEndOffset);
-    childWidgetValues.push(childWidgetValue);
-    const index = childWidgetValues.length - 1;
-
-    let isAfterBlur = false;
-    const childCtx = {
-      ...ctx,
-      blur: (): void => {
-        isAfterBlur = true;
-        ctx.blur();
-      },
-      onChange: (newValue: unknown): void => {
-        const newValueStr = (newValue as null | string) ?? '';
-
-        if (isAfterBlur) {
-          isAfterBlur = false;
-
-          if (newValueStr === childWidgetValues[index]?.trimEnd()) {
-            return;
-          }
-        }
-
-        if (childWidgetValues[index] === newValueStr) {
-          return;
-        }
-
-        childWidgetValues[index] = newValueStr;
-        const newFullValue = childWidgetValues.join('');
-        ctxWithRerenderOnChange.onChange(newFullValue);
-      }
-    };
-
-    const childEl = el.createDiv('metadata-property-value');
+    const childEl = childWidgetsContainerEl.createDiv('metadata-property-value');
     const childWidgetData = modifyData(data, childWidgetValue);
 
-    renderTextPropertyWidgetComponent(next, childEl, childWidgetData, childCtx);
+    const childWidget = renderTextPropertyWidgetComponent(next, childEl, childWidgetData, ctx);
+    childWidget.inputEl.addEventListener('focus', () => {
+      requestAnimationFrame(() => {
+        const caretOffset = getCaretCharacterOffset();
+        childWidgetsContainerEl.hide();
+        widgetEl.show();
+        widget.inputEl.focus();
+        const sel = widget.inputEl.win.getSelection();
+        if (!sel) {
+          return;
+        }
+        const range = widget.inputEl.doc.createRange();
+        if (widget.inputEl.firstChild) {
+          range.setStart(widget.inputEl.firstChild, widgetStartOffset + caretOffset);
+        }
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      });
+    });
   }
 }
