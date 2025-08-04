@@ -25,11 +25,11 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.1",
     "@tsconfig/strictest": "^2.0.5",
-    "@types/node": "^24.1.0",
+    "@types/node": "^24.2.0",
     "jiti": "^2.5.1",
     "obsidian": "^1.8.7",
     "obsidian-dev-utils": "^30.2.1",
-    "obsidian-typings": "^3.14.1"
+    "obsidian-typings": "^3.15.0"
   },
   "type": "module",
   "overrides": {
