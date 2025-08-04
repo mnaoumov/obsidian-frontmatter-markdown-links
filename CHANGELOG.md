@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.5.0
+
+- Fix multitext remove button
+- Show suggestions for inner links
+- Fix padding for first/last part
+- Restore to big widget for editing
+- Update libs
+
 ## 2.4.3
 
 - Hide link pencil
