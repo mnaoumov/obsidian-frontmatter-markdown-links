@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.5.1
+
+- Don't nest high-level text prop (#16)
+
 ## 2.5.0
 
 - Fix multitext remove button
