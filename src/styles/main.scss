@@ -1,7 +1,10 @@
 .frontmatter-markdown-links {
   &.text-property-widget-component.metadata-property-value {
-    flex: none;
     gap: 0;
+
+    > .metadata-property-value {
+      --metadata-divider-width: 0;
+    }
 
     > .metadata-property-value > .metadata-property-value:not(:first-of-type) {
       .metadata-link,
