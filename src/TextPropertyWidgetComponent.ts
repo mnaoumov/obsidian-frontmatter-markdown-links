@@ -196,34 +196,36 @@ function renderWidget(
   const value = (isPropertyEntryData(data) ? data.value : data) ?? '';
 
   const parseLinkResults = parseLinks(value);
-
   el.addClass('frontmatter-markdown-links', 'text-property-widget-component');
   const childWidgetsContainerEl = el.createDiv('metadata-property-value');
 
-  let startOffset = 0;
+  const hasMultipleLinks = parseLinkResults.length > 0 && parseLinkResults[0]?.raw !== value;
 
-  for (const parseLinkResult of parseLinkResults) {
-    createChildWidget(startOffset, parseLinkResult.startOffset);
-    createChildWidget(parseLinkResult.startOffset, parseLinkResult.endOffset);
-    startOffset = parseLinkResult.endOffset;
+  if (hasMultipleLinks) {
+    let startOffset = 0;
+
+    for (const parseLinkResult of parseLinkResults) {
+      createChildWidget(startOffset, parseLinkResult.startOffset);
+      createChildWidget(parseLinkResult.startOffset, parseLinkResult.endOffset);
+      startOffset = parseLinkResult.endOffset;
+    }
+
+    createChildWidget(startOffset, value.length);
   }
 
-  createChildWidget(startOffset, value.length);
+  const widget = renderTextPropertyWidgetComponent(next, el, data, ctxWithRerenderOnChange);
+  if (hasMultipleLinks) {
+    widget.inputEl.hide();
+    widget.linkEl.hide();
 
-  if (value === '') {
-    createChildWidget(startOffset, 1);
+    widget.inputEl.addEventListener('blur', () => {
+      widget.inputEl.hide();
+      childWidgetsContainerEl.show();
+    });
+
+    patchedInputEls.set(widget.inputEl, { from: 0, to: 0 });
   }
 
-  const widgetEl = el.createDiv('metadata-property-value');
-  const widget = renderTextPropertyWidgetComponent(next, widgetEl, data, ctxWithRerenderOnChange);
-  widgetEl.hide();
-
-  widget.inputEl.addEventListener('blur', () => {
-    widgetEl.hide();
-    childWidgetsContainerEl.show();
-  });
-
-  patchedInputEls.set(widget.inputEl, { from: 0, to: 0 });
   return widget;
 
   function createChildWidget(widgetStartOffset: number, widgetEndOffset: number): void {
@@ -240,7 +242,7 @@ function renderWidget(
       requestAnimationFrame(() => {
         const caretOffset = getCaretCharacterOffset();
         childWidgetsContainerEl.hide();
-        widgetEl.show();
+        widget.inputEl.show();
         widget.inputEl.focus();
         const sel = widget.inputEl.win.getSelection();
         if (!sel) {
