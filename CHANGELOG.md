@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.5.2
+
+- Fix styling of property row lines (#15)
+
 ## 2.5.1
 
 - Don't nest high-level text prop (#16)
