@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.5.3
+
+- Update libs
+
 ## 2.5.2
 
 - Fix styling of property row lines (#15)
