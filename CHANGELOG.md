@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.5.4
+
+- Update libs
+
 ## 2.5.3
 
 - Update libs
