@@ -20,7 +20,6 @@
   "author": "mnaoumov",
   "license": "MIT",
   "devDependencies": {
-    "@antfu/utils": "^9.2.0",
     "@codemirror/language": "^6.11.2",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.1",
@@ -28,11 +27,11 @@
     "@types/node": "^24.2.1",
     "jiti": "^2.5.1",
     "obsidian": "^1.8.7",
-    "obsidian-dev-utils": "^30.5.1",
+    "obsidian-dev-utils": "^31.0.0",
     "obsidian-typings": "^3.16.0"
   },
   "type": "module",
   "overrides": {
-    "@antfu/utils": "$@antfu/utils"
+    "@antfu/utils": "9.2.0"
   }
 }
