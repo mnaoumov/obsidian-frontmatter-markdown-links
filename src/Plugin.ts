@@ -1,11 +1,10 @@
-import {
-  MenuItem,
-  type CachedMetadata,
-  type Editor,
-  type EditorPosition,
-  type FrontmatterLinkCache,
-  type MenuSeparator,
-  type TAbstractFile
+import type {
+  CachedMetadata,
+  Editor,
+  EditorPosition,
+  FrontmatterLinkCache,
+  MenuSeparator,
+  TAbstractFile
 } from 'obsidian';
 import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/FrontmatterLinkCacheWithOffsets';
 import type { ClickableToken } from 'obsidian-typings';
@@ -14,6 +13,7 @@ import {
   Keymap,
   MarkdownView,
   Menu,
+  MenuItem,
   parseYaml,
   TFile
 } from 'obsidian';
@@ -438,7 +438,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       return fallback();
     }
 
-    if (menu.items.some((menuItem: (MenuItem | MenuSeparator)) => (menuItem instanceof MenuItem) && menuItem.section === 'open')) {
+    if (menu.items.some((menuItem: MenuItem | MenuSeparator) => (menuItem instanceof MenuItem) && menuItem.section === 'open')) {
       return fallback();
     }
     if (linkData.isExternalUrl) {
