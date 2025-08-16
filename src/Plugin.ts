@@ -1,10 +1,11 @@
-import type {
-  CachedMetadata,
-  Editor,
-  EditorPosition,
-  FrontmatterLinkCache,
+import {
   MenuItem,
-  TAbstractFile
+  type CachedMetadata,
+  type Editor,
+  type EditorPosition,
+  type FrontmatterLinkCache,
+  type MenuSeparator,
+  type TAbstractFile
 } from 'obsidian';
 import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/FrontmatterLinkCacheWithOffsets';
 import type { ClickableToken } from 'obsidian-typings';
@@ -437,7 +438,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       return fallback();
     }
 
-    if (menu.items.some((menuItem: MenuItem) => menuItem.section === 'open')) {
+    if (menu.items.some((menuItem: (MenuItem | MenuSeparator)) => (menuItem instanceof MenuItem) && menuItem.section === 'open')) {
       return fallback();
     }
     if (linkData.isExternalUrl) {
