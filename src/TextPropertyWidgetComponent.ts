@@ -116,14 +116,6 @@ function isWikilink(textPropertyComponent: TextPropertyWidgetComponent): boolean
   return !!parseLinkResult && (parseLinkResult.isWikilink || !parseLinkResult.isExternal);
 }
 
-function modifyData(data: null | PropertyEntryData<null | string> | string, newValue: null | string): null | PropertyEntryData<null | string> | string {
-  if (isPropertyEntryData(data)) {
-    return { ...data, value: newValue };
-  }
-
-  return newValue;
-}
-
 function render(textPropertyComponent: TextPropertyWidgetComponent, next: () => void): void {
   const parseLinkResult = getParseLinkResult(textPropertyComponent, true);
   if (parseLinkResult?.isExternal) {
@@ -132,32 +124,16 @@ function render(textPropertyComponent: TextPropertyWidgetComponent, next: () => 
   next.call(textPropertyComponent);
 }
 
-function renderTextPropertyWidgetComponent(
-  next: RenderTextPropertyWidgetComponentFn,
-  el: HTMLElement,
-  data: null | PropertyEntryData<null | string> | string,
-  ctx: PropertyRenderContext
-): TextPropertyWidgetComponent {
-  if (isPropertyEntryData(data)) {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    return next(el, data as PropertyEntryData<string>, ctx);
-  }
-
-  return next(el, data, ctx);
-}
-
 function renderWidget(
   el: HTMLElement,
-  data: null | PropertyEntryData<null | string> | string,
+  data: null | string,
   ctx: PropertyRenderContext,
   next: RenderTextPropertyWidgetComponentFn,
   plugin: Plugin
 ): TextPropertyWidgetComponent {
   if (!isTextPropertyWidgetComponentPatched) {
     const temp = el.createDiv();
-    const fakeData = modifyData(data, '');
-
-    const textPropertyWidgetComponent = renderTextPropertyWidgetComponent(next, temp, fakeData, ctx);
+    const textPropertyWidgetComponent = next(temp, '', ctx);
     const textPropertyWidgetComponentProto = getPrototypeOf(textPropertyWidgetComponent);
     registerPatch(plugin, textPropertyWidgetComponentProto, {
       getDisplayText: () =>
@@ -188,7 +164,7 @@ function renderWidget(
       const str = newValue as null | string;
       requestAnimationFrame(() => {
         el.empty();
-        renderWidget(el, modifyData(data, str), ctx, next, plugin);
+        renderWidget(el, str, ctx, next, plugin);
       });
     }
   };
@@ -213,7 +189,7 @@ function renderWidget(
     createChildWidget(startOffset, value.length);
   }
 
-  const widget = renderTextPropertyWidgetComponent(next, el, data, ctxWithRerenderOnChange);
+  const widget = next(el, data, ctxWithRerenderOnChange);
   if (hasMultipleLinks) {
     widget.inputEl.hide();
     widget.linkEl.hide();
@@ -235,9 +211,8 @@ function renderWidget(
 
     const childWidgetValue = value.slice(widgetStartOffset, widgetEndOffset);
     const childEl = childWidgetsContainerEl.createDiv('metadata-property-value');
-    const childWidgetData = modifyData(data, childWidgetValue);
 
-    const childWidget = renderTextPropertyWidgetComponent(next, childEl, childWidgetData, ctx);
+    const childWidget = next(childEl, childWidgetValue, ctx);
     childWidget.inputEl.addEventListener('focus', () => {
       requestAnimationFrame(() => {
         const caretOffset = getCaretCharacterOffset();

@@ -6,7 +6,6 @@ import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
 import type {
   MetadataTypeManagerRegisteredTypeWidgetsRecord,
   MultitextPropertyWidgetComponent,
-  PropertyEntryData,
   PropertyRenderContext
 } from 'obsidian-typings';
 
@@ -35,20 +34,6 @@ export function patchMultiTextPropertyWidgetComponent(plugin: Plugin): void {
     render: (next: RenderMultiTextPropertyWidgetComponentFn): RenderMultiTextPropertyWidgetComponentFn => (el, data, ctx) =>
       renderWidget(el, data, ctx, next, plugin)
   });
-}
-
-function renderMultiTextPropertyWidgetComponent(
-  next: RenderMultiTextPropertyWidgetComponentFn,
-  el: HTMLElement,
-  data: (null | string[]) | PropertyEntryData<null | string[]>,
-  ctx: PropertyRenderContext
-): MultitextPropertyWidgetComponent {
-  if (Array.isArray(data)) {
-    return next(el, data, ctx);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  return next(el, data as PropertyEntryData<string[]>, ctx);
 }
 
 function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next: () => void): void {
@@ -138,7 +123,7 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
 
 function renderWidget(
   el: HTMLElement,
-  data: (null | string[]) | PropertyEntryData<null | string[]>,
+  data: string[],
   ctx: PropertyRenderContext,
   next: RenderMultiTextPropertyWidgetComponentFn,
   plugin: Plugin
@@ -159,5 +144,5 @@ function renderWidget(
     temp.remove();
   }
 
-  return renderMultiTextPropertyWidgetComponent(next, el, data, ctx);
+  return next(el, data, ctx);
 }
