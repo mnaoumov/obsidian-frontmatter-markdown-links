@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.5.6
+
+- Remove previous implementation hooks
+- Update libs
+
 ## 2.5.5
 
 - Update libs
