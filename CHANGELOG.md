@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.5.7
+
+- Init displayText (#20)
+- Update libs
+
 ## 2.5.6
 
 - Remove previous implementation hooks
