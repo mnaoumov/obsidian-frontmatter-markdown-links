@@ -123,7 +123,7 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
 
 function renderWidget(
   el: HTMLElement,
-  data: string[],
+  data: string | string[],
   ctx: PropertyRenderContext,
   next: RenderMultiTextPropertyWidgetComponentFn,
   plugin: Plugin
