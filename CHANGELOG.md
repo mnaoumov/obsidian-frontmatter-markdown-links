@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.5.8
+
+Deploy
+
 ## 2.5.7
 
 - Init displayText (#20)
