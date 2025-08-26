@@ -127,7 +127,7 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
 
 function renderWidget(
   el: HTMLElement,
-  data: null | string | string[],
+  data: unknown,
   ctx: PropertyRenderContext,
   next: RenderMultiTextPropertyWidgetComponentFn,
   plugin: Plugin

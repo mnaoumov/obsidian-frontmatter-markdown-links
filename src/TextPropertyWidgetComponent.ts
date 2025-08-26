@@ -2,7 +2,6 @@ import type { SearchResult } from 'obsidian';
 import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
 import type {
   MetadataTypeManagerRegisteredTypeWidgetsRecord,
-  PropertyEntryData,
   PropertyRenderContext,
   TextPropertyWidgetComponent
 } from 'obsidian-typings';
@@ -16,6 +15,7 @@ import {
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
 import type { Plugin } from './Plugin.ts';
+
 import { extractDisplayText } from './Utils.ts';
 
 type GetValueFn = AbstractInputSuggest<MySearchResult>['getValue'];
@@ -111,10 +111,6 @@ function getValue(next: GetValueFn, suggest: AbstractInputSuggest<MySearchResult
   return value.slice(openBracketBeforeCaretIndex, caretOffset);
 }
 
-function isPropertyEntryData(data: null | PropertyEntryData<null | string> | string): data is PropertyEntryData<null | string> {
-  return (data as null | Partial<PropertyEntryData<null | string>>)?.value !== undefined;
-}
-
 function isWikilink(textPropertyComponent: TextPropertyWidgetComponent): boolean {
   const parseLinkResult = getParseLinkResult(textPropertyComponent);
   return !!parseLinkResult && (parseLinkResult.isWikilink || !parseLinkResult.isExternal);
@@ -130,11 +126,17 @@ function render(textPropertyComponent: TextPropertyWidgetComponent, next: () => 
 
 function renderWidget(
   el: HTMLElement,
-  data: null | string,
+  data: unknown,
   ctx: PropertyRenderContext,
   next: RenderTextPropertyWidgetComponentFn,
   plugin: Plugin
 ): TextPropertyWidgetComponent {
+  if (typeof data !== 'string') {
+    return next(el, data, ctx);
+  }
+
+  const str = data;
+
   if (!isTextPropertyWidgetComponentPatched) {
     const temp = el.createDiv();
     const textPropertyWidgetComponent = next(temp, '', ctx);
@@ -165,21 +167,18 @@ function renderWidget(
     ...ctx,
     onChange: (newValue: unknown): void => {
       ctx.onChange(newValue);
-      const str = newValue as null | string;
       requestAnimationFrame(() => {
         el.empty();
-        renderWidget(el, str, ctx, next, plugin);
+        renderWidget(el, newValue, ctx, next, plugin);
       });
     }
   };
 
-  const value = (isPropertyEntryData(data) ? data.value : data) ?? '';
-
-  const parseLinkResults = parseLinks(value);
+  const parseLinkResults = parseLinks(str);
   el.addClass('frontmatter-markdown-links', 'text-property-widget-component');
   const childWidgetsContainerEl = el.createDiv('metadata-property-value');
 
-  const hasMultipleLinks = parseLinkResults.length > 0 && parseLinkResults[0]?.raw !== value;
+  const hasMultipleLinks = parseLinkResults.length > 0 && parseLinkResults[0]?.raw !== str;
 
   if (hasMultipleLinks) {
     let startOffset = 0;
@@ -190,10 +189,10 @@ function renderWidget(
       startOffset = parseLinkResult.endOffset;
     }
 
-    createChildWidget(startOffset, value.length);
+    createChildWidget(startOffset, str.length);
   }
 
-  const widget = next(el, data, ctxWithRerenderOnChange);
+  const widget = next(el, str, ctxWithRerenderOnChange);
   if (hasMultipleLinks) {
     widget.inputEl.hide();
     widget.linkEl.hide();
@@ -213,7 +212,7 @@ function renderWidget(
       return;
     }
 
-    const childWidgetValue = value.slice(widgetStartOffset, widgetEndOffset);
+    const childWidgetValue = str.slice(widgetStartOffset, widgetEndOffset);
     const childEl = childWidgetsContainerEl.createDiv('metadata-property-value');
 
     const childWidget = next(childEl, childWidgetValue, ctx);
