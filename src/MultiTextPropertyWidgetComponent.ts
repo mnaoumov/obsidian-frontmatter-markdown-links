@@ -10,12 +10,16 @@ import type {
 } from 'obsidian-typings';
 
 import { getPrototypeOf } from 'obsidian-dev-utils/ObjectUtils';
-import { parseLinks } from 'obsidian-dev-utils/obsidian/Link';
+import {
+  parseLinks,
+  splitSubpath
+} from 'obsidian-dev-utils/obsidian/Link';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
 import type { Plugin } from './Plugin.ts';
 
 import { attachLinkData } from './LinkData.ts';
+import { extractDisplayText } from './Utils.ts';
 
 interface MultiSelectComponent extends Component {
   renderValues(): void;
@@ -103,10 +107,10 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
     }
 
     function renderChild(childEl: HTMLElement, parseLinkResult: ParseLinkResult): void {
-      childEl.setText(parseLinkResult.alias ?? parseLinkResult.url);
+      childEl.setText(extractDisplayText(parseLinkResult));
       childEl.addClass(parseLinkResult.isExternal ? 'external-link' : 'internal-link');
       if (!parseLinkResult.isExternal) {
-        const resolvedLink = app.metadataCache.getFirstLinkpathDest(parseLinkResult.url, app.workspace.getActiveFile()?.path ?? '');
+        const resolvedLink = app.metadataCache.getFirstLinkpathDest(splitSubpath(parseLinkResult.url).linkPath, app.workspace.getActiveFile()?.path ?? '');
         if (!resolvedLink) {
           childEl.addClass('is-unresolved');
         }

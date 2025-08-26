@@ -16,6 +16,7 @@ import {
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
 import type { Plugin } from './Plugin.ts';
+import { extractDisplayText } from './Utils.ts';
 
 type GetValueFn = AbstractInputSuggest<MySearchResult>['getValue'];
 type RenderTextPropertyWidgetComponentFn = MetadataTypeManagerRegisteredTypeWidgetsRecord['text']['render'];
@@ -64,7 +65,10 @@ function getCaretCharacterOffset(): number {
 
 function getDisplayText(textPropertyComponent: TextPropertyWidgetComponent): string {
   const parseLinkResult = getParseLinkResult(textPropertyComponent);
-  return parseLinkResult?.alias ?? parseLinkResult?.url ?? textPropertyComponent.value;
+  if (parseLinkResult) {
+    return extractDisplayText(parseLinkResult);
+  }
+  return textPropertyComponent.value;
 }
 
 function getLinkText(textPropertyComponent: TextPropertyWidgetComponent): string {
