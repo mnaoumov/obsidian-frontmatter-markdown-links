@@ -332,9 +332,7 @@ export class Plugin extends PluginBase<PluginTypes> {
             startOffset: parseLinkResult.startOffset
           } as FrontmatterLinkCacheWithOffsets;
 
-        if (parseLinkResult.alias !== undefined) {
-          link.displayText = parseLinkResult.alias;
-        }
+        link.displayText = parseLinkResult.alias ?? parseLinkResult.url;
 
         cache.frontmatterLinks.push(link);
 
