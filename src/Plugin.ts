@@ -7,7 +7,15 @@ import type {
   TAbstractFile
 } from 'obsidian';
 import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/FrontmatterLinkCacheWithOffsets';
-import type { ClickableToken } from 'obsidian-typings';
+import type {
+  BasesContextConstructor,
+  BasesControl,
+  BasesExternalLink,
+  BasesNote,
+  BasesView,
+  ClickableToken,
+  RenderContext
+} from 'obsidian-typings';
 
 import {
   Keymap,
@@ -20,7 +28,9 @@ import {
 import { filterInPlace } from 'obsidian-dev-utils/Array';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
 import { ensureLoaded } from 'obsidian-dev-utils/HTMLElement';
+import { getPrototypeOf } from 'obsidian-dev-utils/ObjectUtils';
 import {
+  parseLink,
   parseLinks,
   splitSubpath
 } from 'obsidian-dev-utils/obsidian/Link';
@@ -29,6 +39,10 @@ import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
+import {
+  InternalPluginName,
+  ViewType
+} from 'obsidian-typings/implementations';
 
 import type { PluginTypes } from './PluginTypes.ts';
 
@@ -41,11 +55,16 @@ import { PluginSettingsTab } from './PluginSettingsTab.ts';
 import { patchTextPropertyWidgetComponent } from './TextPropertyWidgetComponent.ts';
 import { isSourceMode } from './Utils.ts';
 
+type BasesNoteGetFn = BasesNote['get'];
 type GetClickableTokenAtFn = Editor['getClickableTokenAt'];
+
+type RenderToFn = BasesControl['renderTo'];
 type ShowAtMouseEventFn = Menu['showAtMouseEvent'];
 
 export class Plugin extends PluginBase<PluginTypes> {
+  private basesExternalLinkPatched = false;
   private readonly currentlyProcessingFiles = new Set<string>();
+  private readonly displayTexts = new WeakMap<BasesExternalLink, string>();
   private frontmatterMarkdownLinksCache!: FrontmatterMarkdownLinksCache;
   private isEditorPatched = false;
 
@@ -75,6 +94,8 @@ export class Plugin extends PluginBase<PluginTypes> {
         };
       }
     });
+
+    await this.patchBases();
   }
 
   protected override async onloadImpl(): Promise<void> {
@@ -89,6 +110,14 @@ export class Plugin extends PluginBase<PluginTypes> {
     this.register(this.refreshMarkdownViews.bind(this));
     this.refreshMarkdownViews();
     this.registerIFrameEvents();
+  }
+
+  private basesExternalLinkRenderTo(next: RenderToFn, basesExternalLink: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
+    next.call(basesExternalLink, containerEl, renderContext);
+    const displayText = this.displayTexts.get(basesExternalLink);
+    if (displayText !== undefined) {
+      containerEl.find('a').setText(displayText);
+    }
   }
 
   private async clearMetadataCache(): Promise<void> {
@@ -251,6 +280,78 @@ export class Plugin extends PluginBase<PluginTypes> {
     }
 
     this.frontmatterMarkdownLinksCache.rename(oldPath, file);
+  }
+
+  private noteGet(next: BasesNoteGetFn, note: BasesNote, key: string): BasesControl {
+    const value = note.data[key];
+    if (typeof value === 'string') {
+      const parseLinkResult = parseLink(value);
+      if (!parseLinkResult || parseLinkResult.isWikilink) {
+        return next.call(note, key);
+      }
+
+      if (parseLinkResult.isExternal) {
+        note.data[key] = parseLinkResult.url;
+        const basesExternalLink = next.call(note, key) as BasesExternalLink;
+        if (parseLinkResult.alias) {
+          this.displayTexts.set(basesExternalLink, parseLinkResult.alias);
+        }
+        if (!this.basesExternalLinkPatched) {
+          this.basesExternalLinkPatched = true;
+          const that = this;
+          registerPatch(this, getPrototypeOf(basesExternalLink), {
+            renderTo: (nextRenderToFn: RenderToFn): RenderToFn => {
+              return function renderToPatched(this: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
+                that.basesExternalLinkRenderTo(nextRenderToFn, this, containerEl, renderContext);
+              };
+            }
+          });
+        }
+        return basesExternalLink;
+      }
+
+      const wikilink = parseLinkResult.alias ? `[[${parseLinkResult.url}|${parseLinkResult.alias}]]` : `[[${parseLinkResult.url}]]`;
+      note.data[key] = wikilink;
+      return next.call(note, key);
+    }
+    return next.call(note, key);
+  }
+
+  private async patchBases(): Promise<void> {
+    const basesPlugin = this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Bases);
+    if (!basesPlugin) {
+      return;
+    }
+
+    const tempName = `__TEMP__${window.crypto.randomUUID()}`;
+    const tempMdFile = await this.app.vault.create(`${tempName}.md`, '');
+    const tempBasesFile = await this.app.vault.create(`${tempName}.base`, '');
+
+    const leaf = this.app.workspace.createLeafInTabGroup();
+    await leaf.setViewState({
+      state: {
+        file: tempBasesFile.path
+      },
+      type: ViewType.Bases
+    }, {});
+
+    const basesView = leaf.view as BasesView;
+    const basesContextCtor = basesView.controller.ctx.constructor as BasesContextConstructor;
+    const ctx = new basesContextCtor(this.app, {}, {}, tempMdFile);
+    const note = ctx._local.note;
+    const that = this;
+
+    registerPatch(this, getPrototypeOf(note), {
+      get: (next: BasesNoteGetFn): BasesNoteGetFn => {
+        return function getPatched(this: BasesNote, key: string): BasesControl {
+          return that.noteGet(next, this, key);
+        };
+      }
+    });
+
+    await basesView.onUnloadFile(tempBasesFile);
+    await this.app.vault.delete(tempBasesFile);
+    await this.app.vault.delete(tempMdFile);
   }
 
   private async processAllNotes(): Promise<void> {
