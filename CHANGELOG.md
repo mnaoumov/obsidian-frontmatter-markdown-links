@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.1
+
+- Update libs
+
 ## 2.6.0
 
 - Patch bases cards (#18)
