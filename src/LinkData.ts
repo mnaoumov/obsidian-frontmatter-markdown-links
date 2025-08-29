@@ -31,7 +31,12 @@ export function getDataAttributes(linkData: LinkData | null): Record<string, str
 }
 
 export function getLinkData(el: HTMLElement): LinkData | null {
-  const dataset = el.dataset as Partial<Dataset>;
+  const parentEl = el.closest('[data-frontmatter-markdown-links-link-data]');
+  if (!(parentEl instanceof HTMLElement)) {
+    return null;
+  }
+
+  const dataset = parentEl.dataset as Partial<Dataset>;
   if (!dataset.frontmatterMarkdownLinksLinkData) {
     return null;
   }
