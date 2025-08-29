@@ -40,6 +40,11 @@ export function patchMultiTextPropertyWidgetComponent(plugin: Plugin): void {
   });
 }
 
+function addClassToElementAndParent(el: HTMLElement, className: string): void {
+  el.addClass(className);
+  el.parentElement?.addClass(className);
+}
+
 function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next: () => void): void {
   next.call(multiSelectComponent);
   const renderedItemEls: HTMLElement[] = Array.from(multiSelectComponent.rootEl.querySelectorAll('.multi-select-pill-content'));
@@ -107,12 +112,13 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
     }
 
     function renderChild(childEl: HTMLElement, parseLinkResult: ParseLinkResult): void {
-      childEl.setText(extractDisplayText(parseLinkResult));
-      childEl.addClass(parseLinkResult.isExternal ? 'external-link' : 'internal-link');
+      childEl.setText('');
+      childEl.createSpan({ text: extractDisplayText(parseLinkResult) });
+      addClassToElementAndParent(childEl, parseLinkResult.isExternal ? 'external-link' : 'internal-link');
       if (!parseLinkResult.isExternal) {
         const resolvedLink = app.metadataCache.getFirstLinkpathDest(splitSubpath(parseLinkResult.url).linkPath, app.workspace.getActiveFile()?.path ?? '');
         if (!resolvedLink) {
-          childEl.addClass('is-unresolved');
+          addClassToElementAndParent(childEl, 'is-unresolved');
         }
       }
       childEl.setAttribute('title', parseLinkResult.url);
