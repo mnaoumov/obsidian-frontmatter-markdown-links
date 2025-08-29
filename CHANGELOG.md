@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.6.2
+
+- Wrap list links in span and add parent classes (#20)
+- Handle clicks using parent element data
+
 ## 2.6.1
 
 - Update libs
