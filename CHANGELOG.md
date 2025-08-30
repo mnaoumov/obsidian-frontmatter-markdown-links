@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.3
+
+- Fix double icon for external-link (#21)
+
 ## 2.6.2
 
 - Wrap list links in span and add parent classes (#20)
@@ -7,13 +11,12 @@
 
 ## 2.6.1
 
-- Update libs
+- Minor changes
 
 ## 2.6.0
 
 - Patch bases cards (#18)
 - Transform subpath urls
-- Update libs
 
 ## 2.5.8
 
@@ -22,24 +25,22 @@ Deploy
 ## 2.5.7
 
 - Init displayText (#20)
-- Update libs
 
 ## 2.5.6
 
 - Remove previous implementation hooks
-- Update libs
 
 ## 2.5.5
 
-- Update libs
+- Minor changes
 
 ## 2.5.4
 
-- Update libs
+- Minor changes
 
 ## 2.5.3
 
-- Update libs
+- Minor changes
 
 ## 2.5.2
 
@@ -55,7 +56,6 @@ Deploy
 - Show suggestions for inner links
 - Fix padding for first/last part
 - Restore to big widget for editing
-- Update libs
 
 ## 2.4.3
 
@@ -63,7 +63,6 @@ Deploy
 - Make multi text in one line
 - Prevent click
 - Make widget working for 1.8.10 and 1.9.6
-- Update libs
 
 ## 2.4.2
 
@@ -71,7 +70,7 @@ Deploy
 
 ## 2.4.1
 
-- Update libs
+- Minor changes
 
 ## 2.4.0
 
@@ -98,11 +97,10 @@ Deploy
 ## 2.2.0
 
 - Fix source mode context menu
-- Update libs
 
 ## 2.1.4
 
-- Update libs (for https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/9)
+- Update libs (#9)
 
 ## 2.1.3
 
@@ -115,29 +113,26 @@ Deploy
 ## 2.1.1
 
 - Unify context menus
-- Update libs
 
 ## 2.1.0
 
 - shouldShowInitializationNotice
-- Update libs
 
 ## 2.0.8
 
 - Don't handle wikilink clicks
-- Update libs
 
 ## 2.0.7
 
-- Update libs
+- Minor changes
 
 ## 2.0.6
 
-- Update libs
+- Minor changes
 
 ## 2.0.5
 
-- Update libs
+- Minor changes
 
 ## 2.0.4
 
@@ -150,7 +145,6 @@ Deploy
 ## 2.0.2
 
 - Add support for urls with spaces
-- Update libs
 
 ## 2.0.1
 
@@ -167,19 +161,18 @@ Deploy
 ## 1.10.5
 
 - Improve performance
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/26.15.2
 
 ## 1.10.4
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/24.1.1
+- Minor changes
 
 ## 1.10.3
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/24.1.0
+- Minor changes
 
 ## 1.10.2
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/24.0.1
+- Minor changes
 
 ## 1.10.1
 
@@ -188,27 +181,23 @@ Deploy
 ## 1.10.0
 
 - Show progress bar
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/21.1.0
 
 ## 1.9.0
 
 - Make links clickable in canvas iframes
 - Trigger metadata change on unload
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/19.7.0
 
 ## 1.8.0
 
 - Add hover preview
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/19.4.0
 
 ## 1.7.2
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/19.2.1
+- Minor changes
 
 ## 1.7.1
 
 - Update template
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/18.4.2
 
 ## 1.7.0
 
@@ -224,12 +213,10 @@ Deploy
 ## 1.5.5
 
 - Lint
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/17.2.2
 
 ## 1.5.4
 
 - Fix for mobile
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/16.6.4
 
 ## 1.5.3
 
@@ -237,11 +224,11 @@ Deploy
 
 ## 1.5.2
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/16.1.0
+- Minor changes
 
 ## 1.5.1
 
-- https://github.com/mnaoumov/obsidian-dev-utils/releases/tag/15.0.0
+- Minor changes
 
 ## 1.5.0
 
@@ -249,11 +236,11 @@ Deploy
 
 ## 1.4.2
 
-- Update libs
+- Minor changes
 
 ## 1.4.1
 
-- Update libs
+- Minor changes
 
 ## 1.4.0
 
