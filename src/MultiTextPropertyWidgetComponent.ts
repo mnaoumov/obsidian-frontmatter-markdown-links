@@ -114,8 +114,10 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
     function renderChild(childEl: HTMLElement, parseLinkResult: ParseLinkResult): void {
       childEl.setText('');
       childEl.createSpan({ text: extractDisplayText(parseLinkResult) });
-      addClassToElementAndParent(childEl, parseLinkResult.isExternal ? 'external-link' : 'internal-link');
-      if (!parseLinkResult.isExternal) {
+      if (parseLinkResult.isExternal) {
+        childEl.addClass('external-link');
+      } else {
+        addClassToElementAndParent(childEl, 'internal-link');
         const resolvedLink = app.metadataCache.getFirstLinkpathDest(splitSubpath(parseLinkResult.url).linkPath, app.workspace.getActiveFile()?.path ?? '');
         if (!resolvedLink) {
           addClassToElementAndParent(childEl, 'is-unresolved');
