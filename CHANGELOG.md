@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.4
+
+- Minor changes
+
 ## 2.6.3
 
 - Fix double icon for external-link (#21)
