@@ -27,7 +27,6 @@ import {
 } from 'obsidian';
 import { filterInPlace } from 'obsidian-dev-utils/Array';
 import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
-import { ensureLoaded } from 'obsidian-dev-utils/HTMLElement';
 import { getPrototypeOf } from 'obsidian-dev-utils/ObjectUtils';
 import {
   parseLink,
@@ -82,7 +81,6 @@ export class Plugin extends PluginBase<PluginTypes> {
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
     this.registerEvent(this.app.workspace.on('file-open', this.handleFileOpen.bind(this)));
-    this.registerDomEvents(document);
     this.handleFileOpen();
 
     const that = this;
@@ -96,6 +94,9 @@ export class Plugin extends PluginBase<PluginTypes> {
     });
 
     await this.patchBases();
+
+    this.registerPopupDocumentDomEvent('mousedown', this.handleMouseDown.bind(this), { capture: true });
+    this.registerPopupDocumentDomEvent('mouseover', this.handleMouseOver.bind(this), { capture: true });
   }
 
   protected override async onloadImpl(): Promise<void> {
@@ -109,7 +110,6 @@ export class Plugin extends PluginBase<PluginTypes> {
     });
     this.register(this.refreshMarkdownViews.bind(this));
     this.refreshMarkdownViews();
-    this.registerIFrameEvents();
   }
 
   private basesExternalLinkRenderTo(next: RenderToFn, basesExternalLink: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
@@ -489,40 +489,6 @@ export class Plugin extends PluginBase<PluginTypes> {
       leaf.view.metadataEditor.synchronize({});
       leaf.view.metadataEditor.synchronize(frontmatter);
     }
-  }
-
-  private registerDomEvents(document: Document): void {
-    this.registerDomEvent(document, 'mousedown', this.handleMouseDown.bind(this), { capture: true });
-    this.registerDomEvent(document, 'mouseover', this.handleMouseOver.bind(this), { capture: true });
-  }
-
-  private registerIFrameEvents(): void {
-    const observer = new MutationObserver((mutationsList) => {
-      for (const mutation of mutationsList) {
-        if (mutation.type !== 'childList') {
-          continue;
-        }
-
-        for (const node of Array.from(mutation.addedNodes)) {
-          if (!(node instanceof HTMLIFrameElement)) {
-            continue;
-          }
-
-          invokeAsyncSafely(async () => {
-            await ensureLoaded(node);
-            if (node.contentDocument) {
-              this.registerDomEvents(node.contentDocument);
-            }
-          });
-        }
-      }
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    this.register(() => {
-      observer.disconnect();
-    });
   }
 
   private showAtMouseEvent(next: ShowAtMouseEventFn, menu: Menu, evt: MouseEvent): Menu {
