@@ -7,10 +7,12 @@ import type {
   TAbstractFile
 } from 'obsidian';
 import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/FrontmatterLinkCacheWithOffsets';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
 import type {
   BasesContextConstructor,
   BasesControl,
   BasesExternalLink,
+  BasesList,
   BasesNote,
   BasesView,
   ClickableToken,
@@ -60,10 +62,13 @@ type GetClickableTokenAtFn = Editor['getClickableTokenAt'];
 type RenderToFn = BasesControl['renderTo'];
 type ShowAtMouseEventFn = Menu['showAtMouseEvent'];
 
+const EXTERNAL_LINK_PREFIX = 'https://EXTERNAL_LINK_PREFIX.com/';
+
 export class Plugin extends PluginBase<PluginTypes> {
   private basesExternalLinkPatched = false;
   private readonly currentlyProcessingFiles = new Set<string>();
-  private readonly displayTexts = new WeakMap<BasesExternalLink, string>();
+  private externalLinkMaxId = 0;
+  private readonly externalLinks = new Map<number, ParseLinkResult>();
   private frontmatterMarkdownLinksCache!: FrontmatterMarkdownLinksCache;
   private isEditorPatched = false;
 
@@ -114,10 +119,12 @@ export class Plugin extends PluginBase<PluginTypes> {
 
   private basesExternalLinkRenderTo(next: RenderToFn, basesExternalLink: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
     next.call(basesExternalLink, containerEl, renderContext);
-    const displayText = this.displayTexts.get(basesExternalLink);
-    if (displayText !== undefined) {
-      containerEl.find('a').setText(displayText);
-    }
+    this.fixExternalLinks(containerEl);
+  }
+
+  private basesListRenderTo(next: RenderToFn, basesExternalLink: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
+    next.call(basesExternalLink, containerEl, renderContext);
+    this.fixExternalLinks(containerEl);
   }
 
   private async clearMetadataCache(): Promise<void> {
@@ -139,6 +146,29 @@ export class Plugin extends PluginBase<PluginTypes> {
       }
       const data = await this.app.vault.read(file);
       this.app.metadataCache.trigger('changed', file, data, cache);
+    }
+  }
+
+  private fixExternalLinks(containerEl: HTMLElement): void {
+    const aEls = containerEl.querySelectorAll<HTMLAnchorElement>('a');
+
+    for (const aEl of aEls) {
+      if (!aEl.href.toLowerCase().startsWith(EXTERNAL_LINK_PREFIX.toLowerCase())) {
+        continue;
+      }
+
+      const linkId = Number(aEl.href.slice(EXTERNAL_LINK_PREFIX.length));
+      const parseLinkResult = this.externalLinks.get(linkId);
+      if (!parseLinkResult) {
+        return;
+      }
+
+      this.externalLinks.delete(linkId);
+
+      aEl.href = parseLinkResult.url;
+      if (parseLinkResult.alias) {
+        aEl.setText(parseLinkResult.alias);
+      }
     }
   }
 
@@ -284,37 +314,40 @@ export class Plugin extends PluginBase<PluginTypes> {
 
   private noteGet(next: BasesNoteGetFn, note: BasesNote, key: string): BasesControl {
     const value = note.data[key];
-    if (typeof value === 'string') {
-      const parseLinkResult = parseLink(value);
-      if (!parseLinkResult || parseLinkResult.isWikilink) {
-        return next.call(note, key);
-      }
 
-      if (parseLinkResult.isExternal) {
-        note.data[key] = parseLinkResult.url;
-        const basesExternalLink = next.call(note, key) as BasesExternalLink;
-        if (parseLinkResult.alias) {
-          this.displayTexts.set(basesExternalLink, parseLinkResult.alias);
-        }
-        if (!this.basesExternalLinkPatched) {
-          this.basesExternalLinkPatched = true;
-          const that = this;
-          registerPatch(this, getPrototypeOf(basesExternalLink), {
-            renderTo: (nextRenderToFn: RenderToFn): RenderToFn => {
-              return function renderToPatched(this: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
-                that.basesExternalLinkRenderTo(nextRenderToFn, this, containerEl, renderContext);
-              };
-            }
-          });
-        }
-        return basesExternalLink;
-      }
+    if (!this.basesExternalLinkPatched) {
+      this.basesExternalLinkPatched = true;
+      const that = this;
 
-      const wikilink = parseLinkResult.alias ? `[[${parseLinkResult.url}|${parseLinkResult.alias}]]` : `[[${parseLinkResult.url}]]`;
-      note.data[key] = wikilink;
-      return next.call(note, key);
+      note.data[key] = EXTERNAL_LINK_PREFIX;
+      const basesExternalLink = next.call(note, key) as BasesExternalLink;
+      registerPatch(this, getPrototypeOf(basesExternalLink), {
+        renderTo: (nextRenderToFn: RenderToFn): RenderToFn => {
+          return function renderToPatched(this: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
+            that.basesExternalLinkRenderTo(nextRenderToFn, this, containerEl, renderContext);
+          };
+        }
+      });
+
+      note.data[key] = [EXTERNAL_LINK_PREFIX];
+      const basesList = next.call(note, key) as BasesList;
+      registerPatch(this, getPrototypeOf(basesList), {
+        renderTo: (nextRenderToFn: RenderToFn): RenderToFn => {
+          return function renderToPatched(this: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
+            that.basesListRenderTo(nextRenderToFn, this, containerEl, renderContext);
+          };
+        }
+      });
+
+      note.data[key] = value;
     }
-    return next.call(note, key);
+
+    try {
+      note.data[key] = this.patchLink(value);
+      return next.call(note, key);
+    } finally {
+      note.data[key] = value;
+    }
   }
 
   private async patchBases(): Promise<void> {
@@ -352,6 +385,29 @@ export class Plugin extends PluginBase<PluginTypes> {
     await basesView.onUnloadFile(tempBasesFile);
     await this.app.vault.delete(tempBasesFile);
     await this.app.vault.delete(tempMdFile);
+  }
+
+  private patchLink(value: unknown): unknown {
+    if (typeof value === 'string') {
+      const parseLinkResult = parseLink(value);
+      if (!parseLinkResult || parseLinkResult.isWikilink) {
+        return value;
+      }
+
+      if (parseLinkResult.isExternal) {
+        this.externalLinkMaxId++;
+        this.externalLinks.set(this.externalLinkMaxId, parseLinkResult);
+        return `${EXTERNAL_LINK_PREFIX}${String(this.externalLinkMaxId)}`;
+      }
+
+      return parseLinkResult.alias ? `[[${parseLinkResult.url}|${parseLinkResult.alias}]]` : `[[${parseLinkResult.url}]]`;
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => this.patchLink(item));
+    }
+
+    return value;
   }
 
   private async processAllNotes(): Promise<void> {
