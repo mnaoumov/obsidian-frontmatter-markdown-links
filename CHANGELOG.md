@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.5
+
+- Fix external list links in bases
+
 ## 2.6.4
 
 - Minor changes
