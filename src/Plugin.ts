@@ -415,6 +415,9 @@ export class Plugin extends PluginBase<PluginTypes> {
       }
 
       if (parseLinkResult.isExternal) {
+        if (parseLinkResult.alias === undefined) {
+          return parseLinkResult.url;
+        }
         this.externalLinkMaxId++;
         this.externalLinks.set(this.externalLinkMaxId, parseLinkResult);
         return `${EXTERNAL_LINK_PREFIX}${String(this.externalLinkMaxId)}`;
