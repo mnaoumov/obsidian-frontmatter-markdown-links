@@ -25,10 +25,14 @@ import {
   Menu,
   MenuItem,
   parseYaml,
-  TFile
+  TFile,
+  WorkspaceLeaf
 } from 'obsidian';
 import { filterInPlace } from 'obsidian-dev-utils/Array';
-import { invokeAsyncSafely } from 'obsidian-dev-utils/Async';
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely
+} from 'obsidian-dev-utils/Async';
 import { getPrototypeOf } from 'obsidian-dev-utils/ObjectUtils';
 import {
   parseLink,
@@ -65,11 +69,12 @@ type ShowAtMouseEventFn = Menu['showAtMouseEvent'];
 const EXTERNAL_LINK_PREFIX = 'https://EXTERNAL_LINK_PREFIX.com/';
 
 export class Plugin extends PluginBase<PluginTypes> {
-  private basesExternalLinkPatched = false;
   private readonly currentlyProcessingFiles = new Set<string>();
   private externalLinkMaxId = 0;
   private readonly externalLinks = new Map<number, ParseLinkResult>();
   private frontmatterMarkdownLinksCache!: FrontmatterMarkdownLinksCache;
+  private isBasesExternalLinkPatched = false;
+  private isBasesViewPatched = false;
   private isEditorPatched = false;
 
   protected override createSettingsManager(): PluginSettingsManager {
@@ -98,10 +103,14 @@ export class Plugin extends PluginBase<PluginTypes> {
       }
     });
 
-    await this.patchBases();
-
     this.registerPopupDocumentDomEvent('mousedown', this.handleMouseDown.bind(this), { capture: true });
     this.registerPopupDocumentDomEvent('mouseover', this.handleMouseOver.bind(this), { capture: true });
+
+    await this.handleActiveLeafChange(this.app.workspace.getLeavesOfType(ViewType.Bases)[0] ?? null);
+
+    if (!this.isBasesViewPatched) {
+      this.registerEvent(this.app.workspace.on('active-leaf-change', convertAsyncToSync(this.handleActiveLeafChange.bind(this))));
+    }
   }
 
   protected override async onloadImpl(): Promise<void> {
@@ -207,6 +216,54 @@ export class Plugin extends PluginBase<PluginTypes> {
       type: linkData.isExternalUrl ? 'external-link' : 'internal-link'
     } as ClickableToken;
     return clickableToken;
+  }
+
+  private async handleActiveLeafChange(leaf: null | WorkspaceLeaf): Promise<void> {
+    if (this.isBasesViewPatched) {
+      return;
+    }
+
+    const basesPlugin = this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Bases);
+    if (!basesPlugin) {
+      return;
+    }
+
+    if (!leaf) {
+      return;
+    }
+
+    if (leaf.view.getViewType() !== ViewType.Bases) {
+      return;
+    }
+
+    await leaf.loadIfDeferred();
+
+    const basesView = leaf.view as BasesView;
+    const basesContextCtor = basesView.controller.ctx.constructor as BasesContextConstructor;
+
+    let mdFile = this.app.vault.getMarkdownFiles()[0];
+    let shouldDeleteMdFile = false;
+    if (!mdFile) {
+      mdFile = await this.app.vault.create(`__TEMP__${window.crypto.randomUUID()}.md`, '');
+      shouldDeleteMdFile = true;
+    }
+
+    const ctx = new basesContextCtor(this.app, {}, {}, mdFile);
+    const that = this;
+
+    registerPatch(this, getPrototypeOf(ctx._local.note), {
+      get: (next: BasesNoteGetFn): BasesNoteGetFn => {
+        return function getPatched(this: BasesNote, key: string): BasesControl {
+          return that.noteGet(next, this, key);
+        };
+      }
+    });
+
+    if (shouldDeleteMdFile) {
+      await this.app.vault.delete(mdFile);
+    }
+
+    this.isBasesViewPatched = true;
   }
 
   private handleDelete(file: TAbstractFile): void {
@@ -315,8 +372,8 @@ export class Plugin extends PluginBase<PluginTypes> {
   private noteGet(next: BasesNoteGetFn, note: BasesNote, key: string): BasesControl {
     const value = note.data[key];
 
-    if (!this.basesExternalLinkPatched) {
-      this.basesExternalLinkPatched = true;
+    if (!this.isBasesExternalLinkPatched) {
+      this.isBasesExternalLinkPatched = true;
       const that = this;
 
       note.data[key] = EXTERNAL_LINK_PREFIX;
@@ -348,43 +405,6 @@ export class Plugin extends PluginBase<PluginTypes> {
     } finally {
       note.data[key] = value;
     }
-  }
-
-  private async patchBases(): Promise<void> {
-    const basesPlugin = this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Bases);
-    if (!basesPlugin) {
-      return;
-    }
-
-    const tempName = `__TEMP__${window.crypto.randomUUID()}`;
-    const tempMdFile = await this.app.vault.create(`${tempName}.md`, '');
-    const tempBasesFile = await this.app.vault.create(`${tempName}.base`, '');
-
-    const leaf = this.app.workspace.createLeafInTabGroup();
-    await leaf.setViewState({
-      state: {
-        file: tempBasesFile.path
-      },
-      type: ViewType.Bases
-    }, {});
-
-    const basesView = leaf.view as BasesView;
-    const basesContextCtor = basesView.controller.ctx.constructor as BasesContextConstructor;
-    const ctx = new basesContextCtor(this.app, {}, {}, tempMdFile);
-    const note = ctx._local.note;
-    const that = this;
-
-    registerPatch(this, getPrototypeOf(note), {
-      get: (next: BasesNoteGetFn): BasesNoteGetFn => {
-        return function getPatched(this: BasesNote, key: string): BasesControl {
-          return that.noteGet(next, this, key);
-        };
-      }
-    });
-
-    await basesView.onUnloadFile(tempBasesFile);
-    await this.app.vault.delete(tempBasesFile);
-    await this.app.vault.delete(tempMdFile);
   }
 
   private patchLink(value: unknown): unknown {
