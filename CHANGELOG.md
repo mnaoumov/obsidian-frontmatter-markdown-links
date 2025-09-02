@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.6.7
+
+- Don't transform raw external link (#22)
+- Patch bases without temp files
+
 ## 2.6.6
 
 - Minor changes
