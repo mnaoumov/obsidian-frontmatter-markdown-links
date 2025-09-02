@@ -31,7 +31,8 @@ import {
 import { filterInPlace } from 'obsidian-dev-utils/Array';
 import {
   convertAsyncToSync,
-  invokeAsyncSafely
+  invokeAsyncSafely,
+  requestAnimationFrameAsync
 } from 'obsidian-dev-utils/Async';
 import { getPrototypeOf } from 'obsidian-dev-utils/ObjectUtils';
 import {
@@ -235,6 +236,7 @@ export class Plugin extends PluginBase<PluginTypes> {
     }
 
     await leaf.loadIfDeferred();
+    await requestAnimationFrameAsync();
 
     const basesView = leaf.view as BasesView;
     const basesContextCtor = basesView.controller.ctx.constructor as BasesContextConstructor;
