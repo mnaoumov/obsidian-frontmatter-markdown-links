@@ -175,9 +175,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       this.externalLinks.delete(linkId);
 
       aEl.href = parseLinkResult.url;
-      if (parseLinkResult.alias) {
-        aEl.setText(parseLinkResult.alias);
-      }
+      aEl.setText(parseLinkResult.alias ?? parseLinkResult.url);
     }
   }
 
