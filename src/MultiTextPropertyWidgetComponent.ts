@@ -40,11 +40,6 @@ export function patchMultiTextPropertyWidgetComponent(plugin: Plugin): void {
   });
 }
 
-function addClassToElementAndParent(el: HTMLElement, className: string): void {
-  el.addClass(className);
-  el.parentElement?.addClass(className);
-}
-
 function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next: () => void): void {
   next.call(multiSelectComponent);
   const renderedItemEls: HTMLElement[] = Array.from(multiSelectComponent.rootEl.querySelectorAll('.multi-select-pill-content'));
@@ -63,7 +58,12 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
       continue;
     }
 
-    if (parseLinkResults[0]?.raw === value) {
+    const isSingleValue = parseLinkResults[0]?.raw === value;
+
+    if (isSingleValue) {
+      if (!parseLinkResults[0]) {
+        continue;
+      }
       renderChild(el, parseLinkResults[0]);
       continue;
     }
@@ -129,6 +129,13 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
         isWikilink: parseLinkResult.isWikilink,
         url: parseLinkResult.url
       });
+    }
+
+    function addClassToElementAndParent(childEl: HTMLElement, className: string): void {
+      childEl.addClass(className);
+      if (isSingleValue) {
+        childEl.parentElement?.addClass(className);
+      }
     }
   }
 }
