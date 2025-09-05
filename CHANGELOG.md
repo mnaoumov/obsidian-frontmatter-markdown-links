@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.6.10
+
+- Preserve whitespace
+- Don't add base class to combined list value (#23)
+
 ## 2.6.9
 
 - Minor changes
