@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.11
+
+- Minor changes
+
 ## 2.6.10
 
 - Preserve whitespace
