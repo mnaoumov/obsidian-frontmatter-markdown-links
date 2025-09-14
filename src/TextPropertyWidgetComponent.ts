@@ -78,7 +78,7 @@ function getLinkText(textPropertyComponent: TextPropertyWidgetComponent): string
 
 function getParseLinkResult(textPropertyComponent: TextPropertyWidgetComponent, useValue = false): null | ParseLinkResult {
   const text = useValue ? textPropertyComponent.value : textPropertyComponent.inputEl.textContent;
-  return parseLink(text ?? '');
+  return parseLink(text);
 }
 
 function getValue(next: GetValueFn, suggest: AbstractInputSuggest<MySearchResult>, plugin: Plugin): string {
@@ -251,9 +251,9 @@ function selectSuggestion(
     return;
   }
 
-  const oldValue = suggest.textInputEl.textContent ?? '';
+  const oldValue = suggest.textInputEl.textContent;
   next.call(suggest, value, evt);
-  const newValue = suggest.textInputEl.textContent ?? '';
+  const newValue = suggest.textInputEl.textContent;
   const { from, to } = patchedInputEls.get(suggest.textInputEl) ?? { from: 0, to: 0 };
   patchedInputEls.set(suggest.textInputEl, { from: 0, to: 0 });
 
