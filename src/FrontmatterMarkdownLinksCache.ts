@@ -31,9 +31,9 @@ export class FrontmatterMarkdownLinksCache {
   private db!: IDBDatabase;
 
   private readonly fileFrontmatterLinkCacheMap = new Map<string, FrontmatterLinkCache[]>();
-  private pathMtimeMap = new Map<string, number>();
+  private readonly pathMtimeMap = new Map<string, number>();
   private pendingStoreActions: StoreAction[] = [];
-  private processStoreActionsDebounced = debounce(() => {
+  private readonly processStoreActionsDebounced = debounce(() => {
     this.processStoreActions();
   }, PROCESS_STORE_ACTIONS_DEBOUNCE_INTERVAL_IN_MILLISECONDS);
 
