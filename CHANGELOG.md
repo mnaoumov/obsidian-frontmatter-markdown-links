@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.6.15
+
+- fix: build
+- chore: update libs
+
 ## 2.6.14
 
 - chore: enable conventional commits
