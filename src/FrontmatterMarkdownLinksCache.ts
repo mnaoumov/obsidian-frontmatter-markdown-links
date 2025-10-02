@@ -28,7 +28,7 @@ const FILE_MTIME_STORE_NAME = 'file-mtime';
 const PROCESS_STORE_ACTIONS_DEBOUNCE_INTERVAL_IN_MILLISECONDS = 5000;
 
 export class FrontmatterMarkdownLinksCache {
-  private db!: IDBDatabase;
+  private db?: IDBDatabase;
 
   private readonly fileFrontmatterLinkCacheMap = new Map<string, FrontmatterLinkCache[]>();
   private readonly pathMtimeMap = new Map<string, number>();

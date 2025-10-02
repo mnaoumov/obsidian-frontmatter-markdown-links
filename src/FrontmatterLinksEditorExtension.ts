@@ -73,7 +73,7 @@ class FrontMatterLinksViewPlugin implements PluginValue {
 
     for (const { from, to } of view.visibleRanges) {
       syntaxTree(view.state).iterate({
-        // eslint-disable-next-line no-loop-func
+        // eslint-disable-next-line no-loop-func -- Intentionally capture outer variables.
         enter(node) {
           const lineNumber = view.state.doc.lineAt(node.from).number;
           if (lineNumber !== previousLineNumber) {
