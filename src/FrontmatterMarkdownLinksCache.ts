@@ -30,19 +30,20 @@ const PROCESS_STORE_ACTIONS_DEBOUNCE_INTERVAL_IN_MILLISECONDS = 5000;
 export class FrontmatterMarkdownLinksCache {
   private _db?: IDBDatabase;
 
-  protected get db(): IDBDatabase {
-    if (!this._db) {
-      throw new Error('db is not initialized');
-    }
-    return this._db;
-  }
-
   private readonly fileFrontmatterLinkCacheMap = new Map<string, FrontmatterLinkCache[]>();
+
   private readonly pathMtimeMap = new Map<string, number>();
   private pendingStoreActions: StoreAction[] = [];
   private readonly processStoreActionsDebounced = debounce(() => {
     this.processStoreActions();
   }, PROCESS_STORE_ACTIONS_DEBOUNCE_INTERVAL_IN_MILLISECONDS);
+
+  private get db(): IDBDatabase {
+    if (!this._db) {
+      throw new Error('db is not initialized');
+    }
+    return this._db;
+  }
 
   public add(filePath: string, link: FrontmatterLinkCache): void {
     let links = this.fileFrontmatterLinkCacheMap.get(filePath);
