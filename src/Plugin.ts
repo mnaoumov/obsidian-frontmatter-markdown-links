@@ -73,7 +73,7 @@ export class Plugin extends PluginBase<PluginTypes> {
   private readonly currentlyProcessingFiles = new Set<string>();
   private externalLinkMaxId = 0;
   private readonly externalLinks = new Map<number, ParseLinkResult>();
-  private frontmatterMarkdownLinksCache?: FrontmatterMarkdownLinksCache;
+  private frontmatterMarkdownLinksCache = new FrontmatterMarkdownLinksCache();
   private isBasesExternalLinkPatched = false;
   private isBasesViewPatched = false;
   private isEditorPatched = false;

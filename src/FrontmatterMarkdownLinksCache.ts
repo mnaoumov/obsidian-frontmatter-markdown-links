@@ -28,7 +28,14 @@ const FILE_MTIME_STORE_NAME = 'file-mtime';
 const PROCESS_STORE_ACTIONS_DEBOUNCE_INTERVAL_IN_MILLISECONDS = 5000;
 
 export class FrontmatterMarkdownLinksCache {
-  private db?: IDBDatabase;
+  private _db?: IDBDatabase;
+
+  protected get db(): IDBDatabase {
+    if (!this._db) {
+      throw new Error('db is not initialized');
+    }
+    return this._db;
+  }
 
   private readonly fileFrontmatterLinkCacheMap = new Map<string, FrontmatterLinkCache[]>();
   private readonly pathMtimeMap = new Map<string, number>();
@@ -90,7 +97,7 @@ export class FrontmatterMarkdownLinksCache {
 
     const db = await getResult(request);
 
-    this.db = db;
+    this._db = db;
     const transaction = db.transaction([FILE_MTIME_STORE_NAME, FRONTMATTER_LINKS_STORE_NAME], 'readonly');
     const fileMtimeStore = transaction.objectStore(FILE_MTIME_STORE_NAME);
     const fileMtimeEntries = await getResult(fileMtimeStore.getAll()) as FileMtimeEntry[];
