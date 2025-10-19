@@ -196,7 +196,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       return null;
     }
 
-    const linkEl = frontmatterEl.find('[data-frontmatter-markdown-links-link-data]') as HTMLElement | undefined;
+    const linkEl = frontmatterEl.find('[data-frontmatter-markdown-links-link-data]:is(.cm-hmd-internal-link, .cm-url)') as HTMLElement | undefined;
 
     if (!linkEl) {
       return null;
@@ -208,9 +208,16 @@ export class Plugin extends PluginBase<PluginTypes> {
       return null;
     }
 
+    const startPos = editor.offsetToPos(editor.cm.posAtDOM(linkEl));
+    let endPos = startPos;
+    const endEl = frontmatterEl.find('.cm-formatting-link-end') ?? linkEl.nextElementSibling;
+    if (endEl) {
+      endPos = editor.offsetToPos(editor.cm.posAtDOM(endEl));
+    }
+
     clickableToken = {
-      end: pos,
-      start: pos,
+      end: endPos,
+      start: startPos,
       text: linkData.url,
       type: linkData.isExternalUrl ? 'external-link' : 'internal-link'
     } as ClickableToken;
