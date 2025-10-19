@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.6.17
+
+- fix: deps versions
+- fix: clickable token positions
+- chore: update libs
+
 ## 2.6.16
 
 - chore: update libs
