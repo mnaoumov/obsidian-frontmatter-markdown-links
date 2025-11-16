@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.6.18
+
+- fix: compilation
+- chore: update libs
+- fix: spaces around links in Bases
+  - re #24
+
 ## 2.6.17
 
 - fix: deps versions
