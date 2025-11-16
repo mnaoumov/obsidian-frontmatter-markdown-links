@@ -4,6 +4,7 @@ import type {
   EditorPosition,
   FrontmatterLinkCache,
   MenuSeparator,
+  RenderContext,
   TAbstractFile
 } from 'obsidian';
 import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/FrontmatterLinkCacheWithOffsets';
@@ -15,8 +16,7 @@ import type {
   BasesList,
   BasesNote,
   BasesView,
-  ClickableToken,
-  RenderContext
+  ClickableToken
 } from 'obsidian-typings';
 
 import {
