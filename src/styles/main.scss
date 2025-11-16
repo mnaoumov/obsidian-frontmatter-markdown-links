@@ -32,4 +32,8 @@
     gap: 0;
     white-space: pre;
   }
+
+  .bases-table-container:not(.mod-multiline) & .metadata-input-longtext:not(:focus-within) {
+    white-space-collapse: preserve;
+  }
 }
