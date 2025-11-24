@@ -267,7 +267,7 @@ export class Plugin extends PluginBase<PluginTypes> {
     });
 
     if (shouldDeleteMdFile) {
-      await this.app.vault.delete(mdFile);
+      await this.app.fileManager.trashFile(mdFile);
     }
 
     this.isBasesViewPatched = true;
