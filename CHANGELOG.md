@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.19
+
+- chore: update libs
+
 ## 2.6.18
 
 - fix: compilation
