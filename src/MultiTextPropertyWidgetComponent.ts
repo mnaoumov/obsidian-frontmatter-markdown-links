@@ -104,7 +104,7 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
 
       const childEl = el.createDiv();
       renderChild(childEl, parseLinkResult);
-      startOffset += parseLinkResult.endOffset;
+      startOffset = parseLinkResult.endOffset;
     }
 
     if (startOffset < value.length) {
