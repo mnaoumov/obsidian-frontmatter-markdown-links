@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.20
+
+- fix: missing text between links. re #25
+
 ## 2.6.19
 
 - chore: update libs
