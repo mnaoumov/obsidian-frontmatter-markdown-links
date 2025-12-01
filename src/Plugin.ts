@@ -458,11 +458,29 @@ export class Plugin extends PluginBase<PluginTypes> {
             const cache = await getCacheSafe(this.app, note);
             if (cache) {
               cache.frontmatterLinks ??= [];
+              const currentLinks = new Map<string, FrontmatterLinkCache>();
+
+              for (const link of cache.frontmatterLinks) {
+                currentLinks.set(link.key, link);
+              }
+
               const linkKeys = new Set(links.map((link) => link.key));
               filterInPlace(cache.frontmatterLinks, (link) => !linkKeys.has(link.key));
-              cache.frontmatterLinks.push(...links);
+
+              const newLinks: FrontmatterLinkCache[] = [];
 
               for (const link of links) {
+                const currentLink = currentLinks.get(link.key);
+                if (currentLink && currentLink.original !== link.original) {
+                  cache.frontmatterLinks.push(currentLink);
+                  continue;
+                }
+
+                cache.frontmatterLinks.push(link);
+                newLinks.push(link);
+              }
+
+              for (const link of newLinks) {
                 this.updateResolvedOrUnresolvedLinksCache(link.link, note.path);
               }
             }
@@ -488,6 +506,7 @@ export class Plugin extends PluginBase<PluginTypes> {
 
   private processFrontmatterLinks(value: unknown, key: string, cache: CachedMetadata, filePath: string): boolean {
     if (typeof value === 'string') {
+      this.frontmatterMarkdownLinksCache.deleteKey(filePath, key);
       const parseLinkResults = parseLinks(value);
       const isSingleLink = parseLinkResults[0]?.raw === value;
 

@@ -67,6 +67,27 @@ export class FrontmatterMarkdownLinksCache {
     });
   }
 
+  public deleteKey(filePath: string, key: string): void {
+    const links = this.fileFrontmatterLinkCacheMap.get(filePath);
+    if (!links) {
+      return;
+    }
+    const unfilteredCount = links.length;
+    filterInPlace(links, (link) => link.key !== key);
+    if (links.length === unfilteredCount) {
+      return;
+    }
+
+    if (links.length === 0) {
+      this.delete(filePath);
+      return;
+    }
+
+    this.addStoreAction(FRONTMATTER_LINKS_STORE_NAME, (store) => {
+      store.put({ filePath, links });
+    });
+  }
+
   public getFilePaths(): string[] {
     return Array.from(this.fileFrontmatterLinkCacheMap.keys());
   }
