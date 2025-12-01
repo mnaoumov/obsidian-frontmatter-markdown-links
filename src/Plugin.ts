@@ -34,7 +34,10 @@ import {
   invokeAsyncSafely,
   requestAnimationFrameAsync
 } from 'obsidian-dev-utils/Async';
-import { getPrototypeOf } from 'obsidian-dev-utils/ObjectUtils';
+import {
+  getNestedPropertyValue,
+  getPrototypeOf
+} from 'obsidian-dev-utils/ObjectUtils';
 import {
   parseLink,
   parseLinks,
@@ -477,8 +480,12 @@ export class Plugin extends PluginBase<PluginTypes> {
                   continue;
                 }
 
-                cache.frontmatterLinks.push(link);
-                newLinks.push(link);
+                if (cache.frontmatter && getNestedPropertyValue(cache.frontmatter, link.key) instanceof String) {
+                  cache.frontmatterLinks.push(link);
+                  newLinks.push(link);
+                } else {
+                  this.frontmatterMarkdownLinksCache.deleteKey(note.path, link.key);
+                }
               }
 
               for (const link of newLinks) {
