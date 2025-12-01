@@ -1,6 +1,6 @@
 {
   "name": "frontmatter-markdown-links",
-  "version": "2.6.20",
+  "version": "2.6.21",
   "description": "Adds support for markdown links in frontmatter",
   "scripts": {
     "build": "obsidian-dev-utils build",

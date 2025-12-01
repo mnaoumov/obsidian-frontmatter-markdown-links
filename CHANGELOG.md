@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.21
+
+- fix: cache invalidation
+
 ## 2.6.20
 
 - fix: missing text between links. re #25
