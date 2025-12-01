@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.6.22
+
+- fix: remove non-existing cache entries
+- fix: delete orphan cache entries
+
 ## 2.6.21
 
 - fix: cache invalidation
