@@ -473,6 +473,7 @@ export class Plugin extends PluginBase<PluginTypes> {
                 const currentLink = currentLinks.get(link.key);
                 if (currentLink && currentLink.original !== link.original) {
                   cache.frontmatterLinks.push(currentLink);
+                  this.frontmatterMarkdownLinksCache.deleteKey(note.path, link.key);
                   continue;
                 }
 
