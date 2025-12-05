@@ -538,7 +538,6 @@ export class Plugin extends PluginBase<PluginTypes> {
             original: value
           } as FrontmatterLinkCache
           : {
-            cleanKey: key,
             endOffset: parseLinkResult.endOffset,
             key,
             link: parseLinkResult.url,
