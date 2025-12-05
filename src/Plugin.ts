@@ -456,42 +456,45 @@ export class Plugin extends PluginBase<PluginTypes> {
       processItem: async (note) => {
         cachedFilePaths.delete(note.path);
         if (this.frontmatterMarkdownLinksCache.isCacheValid(note)) {
-          const links = this.frontmatterMarkdownLinksCache.getLinks(note);
-          if (links.length > 0) {
-            const cache = await getCacheSafe(this.app, note);
-            if (cache) {
-              cache.frontmatterLinks ??= [];
-              const currentLinks = new Map<string, FrontmatterLinkCache>();
+          const frontmatterMarkdownLinksCacheLinks = this.frontmatterMarkdownLinksCache.getLinks(note);
+          if (frontmatterMarkdownLinksCacheLinks.length === 0) {
+            return;
+          }
+          const cache = await getCacheSafe(this.app, note);
+          if (!cache) {
+            return;
+          }
+          cache.frontmatterLinks ??= [];
 
-              for (const link of cache.frontmatterLinks) {
-                currentLinks.set(link.key, link);
+          const obsidianLinkMap = new Map<string, FrontmatterLinkCache>();
+
+          for (const link of cache.frontmatterLinks) {
+            obsidianLinkMap.set(link.key, link);
+          }
+
+          const frontmatterMarkdownLinksCacheKeys = new Set(frontmatterMarkdownLinksCacheLinks.map((link) => link.key));
+          filterInPlace(cache.frontmatterLinks, (link) => !frontmatterMarkdownLinksCacheKeys.has(link.key));
+
+          const newLinks: FrontmatterLinkCache[] = [];
+
+          for (const link of frontmatterMarkdownLinksCacheLinks) {
+            const value = getNestedPropertyValue(cache.frontmatter ?? {}, link.key);
+            if (value !== link.original) {
+              this.frontmatterMarkdownLinksCache.deleteKey(note.path, link.key);
+              const obsidianLink = obsidianLinkMap.get(link.key);
+              if (obsidianLink) {
+                cache.frontmatterLinks.push(obsidianLink);
+                obsidianLinkMap.delete(link.key);
               }
-
-              const linkKeys = new Set(links.map((link) => link.key));
-              filterInPlace(cache.frontmatterLinks, (link) => !linkKeys.has(link.key));
-
-              const newLinks: FrontmatterLinkCache[] = [];
-
-              for (const link of links) {
-                const currentLink = currentLinks.get(link.key);
-                if (currentLink && currentLink.original !== link.original) {
-                  cache.frontmatterLinks.push(currentLink);
-                  this.frontmatterMarkdownLinksCache.deleteKey(note.path, link.key);
-                  continue;
-                }
-
-                if (cache.frontmatter && getNestedPropertyValue(cache.frontmatter, link.key) instanceof String) {
-                  cache.frontmatterLinks.push(link);
-                  newLinks.push(link);
-                } else {
-                  this.frontmatterMarkdownLinksCache.deleteKey(note.path, link.key);
-                }
-              }
-
-              for (const link of newLinks) {
-                this.updateResolvedOrUnresolvedLinksCache(link.link, note.path);
-              }
+              continue;
             }
+
+            cache.frontmatterLinks.push(link);
+            newLinks.push(link);
+          }
+
+          for (const link of newLinks) {
+            this.updateResolvedOrUnresolvedLinksCache(link.link, note.path);
           }
           return;
         }

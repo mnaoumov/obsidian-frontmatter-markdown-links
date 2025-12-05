@@ -52,7 +52,6 @@ export class FrontmatterMarkdownLinksCache {
       this.fileFrontmatterLinkCacheMap.set(filePath, links);
     }
 
-    filterInPlace(links, (oldLink) => oldLink.key !== link.key);
     links.push(link);
     this.addStoreAction(FRONTMATTER_LINKS_STORE_NAME, (store) => {
       store.put({ filePath, links });
@@ -130,16 +129,7 @@ export class FrontmatterMarkdownLinksCache {
     const frontmatterLinksStore = transaction.objectStore(FRONTMATTER_LINKS_STORE_NAME);
     const frontmatterLinksEntries = await getResult(frontmatterLinksStore.getAll()) as FrontmatterLinkEntry[];
     for (const entry of frontmatterLinksEntries) {
-      const usedKeys = new Set<string>();
-      const uniqueLinks = [];
-      for (const link of entry.links) {
-        if (usedKeys.has(link.key)) {
-          continue;
-        }
-        usedKeys.add(link.key);
-        uniqueLinks.push(link);
-      }
-      this.fileFrontmatterLinkCacheMap.set(entry.filePath, uniqueLinks);
+      this.fileFrontmatterLinkCacheMap.set(entry.filePath, entry.links);
     }
   }
 
