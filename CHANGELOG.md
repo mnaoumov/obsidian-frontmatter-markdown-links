@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.6.23
+
+- fix: accurately handle links with offsets
+- chore: remove unused prop
+
 ## 2.6.22
 
 - fix: remove non-existing cache entries
