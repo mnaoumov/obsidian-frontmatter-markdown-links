@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.24
+
+- fix: add different implementation for 1.11.0 re #26
+
 ## 2.6.23
 
 - fix: accurately handle links with offsets
