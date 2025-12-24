@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.25
+
+- chore: update libs
+
 ## 2.6.24
 
 - fix: add different implementation for 1.11.0 re #26
