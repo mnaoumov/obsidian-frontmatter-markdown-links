@@ -16,8 +16,6 @@ import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 
 import type { Plugin } from './Plugin.ts';
 
-import { extractDisplayText } from './Utils.ts';
-
 type GetValueFn = AbstractInputSuggest<MySearchResult>['getValue'];
 type RenderTextPropertyWidgetComponentFn = MetadataTypeManagerRegisteredTypeWidgetsRecord['text']['render'];
 type SelectSuggestionFn = AbstractInputSuggest<MySearchResult>['selectSuggestion'];
@@ -63,19 +61,6 @@ function getCaretCharacterOffset(): number {
   return range.startOffset;
 }
 
-function getDisplayText(textPropertyComponent: TextPropertyWidgetComponent): string {
-  const parseLinkResult = getParseLinkResult(textPropertyComponent);
-  if (parseLinkResult) {
-    return extractDisplayText(parseLinkResult);
-  }
-  return textPropertyComponent.value;
-}
-
-function getLinkText(textPropertyComponent: TextPropertyWidgetComponent): string {
-  const parseLinkResult = getParseLinkResult(textPropertyComponent);
-  return parseLinkResult?.url ?? textPropertyComponent.value;
-}
-
 function getParseLinkResult(textPropertyComponent: TextPropertyWidgetComponent, useValue = false): null | ParseLinkResult {
   const text = useValue ? textPropertyComponent.value : textPropertyComponent.inputEl.textContent;
   return parseLink(text);
@@ -111,15 +96,12 @@ function getValue(next: GetValueFn, suggest: AbstractInputSuggest<MySearchResult
   return value.slice(openBracketBeforeCaretIndex, caretOffset);
 }
 
-function isWikilink(textPropertyComponent: TextPropertyWidgetComponent): boolean {
-  const parseLinkResult = getParseLinkResult(textPropertyComponent);
-  return !!parseLinkResult && (parseLinkResult.isWikilink || !parseLinkResult.isExternal);
-}
-
 function render(textPropertyComponent: TextPropertyWidgetComponent, next: () => void): void {
   const parseLinkResult = getParseLinkResult(textPropertyComponent, true);
-  if (parseLinkResult?.isExternal) {
+  if (parseLinkResult?.isExternal && parseLinkResult.hasAngleBrackets) {
     textPropertyComponent.value = parseLinkResult.encodedUrl ?? parseLinkResult.url;
+  } else if (parseLinkResult?.isEmbed) {
+    textPropertyComponent.value = parseLinkResult.raw.slice(1);
   }
   next.call(textPropertyComponent);
 }
@@ -142,18 +124,6 @@ function renderWidget(
     const textPropertyWidgetComponent = next(temp, '', ctx);
     const textPropertyWidgetComponentProto = getPrototypeOf(textPropertyWidgetComponent);
     registerPatch(plugin, textPropertyWidgetComponentProto, {
-      getDisplayText: () =>
-        function getDisplayTextPatched(this: TextPropertyWidgetComponent): string {
-          return getDisplayText(this);
-        },
-      getLinkText: () =>
-        function getLinkTextPatched(this: TextPropertyWidgetComponent): string {
-          return getLinkText(this);
-        },
-      isWikilink: () =>
-        function isWikilinkPatched(this: TextPropertyWidgetComponent): boolean {
-          return isWikilink(this);
-        },
       render: (nextRender: () => void) =>
         function renderPatched(this: TextPropertyWidgetComponent): void {
           render(this, nextRender);
@@ -195,10 +165,12 @@ function renderWidget(
   const widget = next(el, str, ctxWithRerenderOnChange);
   if (hasMultipleLinks) {
     widget.inputEl.hide();
-    widget.linkEl.hide();
+    hideMetadataLink(widget);
+    el.appendChild(childWidgetsContainerEl);
 
     widget.inputEl.addEventListener('blur', () => {
       widget.inputEl.hide();
+      hideMetadataLink(widget);
       childWidgetsContainerEl.show();
     });
 
@@ -206,6 +178,11 @@ function renderWidget(
   }
 
   return widget;
+
+  function hideMetadataLink(widget2: TextPropertyWidgetComponent): void {
+    const metadataLinkEl = widget2.containerEl.find('.metadata-link') as HTMLElement | null;
+    metadataLinkEl?.hide();
+  }
 
   function createChildWidget(widgetStartOffset: number, widgetEndOffset: number): void {
     if (widgetStartOffset >= widgetEndOffset) {

@@ -25,7 +25,6 @@ import {
   Menu,
   MenuItem,
   parseYaml,
-  requireApiVersion,
   TFile,
   WorkspaceLeaf
 } from 'obsidian';
@@ -63,6 +62,7 @@ import { getLinkData } from './LinkData.ts';
 import { patchMultiTextPropertyWidgetComponent } from './MultiTextPropertyWidgetComponent.ts';
 import { PluginSettingsManager } from './PluginSettingsManager.ts';
 import { PluginSettingsTab } from './PluginSettingsTab.ts';
+import { patchTextPropertyWidgetComponent } from './TextPropertyWidgetComponent.ts';
 import { isSourceMode } from './Utils.ts';
 
 type BasesNoteGetFn = BasesNote['get'];
@@ -124,10 +124,6 @@ export class Plugin extends PluginBase<PluginTypes> {
 
   protected override async onloadImpl(): Promise<void> {
     await super.onloadImpl();
-
-    const { patchTextPropertyWidgetComponent } = requireApiVersion('1.11.0')
-      ? await import('./TextPropertyWidgetComponent.1.11.0.ts')
-      : await import('./TextPropertyWidgetComponent.ts');
 
     patchTextPropertyWidgetComponent(this);
     patchMultiTextPropertyWidgetComponent(this);
