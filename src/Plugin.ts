@@ -48,6 +48,7 @@ import { loop } from 'obsidian-dev-utils/obsidian/Loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
+import { registerRenameDeleteHandlers } from 'obsidian-dev-utils/obsidian/RenameDeleteHandler';
 import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
 import {
   InternalPluginName,
@@ -115,6 +116,10 @@ export class Plugin extends PluginBase<PluginTypes> {
     if (!this.isBasesViewPatched) {
       this.registerEvent(this.app.workspace.on('active-leaf-change', convertAsyncToSync(this.handleActiveLeafChange.bind(this))));
     }
+
+    registerRenameDeleteHandlers(this, () => ({
+      shouldHandleRenames: this.settings.shouldHandleRenames
+    }));
   }
 
   protected override async onloadImpl(): Promise<void> {
