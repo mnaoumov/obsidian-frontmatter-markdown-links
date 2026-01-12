@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.6.26
+
+- chore: update libs
+- feat: enable rename handler re #27
+
 ## 2.6.25
 
 - chore: update libs
