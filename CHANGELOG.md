@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.28
+
+- chore: update libs
+
 ## 2.6.27
 
 - refactor: remove hack for pre-1.11.0
