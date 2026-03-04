@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.30
+
+- feat: safer trashing
+
 ## 2.6.29
 
 - chore: update libs
