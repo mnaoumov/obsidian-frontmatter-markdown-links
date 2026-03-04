@@ -48,7 +48,10 @@ import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 import { registerRenameDeleteHandlers } from 'obsidian-dev-utils/obsidian/RenameDeleteHandler';
-import { getMarkdownFilesSorted } from 'obsidian-dev-utils/obsidian/Vault';
+import {
+  getMarkdownFilesSorted,
+  trashSafe
+} from 'obsidian-dev-utils/obsidian/Vault';
 import {
   InternalPluginName,
   ViewType
@@ -275,7 +278,7 @@ export class Plugin extends PluginBase<PluginTypes> {
     });
 
     if (shouldDeleteMdFile) {
-      await this.app.fileManager.trashFile(mdFile);
+      await trashSafe(this.app, mdFile);
     }
 
     this.isBasesViewPatched = true;
