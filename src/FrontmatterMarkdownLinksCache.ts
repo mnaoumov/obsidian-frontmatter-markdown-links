@@ -5,7 +5,7 @@ import type {
 } from 'obsidian';
 
 import { debounce } from 'obsidian';
-import { filterInPlace } from 'obsidian-dev-utils/Array';
+import { filterInPlace } from 'obsidian-dev-utils/array';
 
 interface FileMtimeEntry {
   filePath: string;

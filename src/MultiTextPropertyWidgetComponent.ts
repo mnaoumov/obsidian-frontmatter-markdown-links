@@ -9,12 +9,12 @@ import type {
   PropertyRenderContext
 } from 'obsidian-typings';
 
-import { getPrototypeOf } from 'obsidian-dev-utils/ObjectUtils';
+import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
 import {
   parseLinks,
   splitSubpath
 } from 'obsidian-dev-utils/obsidian/Link';
-import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
+import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 
 import type { Plugin } from './Plugin.ts';
 

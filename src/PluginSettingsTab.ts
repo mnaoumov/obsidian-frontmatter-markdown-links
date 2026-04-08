@@ -1,5 +1,5 @@
 import { Setting } from 'obsidian';
-import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginSettingsTabBase';
+import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab-base';
 
 import type { PluginTypes } from './PluginTypes.ts';
 
