@@ -1,5 +1,5 @@
 import type { App } from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 
 import { MarkdownView } from 'obsidian';
 

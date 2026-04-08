@@ -7,16 +7,17 @@ import type {
   RenderContext,
   TAbstractFile
 } from 'obsidian';
-import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/FrontmatterLinkCacheWithOffsets';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
+import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/frontmatter-link-cache-with-offsets';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 import type {
-  BasesContextConstructor,
+  BasesContext,
   BasesControl,
   BasesExternalLink,
   BasesList,
   BasesNote,
   BasesView,
-  ClickableToken
+  ClickableToken,
+  ExtractConstructor
 } from 'obsidian-typings';
 
 import {
@@ -38,20 +39,21 @@ import {
   getNestedPropertyValue,
   getPrototypeOf
 } from 'obsidian-dev-utils/object-utils';
+import { AllWindowsEventHandler } from 'obsidian-dev-utils/obsidian/components/all-windows-event-handler';
 import {
   parseLink,
   parseLinks,
   splitSubpath
-} from 'obsidian-dev-utils/obsidian/Link';
-import { loop } from 'obsidian-dev-utils/obsidian/Loop';
-import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
+} from 'obsidian-dev-utils/obsidian/link';
+import { loop } from 'obsidian-dev-utils/obsidian/loop';
+import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-base';
-import { registerRenameDeleteHandlers } from 'obsidian-dev-utils/obsidian/RenameDeleteHandler';
+import { registerRenameDeleteHandlers } from 'obsidian-dev-utils/obsidian/rename-delete-handler';
 import {
   getMarkdownFilesSorted,
   trashSafe
-} from 'obsidian-dev-utils/obsidian/Vault';
+} from 'obsidian-dev-utils/obsidian/vault';
 import {
   InternalPluginName,
   ViewType
@@ -111,8 +113,9 @@ export class Plugin extends PluginBase<PluginTypes> {
       }
     });
 
-    this.registerPopupDocumentDomEvent('mousedown', this.handleMouseDown.bind(this), { capture: true });
-    this.registerPopupDocumentDomEvent('mouseover', this.handleMouseOver.bind(this), { capture: true });
+    const allWindowsEventHandler = new AllWindowsEventHandler(this.app, this);
+    allWindowsEventHandler.registerAllDocumentsDomEvent('mousedown', this.handleMouseDown.bind(this), { capture: true });
+    allWindowsEventHandler.registerAllDocumentsDomEvent('mouseover', this.handleMouseOver.bind(this), { capture: true });
 
     await this.handleActiveLeafChange(this.app.workspace.getLeavesOfType(ViewType.Bases)[0] ?? null);
 
@@ -257,7 +260,7 @@ export class Plugin extends PluginBase<PluginTypes> {
     await requestAnimationFrameAsync();
 
     const basesView = leaf.view as BasesView;
-    const basesContextCtor = basesView.controller.ctx.constructor as BasesContextConstructor;
+    const basesContextCtor = basesView.controller.ctx.constructor as ExtractConstructor<BasesContext>;
 
     let mdFile = this.app.vault.getMarkdownFiles()[0];
     let shouldDeleteMdFile = false;

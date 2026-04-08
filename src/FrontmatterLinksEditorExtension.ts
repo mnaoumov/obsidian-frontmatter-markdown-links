@@ -3,7 +3,7 @@ import type {
   PluginValue
 } from '@codemirror/view';
 import type { App } from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 
 import { syntaxTree } from '@codemirror/language';
 import { RangeSetBuilder } from '@codemirror/state';
@@ -17,7 +17,7 @@ import {
 import {
   parseLink,
   parseLinks
-} from 'obsidian-dev-utils/obsidian/Link';
+} from 'obsidian-dev-utils/obsidian/link';
 
 import type { Plugin } from './Plugin.ts';
 
