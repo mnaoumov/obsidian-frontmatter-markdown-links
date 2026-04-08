@@ -2,7 +2,7 @@ import type {
   App,
   Component
 } from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 import type {
   MetadataTypeManagerRegisteredTypeWidgetsRecord,
   MultitextPropertyWidgetComponent,
@@ -13,7 +13,7 @@ import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
 import {
   parseLinks,
   splitSubpath
-} from 'obsidian-dev-utils/obsidian/Link';
+} from 'obsidian-dev-utils/obsidian/link';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 
 import type { Plugin } from './Plugin.ts';

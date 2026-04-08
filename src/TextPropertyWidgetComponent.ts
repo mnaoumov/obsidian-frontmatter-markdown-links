@@ -1,5 +1,5 @@
 import type { SearchResult } from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/Link';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 import type {
   MetadataTypeManagerRegisteredTypeWidgetsRecord,
   PropertyRenderContext,
@@ -11,7 +11,7 @@ import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
 import {
   parseLink,
   parseLinks
-} from 'obsidian-dev-utils/obsidian/Link';
+} from 'obsidian-dev-utils/obsidian/link';
 import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 
 import type { Plugin } from './Plugin.ts';
