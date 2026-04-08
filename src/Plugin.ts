@@ -28,16 +28,16 @@ import {
   TFile,
   WorkspaceLeaf
 } from 'obsidian';
-import { filterInPlace } from 'obsidian-dev-utils/Array';
+import { filterInPlace } from 'obsidian-dev-utils/array';
 import {
   convertAsyncToSync,
   invokeAsyncSafely,
   requestAnimationFrameAsync
-} from 'obsidian-dev-utils/Async';
+} from 'obsidian-dev-utils/async';
 import {
   getNestedPropertyValue,
   getPrototypeOf
-} from 'obsidian-dev-utils/ObjectUtils';
+} from 'obsidian-dev-utils/object-utils';
 import {
   parseLink,
   parseLinks,
@@ -45,8 +45,8 @@ import {
 } from 'obsidian-dev-utils/obsidian/Link';
 import { loop } from 'obsidian-dev-utils/obsidian/Loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/MetadataCache';
-import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
-import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
+import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
+import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-base';
 import { registerRenameDeleteHandlers } from 'obsidian-dev-utils/obsidian/RenameDeleteHandler';
 import {
   getMarkdownFilesSorted,

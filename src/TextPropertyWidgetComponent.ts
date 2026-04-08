@@ -7,12 +7,12 @@ import type {
 } from 'obsidian-typings';
 
 import { AbstractInputSuggest } from 'obsidian';
-import { getPrototypeOf } from 'obsidian-dev-utils/ObjectUtils';
+import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
 import {
   parseLink,
   parseLinks
 } from 'obsidian-dev-utils/obsidian/Link';
-import { registerPatch } from 'obsidian-dev-utils/obsidian/MonkeyAround';
+import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
 
 import type { Plugin } from './Plugin.ts';
 
