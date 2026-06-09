@@ -1,10 +1,11 @@
 import { Setting } from 'obsidian';
-import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab-base';
+import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
 
-import type { PluginTypes } from './PluginTypes.ts';
+import type { PluginSettings } from './plugin-settings.ts';
 
-export class PluginSettingsTab extends PluginSettingsTabBase<PluginTypes> {
+export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   public override display(): void {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- PluginSettingsTabBase still relies on the deprecated display() override; getSettingDefinitions is not used here.
     super.display();
 
     new Setting(this.containerEl)

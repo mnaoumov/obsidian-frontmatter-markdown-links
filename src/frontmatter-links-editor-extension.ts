@@ -18,11 +18,12 @@ import {
   parseLink,
   parseLinks
 } from 'obsidian-dev-utils/obsidian/link';
+import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
-import type { Plugin } from './Plugin.ts';
+import type { Plugin } from './plugin.ts';
 
-import { getDataAttributes } from './LinkData.ts';
-import { isSourceMode } from './Utils.ts';
+import { getDataAttributes } from './link-data.ts';
+import { isSourceMode } from './utils.ts';
 
 interface GroupDescription {
   cssClass: string;
@@ -387,7 +388,7 @@ function tryGetLinkStylingInfos(value: string, groupDescriptions: GroupDescripti
 
   for (const groupDescription of groupDescriptions) {
     matchIndex++;
-    const endIndex = startingIndex + (match[matchIndex]?.length ?? 0);
+    const endIndex = startingIndex + ensureNonNullable(match[matchIndex]).length;
     ans.push({
       cssClass: groupDescription.cssClass,
       from: startingIndex,
