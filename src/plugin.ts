@@ -1,15 +1,4 @@
 import type {
-  CachedMetadata,
-  Editor,
-  EditorPosition,
-  FrontmatterLinkCache,
-  MenuSeparator,
-  RenderContext,
-  TAbstractFile
-} from 'obsidian';
-import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/frontmatter-link-cache-with-offsets';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
-import type {
   BasesContext,
   BasesControl,
   BasesExternalLink,
@@ -18,8 +7,26 @@ import type {
   BasesView,
   ClickableToken,
   ExtractConstructor
-} from 'obsidian-typings';
+} from '@obsidian-typings/obsidian-public-latest';
+import type {
+  App,
+  CachedMetadata,
+  Editor,
+  EditorPosition,
+  FrontmatterLinkCache,
+  MenuSeparator,
+  PluginManifest,
+  RenderContext,
+  TAbstractFile
+} from 'obsidian';
+import type { RenameDeleteHandlerSettings } from 'obsidian-dev-utils/obsidian/components/rename-delete-handler-component';
+import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/frontmatter-link-cache-with-offsets';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 
+import {
+  InternalPluginName,
+  ViewType
+} from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   Keymap,
   MarkdownView,
@@ -39,7 +46,12 @@ import {
   getNestedPropertyValue,
   getPrototypeOf
 } from 'obsidian-dev-utils/object-utils';
-import { AllWindowsEventHandler } from 'obsidian-dev-utils/obsidian/components/all-windows-event-handler';
+import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
+import { CallbackLayoutReadyComponent } from 'obsidian-dev-utils/obsidian/components/layout-ready-component';
+import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
+import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
+import { RenameDeleteHandlerComponent } from 'obsidian-dev-utils/obsidian/components/rename-delete-handler-component';
+import { PluginDataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import {
   parseLink,
   parseLinks,
@@ -47,28 +59,21 @@ import {
 } from 'obsidian-dev-utils/obsidian/link';
 import { loop } from 'obsidian-dev-utils/obsidian/loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
-import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
-import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-base';
-import { registerRenameDeleteHandlers } from 'obsidian-dev-utils/obsidian/rename-delete-handler';
+import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
+import { PluginEventSourceImpl } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 import {
   getMarkdownFilesSorted,
   trashSafe
 } from 'obsidian-dev-utils/obsidian/vault';
-import {
-  InternalPluginName,
-  ViewType
-} from 'obsidian-typings/implementations';
 
-import type { PluginTypes } from './PluginTypes.ts';
-
-import { registerFrontmatterLinksEditorExtension } from './FrontmatterLinksEditorExtension.ts';
-import { FrontmatterMarkdownLinksCache } from './FrontmatterMarkdownLinksCache.ts';
-import { getLinkData } from './LinkData.ts';
-import { patchMultiTextPropertyWidgetComponent } from './MultiTextPropertyWidgetComponent.ts';
-import { PluginSettingsManager } from './PluginSettingsManager.ts';
-import { PluginSettingsTab } from './PluginSettingsTab.ts';
-import { patchTextPropertyWidgetComponent } from './TextPropertyWidgetComponent.ts';
-import { isSourceMode } from './Utils.ts';
+import { registerFrontmatterLinksEditorExtension } from './frontmatter-links-editor-extension.ts';
+import { FrontmatterMarkdownLinksCache } from './frontmatter-markdown-links-cache.ts';
+import { getLinkData } from './link-data.ts';
+import { patchMultiTextPropertyWidgetComponent } from './multi-text-property-widget-component.ts';
+import { PluginSettingsComponent } from './plugin-settings-component.ts';
+import { PluginSettingsTab } from './plugin-settings-tab.ts';
+import { patchTextPropertyWidgetComponent } from './text-property-widget-component.ts';
+import { isSourceMode } from './utils.ts';
 
 type BasesNoteGetFn = BasesNote['get'];
 type GetClickableTokenAtFn = Editor['getClickableTokenAt'];
@@ -78,7 +83,7 @@ type ShowAtMouseEventFn = Menu['showAtMouseEvent'];
 
 const EXTERNAL_LINK_PREFIX = 'https://EXTERNAL_LINK_PREFIX.com/';
 
-export class Plugin extends PluginBase<PluginTypes> {
+export class Plugin extends PluginBase {
   private readonly currentlyProcessingFiles = new Set<string>();
   private externalLinkMaxId = 0;
   private readonly externalLinks = new Map<number, ParseLinkResult>();
@@ -86,50 +91,36 @@ export class Plugin extends PluginBase<PluginTypes> {
   private isBasesExternalLinkPatched = false;
   private isBasesViewPatched = false;
   private isEditorPatched = false;
+  private readonly monkeyAroundComponent: MonkeyAroundComponent;
+  private readonly pluginSettingsComponent: PluginSettingsComponent;
 
-  protected override createSettingsManager(): PluginSettingsManager {
-    return new PluginSettingsManager(this);
+  public constructor(app: App, manifest: PluginManifest) {
+    super(app, manifest);
+    this.monkeyAroundComponent = this.addChild(new MonkeyAroundComponent());
+    this.pluginSettingsComponent = this.addChild(
+      new PluginSettingsComponent({
+        dataHandler: new PluginDataHandler(this),
+        pluginEventSource: new PluginEventSourceImpl(this)
+      })
+    );
+    this.addChild(
+      new PluginSettingsTabComponent({
+        plugin: this,
+        pluginSettingsTab: new PluginSettingsTab({
+          plugin: this,
+          pluginSettingsComponent: this.pluginSettingsComponent
+        })
+      })
+    );
+    this.addChild(
+      new CallbackLayoutReadyComponent(app, () => {
+        this.onLayoutReady();
+      })
+    );
   }
 
-  protected override createSettingsTab(): PluginSettingsTab {
-    return new PluginSettingsTab(this);
-  }
-
-  protected override async onLayoutReady(): Promise<void> {
-    await this.processAllNotes();
-    this.registerEvent(this.app.metadataCache.on('changed', this.handleMetadataCacheChanged.bind(this)));
-    this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
-    this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
-    this.registerEvent(this.app.workspace.on('file-open', this.handleFileOpen.bind(this)));
-    this.handleFileOpen();
-
-    const that = this;
-
-    registerPatch(this, Menu.prototype, {
-      showAtMouseEvent: (next: ShowAtMouseEventFn): ShowAtMouseEventFn => {
-        return function showAtMouseEventPatched(this: Menu, evt: MouseEvent): Menu {
-          return that.showAtMouseEvent(next, this, evt);
-        };
-      }
-    });
-
-    const allWindowsEventHandler = new AllWindowsEventHandler(this.app, this);
-    allWindowsEventHandler.registerAllDocumentsDomEvent('mousedown', this.handleMouseDown.bind(this), { capture: true });
-    allWindowsEventHandler.registerAllDocumentsDomEvent('mouseover', this.handleMouseOver.bind(this), { capture: true });
-
-    await this.handleActiveLeafChange(this.app.workspace.getLeavesOfType(ViewType.Bases)[0] ?? null);
-
-    if (!this.isBasesViewPatched) {
-      this.registerEvent(this.app.workspace.on('active-leaf-change', convertAsyncToSync(this.handleActiveLeafChange.bind(this))));
-    }
-
-    registerRenameDeleteHandlers(this, () => ({
-      shouldHandleRenames: this.settings.shouldHandleRenames
-    }));
-  }
-
-  protected override async onloadImpl(): Promise<void> {
-    await super.onloadImpl();
+  public override async onload(): Promise<void> {
+    await super.onload();
 
     patchTextPropertyWidgetComponent(this);
     patchMultiTextPropertyWidgetComponent(this);
@@ -203,7 +194,7 @@ export class Plugin extends PluginBase<PluginTypes> {
     const offset = editor.posToOffset(pos);
     const { node } = editor.cm.domAtPos(offset);
 
-    const parentEl = node instanceof HTMLElement ? node : node.parentElement;
+    const parentEl = node.instanceOf(HTMLElement) ? node : node.parentElement;
     const frontmatterEl = parentEl?.closest('.cm-hmd-frontmatter');
 
     if (!frontmatterEl) {
@@ -234,7 +225,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       start: startPos,
       text: linkData.url,
       type: linkData.isExternalUrl ? 'external-link' : 'internal-link'
-    } as ClickableToken;
+    };
     return clickableToken;
   }
 
@@ -272,7 +263,7 @@ export class Plugin extends PluginBase<PluginTypes> {
     const ctx = new basesContextCtor(this.app, {}, {}, mdFile);
     const that = this;
 
-    registerPatch(this, getPrototypeOf(ctx._local.note), {
+    this.monkeyAroundComponent.registerPatch(getPrototypeOf(ctx._local.note), {
       get: (next: BasesNoteGetFn): BasesNoteGetFn => {
         return function getPatched(this: BasesNote, key: string): BasesControl {
           return that.noteGet(next, this, key);
@@ -303,7 +294,7 @@ export class Plugin extends PluginBase<PluginTypes> {
     this.isEditorPatched = true;
     const that = this;
 
-    registerPatch(this, this.app.workspace.activeEditor.editor.constructor.prototype, {
+    this.monkeyAroundComponent.registerPatch(this.app.workspace.activeEditor.editor.constructor.prototype, {
       getClickableTokenAt: (next: GetClickableTokenAtFn): GetClickableTokenAtFn => {
         return function getClickableTokenAtPatched(this: Editor, pos: EditorPosition): ClickableToken | null {
           return that.getClickableTokenAt(next, this, pos);
@@ -398,8 +389,8 @@ export class Plugin extends PluginBase<PluginTypes> {
       const that = this;
 
       note.data[key] = EXTERNAL_LINK_PREFIX;
-      const basesExternalLink = next.call(note, key) as BasesExternalLink;
-      registerPatch(this, getPrototypeOf(basesExternalLink), {
+      const basesExternalLink = next.call(note, key);
+      this.monkeyAroundComponent.registerPatch(getPrototypeOf(basesExternalLink), {
         renderTo: (nextRenderToFn: RenderToFn): RenderToFn => {
           return function renderToPatched(this: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
             that.basesExternalLinkRenderTo(nextRenderToFn, this, containerEl, renderContext);
@@ -409,7 +400,7 @@ export class Plugin extends PluginBase<PluginTypes> {
 
       note.data[key] = [EXTERNAL_LINK_PREFIX];
       const basesList = next.call(note, key) as BasesList;
-      registerPatch(this, getPrototypeOf(basesList), {
+      this.monkeyAroundComponent.registerPatch(getPrototypeOf(basesList), {
         renderTo: (nextRenderToFn: RenderToFn): RenderToFn => {
           return function renderToPatched(this: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
             that.basesListRenderTo(nextRenderToFn, this, containerEl, renderContext);
@@ -426,6 +417,48 @@ export class Plugin extends PluginBase<PluginTypes> {
     } finally {
       note.data[key] = value;
     }
+  }
+
+  private onLayoutReady(): void {
+    invokeAsyncSafely(this.processAllNotes.bind(this));
+    this.registerEvent(this.app.metadataCache.on('changed', this.handleMetadataCacheChanged.bind(this)));
+    this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
+    this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
+    this.registerEvent(this.app.workspace.on('file-open', this.handleFileOpen.bind(this)));
+    this.handleFileOpen();
+
+    const that = this;
+
+    this.monkeyAroundComponent.registerPatch(Menu.prototype, {
+      showAtMouseEvent: (next: ShowAtMouseEventFn): ShowAtMouseEventFn => {
+        return function showAtMouseEventPatched(this: Menu, evt: MouseEvent): Menu {
+          return that.showAtMouseEvent(next, this, evt);
+        };
+      }
+    });
+
+    const allWindowsEventComponent = this.addChild(new AllWindowsEventComponent(this.app));
+    allWindowsEventComponent.registerAllDocumentsDomEvent('mousedown', this.handleMouseDown.bind(this), { capture: true });
+    allWindowsEventComponent.registerAllDocumentsDomEvent('mouseover', this.handleMouseOver.bind(this), { capture: true });
+
+    invokeAsyncSafely(async () => {
+      await this.handleActiveLeafChange(this.app.workspace.getLeavesOfType(ViewType.Bases)[0] ?? null);
+
+      if (!this.isBasesViewPatched) {
+        this.registerEvent(this.app.workspace.on('active-leaf-change', convertAsyncToSync(this.handleActiveLeafChange.bind(this))));
+      }
+    });
+
+    this.addChild(
+      new RenameDeleteHandlerComponent({
+        abortSignalComponent: this.abortSignalComponent,
+        app: this.app,
+        pluginId: this.manifest.id,
+        settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
+          shouldHandleRenames: this.pluginSettingsComponent.settings.shouldHandleRenames
+        })
+      })
+    );
   }
 
   private patchLink(value: unknown): unknown {
@@ -461,7 +494,7 @@ export class Plugin extends PluginBase<PluginTypes> {
     const cachedFilePaths = new Set(this.frontmatterMarkdownLinksCache.getFilePaths());
 
     await loop({
-      abortSignal: this.abortSignal,
+      abortSignal: this.abortSignalComponent.abortSignal,
       buildNoticeMessage: (note, iterationStr) => `Processing frontmatter links ${iterationStr} - ${note.path}`,
       items: getMarkdownFilesSorted(this.app),
       processItem: async (note) => {
@@ -489,7 +522,7 @@ export class Plugin extends PluginBase<PluginTypes> {
           const newLinks: FrontmatterLinkCache[] = [];
 
           for (const link of frontmatterMarkdownLinksCacheLinks) {
-            const value = getNestedPropertyValue(cache.frontmatter ?? {}, link.key);
+            const value = getNestedPropertyValue((cache.frontmatter ?? {}) as Record<string, unknown>, link.key);
             if (value !== link.original) {
               this.frontmatterMarkdownLinksCache.deleteKey(note.path, link.key);
               const obsidianLink = obsidianLinkMap.get(link.key);
@@ -518,7 +551,7 @@ export class Plugin extends PluginBase<PluginTypes> {
       },
       progressBarTitle: 'Frontmatter Markdown Links: Initializing...',
       shouldContinueOnError: true,
-      shouldShowProgressBar: this.settings.shouldShowInitializationNotice
+      shouldShowProgressBar: this.pluginSettingsComponent.settings.shouldShowInitializationNotice
     });
 
     for (const filePath of cachedFilePaths) {
@@ -550,7 +583,7 @@ export class Plugin extends PluginBase<PluginTypes> {
             key,
             link: parseLinkResult.url,
             original: value
-          } as FrontmatterLinkCache
+          }
           : {
             endOffset: parseLinkResult.endOffset,
             key,
@@ -649,8 +682,8 @@ export class Plugin extends PluginBase<PluginTypes> {
     const { linkPath } = splitSubpath(link);
     const resolvedFile = this.app.metadataCache.getFirstLinkpathDest(linkPath, notePath);
     const linksCacheMap = resolvedFile ? this.app.metadataCache.resolvedLinks : this.app.metadataCache.unresolvedLinks;
-    linksCacheMap[notePath] ??= {};
     const linksCacheForNote = linksCacheMap[notePath] ?? {};
+    linksCacheMap[notePath] = linksCacheForNote;
 
     const resolvedLinkPath = resolvedFile?.path ?? linkPath;
     linksCacheForNote[resolvedLinkPath] ??= 0;

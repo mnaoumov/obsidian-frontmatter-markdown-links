@@ -18,7 +18,7 @@ interface FrontmatterLinkEntry {
 }
 
 interface StoreAction {
-  action: (store: IDBObjectStore) => void;
+  action(store: IDBObjectStore): void;
   storeName: string;
 }
 
@@ -187,7 +187,7 @@ async function getResult<T>(request: IDBRequest<T>): Promise<T> {
       resolve(request.result);
     });
     request.addEventListener('error', () => {
-      reject(request.error as Error);
+      reject(request.error ?? new Error('IDBRequest failed'));
     });
   });
 }

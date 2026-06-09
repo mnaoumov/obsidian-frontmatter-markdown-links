@@ -1,3 +1,5 @@
+import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
+
 export interface LinkData {
   isExternalUrl: boolean;
   isWikilink: boolean;
@@ -20,10 +22,7 @@ export function getDataAttributes(linkData: LinkData | null): Record<string, str
 
   const div = createDiv();
   attachLinkData(div, linkData);
-  const attr = div.attributes[0];
-  if (!attr) {
-    return {};
-  }
+  const attr = ensureNonNullable(div.attributes[0]);
 
   return {
     [attr.name]: attr.value
@@ -41,5 +40,5 @@ export function getLinkData(el: HTMLElement): LinkData | null {
     return null;
   }
 
-  return JSON.parse(dataset.frontmatterMarkdownLinksLinkData) as object as LinkData;
+  return JSON.parse(dataset.frontmatterMarkdownLinksLinkData) as LinkData;
 }

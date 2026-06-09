@@ -1,20 +1,21 @@
-import type { SearchResult } from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 import type {
   MetadataTypeManagerRegisteredTypeWidgetsRecord,
   PropertyRenderContext,
   TextPropertyWidgetComponent
-} from 'obsidian-typings';
+} from '@obsidian-typings/obsidian-public-latest';
+import type { SearchResult } from 'obsidian';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 
 import { AbstractInputSuggest } from 'obsidian';
 import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
+import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
 import {
   parseLink,
   parseLinks
 } from 'obsidian-dev-utils/obsidian/link';
-import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
+import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
-import type { Plugin } from './Plugin.ts';
+import type { Plugin } from './plugin.ts';
 
 type GetValueFn = AbstractInputSuggest<MySearchResult>['getValue'];
 type RenderTextPropertyWidgetComponentFn = MetadataTypeManagerRegisteredTypeWidgetsRecord['text']['render'];
@@ -36,12 +37,13 @@ const patchedInputEls = new WeakMap<HTMLDivElement, Offset>();
 
 export function patchTextPropertyWidgetComponent(plugin: Plugin): void {
   const widget = plugin.app.metadataTypeManager.registeredTypeWidgets.text;
+  const patch = plugin.addChild(new MonkeyAroundComponent());
 
-  registerPatch(plugin, widget, {
+  patch.registerPatch(widget, {
     render: (next: RenderTextPropertyWidgetComponentFn): RenderTextPropertyWidgetComponentFn => (el, value, ctx) => renderWidget(el, value, ctx, next, plugin)
   });
 
-  registerPatch(plugin, AbstractInputSuggest.prototype, {
+  patch.registerPatch(AbstractInputSuggest.prototype, {
     getValue: (next: GetValueFn): GetValueFn => {
       return function getValuePatched(this: AbstractInputSuggest<MySearchResult>): string {
         return getValue(next, this, plugin);
@@ -61,15 +63,15 @@ function getCaretCharacterOffset(): number {
   return range.startOffset;
 }
 
-function getParseLinkResult(textPropertyComponent: TextPropertyWidgetComponent, useValue = false): null | ParseLinkResult {
-  const text = useValue ? textPropertyComponent.value : textPropertyComponent.inputEl.textContent;
-  return parseLink(text);
+function getParseLinkResult(textPropertyComponent: TextPropertyWidgetComponent): null | ParseLinkResult {
+  return parseLink(textPropertyComponent.value);
 }
 
 function getValue(next: GetValueFn, suggest: AbstractInputSuggest<MySearchResult>, plugin: Plugin): string {
   if (!isCustomAbstractInputSuggestPatched) {
     const customAbstractInputSuggestProto = getPrototypeOf(suggest);
-    registerPatch(plugin, customAbstractInputSuggestProto, {
+    const patch = plugin.addChild(new MonkeyAroundComponent());
+    patch.registerPatch(customAbstractInputSuggestProto, {
       selectSuggestion: (nextSelectSuggestion: SelectSuggestionFn): SelectSuggestionFn => {
         return function selectSuggestionPatched(this: AbstractInputSuggest<MySearchResult>, value: MySearchResult, evt: KeyboardEvent | MouseEvent): void {
           selectSuggestion(nextSelectSuggestion, this, value, evt);
@@ -97,9 +99,9 @@ function getValue(next: GetValueFn, suggest: AbstractInputSuggest<MySearchResult
 }
 
 function render(textPropertyComponent: TextPropertyWidgetComponent, next: () => void): void {
-  const parseLinkResult = getParseLinkResult(textPropertyComponent, true);
+  const parseLinkResult = getParseLinkResult(textPropertyComponent);
   if (parseLinkResult?.isExternal && parseLinkResult.hasAngleBrackets) {
-    textPropertyComponent.value = parseLinkResult.encodedUrl ?? parseLinkResult.url;
+    textPropertyComponent.value = ensureNonNullable(parseLinkResult.encodedUrl);
   } else if (parseLinkResult?.isEmbed) {
     textPropertyComponent.value = parseLinkResult.raw.slice(1);
   }
@@ -123,7 +125,8 @@ function renderWidget(
     const temp = el.createDiv();
     const textPropertyWidgetComponent = next(temp, '', ctx);
     const textPropertyWidgetComponentProto = getPrototypeOf(textPropertyWidgetComponent);
-    registerPatch(plugin, textPropertyWidgetComponentProto, {
+    const patchWidget = plugin.addChild(new MonkeyAroundComponent());
+    patchWidget.registerPatch(textPropertyWidgetComponentProto, {
       render: (nextRender: () => void) =>
         function renderPatched(this: TextPropertyWidgetComponent): void {
           render(this, nextRender);
@@ -137,7 +140,7 @@ function renderWidget(
     ...ctx,
     onChange: (newValue: unknown): void => {
       ctx.onChange(newValue);
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         el.empty();
         renderWidget(el, newValue, ctx, next, plugin);
       });
@@ -194,7 +197,7 @@ function renderWidget(
 
     const childWidget = next(childEl, childWidgetValue, ctx);
     childWidget.inputEl.addEventListener('focus', () => {
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         const caretOffset = getCaretCharacterOffset();
         childWidgetsContainerEl.hide();
         widget.inputEl.show();
@@ -231,7 +234,7 @@ function selectSuggestion(
   const oldValue = suggest.textInputEl.textContent;
   next.call(suggest, value, evt);
   const newValue = suggest.textInputEl.textContent;
-  const { from, to } = patchedInputEls.get(suggest.textInputEl) ?? { from: 0, to: 0 };
+  const { from, to } = ensureNonNullable(patchedInputEls.get(suggest.textInputEl));
   patchedInputEls.set(suggest.textInputEl, { from: 0, to: 0 });
 
   const fixedValue = oldValue.slice(0, from) + newValue + oldValue.slice(to);

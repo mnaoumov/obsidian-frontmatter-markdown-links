@@ -1,27 +1,26 @@
 import type {
-  App,
-  Component
-} from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
-import type {
   MetadataTypeManagerRegisteredTypeWidgetsRecord,
   MultitextPropertyWidgetComponent,
   PropertyRenderContext
-} from 'obsidian-typings';
+} from '@obsidian-typings/obsidian-public-latest';
+import type { App } from 'obsidian';
+import type { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 
 import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
+import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
 import {
   parseLinks,
   splitSubpath
 } from 'obsidian-dev-utils/obsidian/link';
-import { registerPatch } from 'obsidian-dev-utils/obsidian/monkey-around';
+import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
-import type { Plugin } from './Plugin.ts';
+import type { Plugin } from './plugin.ts';
 
-import { attachLinkData } from './LinkData.ts';
-import { extractDisplayText } from './Utils.ts';
+import { attachLinkData } from './link-data.ts';
+import { extractDisplayText } from './utils.ts';
 
-interface MultiSelectComponent extends Component {
+interface MultiSelectComponent extends ComponentEx {
   renderValues(): void;
   rootEl: HTMLElement;
   values: string[];
@@ -33,8 +32,9 @@ let isPatched = false;
 
 export function patchMultiTextPropertyWidgetComponent(plugin: Plugin): void {
   const widget = plugin.app.metadataTypeManager.registeredTypeWidgets.multitext;
+  const patch = plugin.addChild(new MonkeyAroundComponent());
 
-  registerPatch(plugin, widget, {
+  patch.registerPatch(widget, {
     render: (next: RenderMultiTextPropertyWidgetComponentFn): RenderMultiTextPropertyWidgetComponentFn => (el, data, ctx) =>
       renderWidget(el, data, ctx, next, plugin)
   });
@@ -53,18 +53,13 @@ function renderValues(app: App, multiSelectComponent: MultiSelectComponent, next
       continue;
     }
 
-    const el = renderedItemEls[i];
-    if (!el) {
-      continue;
-    }
+    const el = ensureNonNullable(renderedItemEls[i]);
 
-    const isSingleValue = parseLinkResults[0]?.raw === value;
+    const firstParseLinkResult = ensureNonNullable(parseLinkResults[0]);
+    const isSingleValue = firstParseLinkResult.raw === value;
 
     if (isSingleValue) {
-      if (!parseLinkResults[0]) {
-        continue;
-      }
-      renderChild(el, parseLinkResults[0]);
+      renderChild(el, firstParseLinkResult);
       continue;
     }
 
@@ -151,7 +146,8 @@ function renderWidget(
     const temp = el.createDiv();
     const multiTextPropertyComponent = next(temp, [], ctx);
     const multiSelectComponentProto = getPrototypeOf(multiTextPropertyComponent.multiselect);
-    registerPatch(plugin, multiSelectComponentProto, {
+    const patch = plugin.addChild(new MonkeyAroundComponent());
+    patch.registerPatch(multiSelectComponentProto, {
       renderValues: (nextRenderValues: () => void) => {
         return function renderValuesPatched(this: MultiSelectComponent): void {
           renderValues(plugin.app, this, nextRenderValues);
