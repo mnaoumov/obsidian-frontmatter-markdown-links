@@ -256,6 +256,7 @@ export class Plugin extends PluginBase {
     let mdFile = this.app.vault.getMarkdownFiles()[0];
     let shouldDeleteMdFile = false;
     if (!mdFile) {
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- window.crypto is the Web Crypto API, available in Obsidian's Electron renderer; the rule incorrectly flags it as a Node experimental builtin.
       mdFile = await this.app.vault.create(`__TEMP__${window.crypto.randomUUID()}.md`, '');
       shouldDeleteMdFile = true;
     }

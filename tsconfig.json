@@ -12,14 +12,14 @@
     "lib": [
       "DOM",
       "DOM.Iterable",
-      "ES2024"
+      "es2022"
     ],
     "libReplacement": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "node16",
+    "moduleResolution": "node16",
     "noEmit": true,
-    "skipLibCheck": false,
-    "target": "ES2024",
+    "skipLibCheck": true,
+    "target": "es2022",
     "types": [
       "@total-typescript/ts-reset",
       "node",
