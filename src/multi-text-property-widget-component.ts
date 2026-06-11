@@ -35,8 +35,7 @@ export function patchMultiTextPropertyWidgetComponent(plugin: Plugin): void {
   const patch = plugin.addChild(new MonkeyAroundComponent());
 
   patch.registerPatch(widget, {
-    render: (next: RenderMultiTextPropertyWidgetComponentFn): RenderMultiTextPropertyWidgetComponentFn => (el, data, ctx) =>
-      renderWidget(el, data, ctx, next, plugin)
+    render: (next: RenderMultiTextPropertyWidgetComponentFn): RenderMultiTextPropertyWidgetComponentFn => (el, data, ctx) => renderWidget(el, data, ctx, next, plugin)
   });
 }
 
