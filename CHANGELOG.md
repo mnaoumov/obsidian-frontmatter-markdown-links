@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.6.34
+
+- chore: update version script
+- chore: update manifest
+- chore: update libs
+
 ## 2.6.33
 
 - chore: update libs
