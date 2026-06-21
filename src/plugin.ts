@@ -9,13 +9,11 @@ import type {
   ExtractConstructor
 } from '@obsidian-typings/obsidian-public-latest';
 import type {
-  App,
   CachedMetadata,
   Editor,
   EditorPosition,
   FrontmatterLinkCache,
   MenuSeparator,
-  PluginManifest,
   RenderContext,
   TAbstractFile
 } from 'obsidian';
@@ -74,6 +72,7 @@ import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 import { patchTextPropertyWidgetComponent } from './text-property-widget-component.ts';
 import { isSourceMode } from './utils.ts';
+import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 
 type BasesNoteGetFn = BasesNote['get'];
 type GetClickableTokenAtFn = Editor['getClickableTokenAt'];
@@ -91,11 +90,10 @@ export class Plugin extends PluginBase {
   private isBasesExternalLinkPatched = false;
   private isBasesViewPatched = false;
   private isEditorPatched = false;
-  private readonly monkeyAroundComponent: MonkeyAroundComponent;
-  private readonly pluginSettingsComponent: PluginSettingsComponent;
+  private monkeyAroundComponent!: MonkeyAroundComponent;
+  private pluginSettingsComponent!: PluginSettingsComponent;
 
-  public constructor(app: App, manifest: PluginManifest) {
-    super(app, manifest);
+ protected override onloadImpl(): void {
     this.monkeyAroundComponent = this.addChild(new MonkeyAroundComponent());
     this.pluginSettingsComponent = this.addChild(
       new PluginSettingsComponent({
@@ -117,10 +115,6 @@ export class Plugin extends PluginBase {
         this.onLayoutReady();
       })
     );
-  }
-
-  public override async onload(): Promise<void> {
-    await super.onload();
 
     patchTextPropertyWidgetComponent(this);
     patchMultiTextPropertyWidgetComponent(this);
@@ -262,12 +256,12 @@ export class Plugin extends PluginBase {
     }
 
     const ctx = new basesContextCtor(this.app, {}, {}, mdFile);
-    const that = this;
+    const thisWrapper = ValueWrapper.of(this);
 
     this.monkeyAroundComponent.registerPatch(getPrototypeOf(ctx._local.note), {
       get: (next: BasesNoteGetFn): BasesNoteGetFn => {
         return function getPatched(this: BasesNote, key: string): BasesControl {
-          return that.noteGet(next, this, key);
+          return thisWrapper.value.noteGet(next, this, key);
         };
       }
     });
@@ -293,12 +287,12 @@ export class Plugin extends PluginBase {
     }
 
     this.isEditorPatched = true;
-    const that = this;
+    const thisWrapper = ValueWrapper.of(this);
 
     this.monkeyAroundComponent.registerPatch(this.app.workspace.activeEditor.editor.constructor.prototype, {
       getClickableTokenAt: (next: GetClickableTokenAtFn): GetClickableTokenAtFn => {
         return function getClickableTokenAtPatched(this: Editor, pos: EditorPosition): ClickableToken | null {
-          return that.getClickableTokenAt(next, this, pos);
+          return thisWrapper.value.getClickableTokenAt(next, this, pos);
         };
       }
     });
@@ -387,14 +381,14 @@ export class Plugin extends PluginBase {
 
     if (!this.isBasesExternalLinkPatched) {
       this.isBasesExternalLinkPatched = true;
-      const that = this;
+      const thisWrapper = ValueWrapper.of(this);
 
       note.data[key] = EXTERNAL_LINK_PREFIX;
       const basesExternalLink = next.call(note, key);
       this.monkeyAroundComponent.registerPatch(getPrototypeOf(basesExternalLink), {
         renderTo: (nextRenderToFn: RenderToFn): RenderToFn => {
           return function renderToPatched(this: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
-            that.basesExternalLinkRenderTo(nextRenderToFn, this, containerEl, renderContext);
+            thisWrapper.value.basesExternalLinkRenderTo(nextRenderToFn, this, containerEl, renderContext);
           };
         }
       });
@@ -404,7 +398,7 @@ export class Plugin extends PluginBase {
       this.monkeyAroundComponent.registerPatch(getPrototypeOf(basesList), {
         renderTo: (nextRenderToFn: RenderToFn): RenderToFn => {
           return function renderToPatched(this: BasesExternalLink, containerEl: HTMLElement, renderContext: RenderContext): void {
-            that.basesListRenderTo(nextRenderToFn, this, containerEl, renderContext);
+            thisWrapper.value.basesListRenderTo(nextRenderToFn, this, containerEl, renderContext);
           };
         }
       });
@@ -428,12 +422,12 @@ export class Plugin extends PluginBase {
     this.registerEvent(this.app.workspace.on('file-open', this.handleFileOpen.bind(this)));
     this.handleFileOpen();
 
-    const that = this;
+    const thisWrapper = ValueWrapper.of(this);
 
     this.monkeyAroundComponent.registerPatch(Menu.prototype, {
       showAtMouseEvent: (next: ShowAtMouseEventFn): ShowAtMouseEventFn => {
         return function showAtMouseEventPatched(this: Menu, evt: MouseEvent): Menu {
-          return that.showAtMouseEvent(next, this, evt);
+          return thisWrapper.value.showAtMouseEvent(next, this, evt);
         };
       }
     });

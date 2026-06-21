@@ -1642,8 +1642,8 @@ describe('Plugin', () => {
     type ProcessItemFn = (note: TFile) => Promise<void>;
 
     interface CaptureProcessItemResult {
-      cacheInstance: MockCacheInstanceAccess & ValidCacheInstance;
-      processItem: ProcessItemFn;
+      readonly cacheInstance: MockCacheInstanceAccess & ValidCacheInstance;
+      readonly processItem: ProcessItemFn;
     }
 
     async function captureProcessItem(plugin: Plugin): Promise<CaptureProcessItemResult> {

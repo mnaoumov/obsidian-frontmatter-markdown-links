@@ -50,7 +50,7 @@ interface ViewPluginDefineConfig {
 type ViewPluginFactory = (view: object) => ViewPluginFactoryResult;
 
 interface ViewPluginFactoryResult {
-  decorations: object;
+  readonly decorations: object;
   update(update: ViewPluginUpdate): void;
 }
 

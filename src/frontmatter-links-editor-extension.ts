@@ -5,6 +5,8 @@ import type {
 import type { App } from 'obsidian';
 import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 
+import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
+
 import { syntaxTree } from '@codemirror/language';
 import { RangeSetBuilder } from '@codemirror/state';
 import {
@@ -70,7 +72,7 @@ class FrontMatterLinksViewPlugin implements PluginValue {
     let valueStartIndex = NO_INDEX;
     let valueEndIndex = NO_INDEX;
     let hasComment = false;
-    const that = this;
+    const thisWrapper = ValueWrapper.of(this);
 
     for (const { from, to } of view.visibleRanges) {
       syntaxTree(view.state).iterate({
@@ -135,7 +137,7 @@ class FrontMatterLinksViewPlugin implements PluginValue {
         const linkEndIndex = startIndex + parseLinkResult.endOffset;
         const isInSelection = view.state.selection.ranges.some((r) => Math.max(r.from, linkStartIndex) <= Math.min(r.to, linkEndIndex));
 
-        if (isInSelection || that.isSourceMode) {
+        if (isInSelection || thisWrapper.value.isSourceMode) {
           for (const linkStylingInfo of getLinkStylingInfos(parseLinkResult.raw)) {
             builder.add(
               linkStartIndex + linkStylingInfo.from,

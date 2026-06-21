@@ -194,9 +194,9 @@ describe('renderWidget', () => {
 });
 
 interface CaptureResult {
-  plugin: Plugin;
-  renderProto: RenderProto;
-  textWidget: WidgetWithRender;
+  readonly plugin: Plugin;
+  readonly renderProto: RenderProto;
+  readonly textWidget: WidgetWithRender;
 }
 
 interface RenderProto {
@@ -448,8 +448,8 @@ interface FreshSuggestModule {
 }
 
 interface MySearchResult {
-  text: string;
-  type: string;
+  readonly text: string;
+  readonly type: string;
 }
 
 type SelectSuggestionFn = (this: unknown, value: MySearchResult, evt: KeyboardEvent | MouseEvent) => void;

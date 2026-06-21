@@ -178,7 +178,7 @@ describe('render patch', () => {
 });
 
 interface CapturePatchedRenderValuesResult {
-  app: App;
+  readonly app: App;
   patchedRenderValues(): void;
 }
 

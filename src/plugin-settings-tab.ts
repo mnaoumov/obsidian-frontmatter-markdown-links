@@ -4,9 +4,8 @@ import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin
 import type { PluginSettings } from './plugin-settings.ts';
 
 export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
-  public override display(): void {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- PluginSettingsTabBase still relies on the deprecated display() override; getSettingDefinitions is not used here.
-    super.display();
+  public override displayLegacy(): void {
+    super.displayLegacy();
 
     new Setting(this.containerEl)
       .setName('Should show initialization notice')

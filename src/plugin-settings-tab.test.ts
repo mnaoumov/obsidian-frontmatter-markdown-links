@@ -89,7 +89,7 @@ describe('PluginSettingsTab', () => {
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new PluginSettingsTab({ plugin, pluginSettingsComponent });
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- PluginSettingsTab still overrides the deprecated display(); exercising it is the intent of this test.
-    tab.display();
+    tab.displayLegacy();
 
     const EXPECTED_SETTINGS_COUNT = 2;
     expect(settingInstances).toHaveLength(EXPECTED_SETTINGS_COUNT);
@@ -108,7 +108,7 @@ describe('PluginSettingsTab', () => {
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new PluginSettingsTab({ plugin, pluginSettingsComponent });
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- PluginSettingsTab still overrides the deprecated display(); exercising it is the intent of this test.
-    tab.display();
+    tab.displayLegacy();
 
     expect(settingInstances.at(0)?.setName).toHaveBeenCalledWith('Should show initialization notice');
   });
@@ -126,7 +126,7 @@ describe('PluginSettingsTab', () => {
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new PluginSettingsTab({ plugin, pluginSettingsComponent });
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- PluginSettingsTab still overrides the deprecated display(); exercising it is the intent of this test.
-    tab.display();
+    tab.displayLegacy();
 
     expect(settingInstances.at(1)?.setName).toHaveBeenCalledWith('Should handle renames');
   });
@@ -145,7 +145,7 @@ describe('PluginSettingsTab', () => {
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new PluginSettingsTab({ plugin, pluginSettingsComponent });
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- PluginSettingsTab still overrides the deprecated display(); exercising it is the intent of this test.
-    tab.display();
+    tab.displayLegacy();
 
     expect(hoisted.keys).toContain('shouldShowInitializationNotice');
   });
@@ -164,7 +164,7 @@ describe('PluginSettingsTab', () => {
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new PluginSettingsTab({ plugin, pluginSettingsComponent });
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- PluginSettingsTab still overrides the deprecated display(); exercising it is the intent of this test.
-    tab.display();
+    tab.displayLegacy();
 
     expect(hoisted.keys).toContain('shouldHandleRenames');
   });

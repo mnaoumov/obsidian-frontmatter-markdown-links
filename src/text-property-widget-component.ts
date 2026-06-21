@@ -24,13 +24,13 @@ type SelectSuggestionFn = AbstractInputSuggest<MySearchResult>['selectSuggestion
 let isTextPropertyWidgetComponentPatched = false;
 
 interface MySearchResult extends SearchResult {
-  text: string;
-  type: string;
+  readonly text: string;
+  readonly type: string;
 }
 
 interface Offset {
-  from: number;
-  to: number;
+  readonly from: number;
+  readonly to: number;
 }
 
 const patchedInputEls = new WeakMap<HTMLDivElement, Offset>();
