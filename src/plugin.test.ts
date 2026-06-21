@@ -13,7 +13,7 @@ import type {
 } from 'obsidian';
 
 import { ViewType } from '@obsidian-typings/obsidian-public-latest/implementations';
-import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
+import { waitForAllAsyncOperations } from 'obsidian-dev-utils/async';
 import {
   noop,
   noopAsync
@@ -88,6 +88,10 @@ interface BasesNoteLike {
   get(key: string): unknown;
 }
 
+interface ClearMetadataCacheAccess {
+  clearMetadataCache: AnyFn;
+}
+
 interface ComponentModuleActual {
   Component: new () => object;
 }
@@ -125,6 +129,10 @@ interface MockCacheInstanceAccess {
 
 interface NoteGetAccess {
   noteGet: AnyFn;
+}
+
+interface ObsidianDevUtilsStateApp {
+  obsidianDevUtilsState: object;
 }
 
 interface ObsidianDevUtilsStateHolder {
@@ -257,18 +265,13 @@ vi.mock('obsidian-dev-utils/obsidian/loop', async (importOriginal) => {
   };
 });
 
-// Keep the REAL `convertAsyncToSync`; only stub `invokeAsyncSafely` so fire-and-forget work
-// Becomes inspectable in tests (the sanctioned exception per the G49 recipe). The default stub still
-// Invokes the function (swallowing rejections) like the real helper, so dev-utils collaborators that
-// Fire-and-forget through it (e.g. the real `CallbackLayoutReadyComponent`) keep working; individual
-// Tests override the implementation when they need to await the queued work.
+// Keep the REAL `invokeAsyncSafely`/`convertAsyncToSync` so fire-and-forget work is tracked and can be
+// Drained via `waitForAllAsyncOperations()` (async-operation tracking is wired in the unit-test setup).
+// Only stub `requestAnimationFrameAsync`, whose real rAF never resolves under jsdom.
 vi.mock('obsidian-dev-utils/async', async (importOriginal) => {
   const actual = await importOriginal<typeof import('obsidian-dev-utils/async')>();
   return {
     ...actual,
-    invokeAsyncSafely: vi.fn((fn: () => unknown) => {
-      Promise.resolve(fn()).catch(() => undefined);
-    }),
     requestAnimationFrameAsync: vi.fn().mockResolvedValue(undefined)
   };
 });
@@ -342,6 +345,10 @@ function createConfiguredApp(): App {
     cb();
   });
   const app = appMock.asOriginalType__();
+  // The async-operation-tracking setup pre-loads dev-utils' `app` module, so dev-utils' INTERNAL
+  // Relative `getObsidianDevUtilsState` call bypasses the public-specifier mock and reads
+  // `app.obsidianDevUtilsState` directly off the strict-proxy App; seed the bag so it does not throw.
+  castTo<ObsidianDevUtilsStateApp>(app).obsidianDevUtilsState = {};
   // The real RenameDeleteHandlerComponent (added during `onLayoutReady`) loads a child that
   // Monkey-patches `fileManager.runAsyncLinkUpdate`; the strict FileManager mock throws on that
   // Unmocked member, so provide it as a thin stub for the patch to wrap.
@@ -484,9 +491,6 @@ afterEach(() => {
   mockCacheConstructor.mockImplementation(createMockCacheInstance);
   // ClearAllMocks resets call history but keeps implementations, so reset the ones
   // That individual tests override to avoid leaking behavior into later tests.
-  vi.mocked(invokeAsyncSafely).mockReset().mockImplementation((fn: () => unknown) => {
-    Promise.resolve(fn()).catch(() => undefined);
-  });
   vi.mocked(getCacheSafe).mockReset().mockResolvedValue(null);
   vi.mocked(getMarkdownFilesSorted).mockReset().mockReturnValue([]);
 });
@@ -568,13 +572,17 @@ describe('Plugin', () => {
       vi.spyOn(plugin, 'register').mockImplementation((fn: () => void) => {
         registered.push(fn);
       });
+      const clearSpy = vi.spyOn(castTo<ClearMetadataCacheAccess>(plugin), 'clearMetadataCache')
+        .mockResolvedValue(undefined);
 
       await plugin.onload();
 
       const clearCallback = registered[0];
       clearCallback?.();
 
-      expect(vi.mocked(invokeAsyncSafely)).toHaveBeenCalledWith(expect.any(Function));
+      // The cleanup fires `clearMetadataCache` fire-and-forget via the real `invokeAsyncSafely`; drain it.
+      await waitForAllAsyncOperations();
+      expect(clearSpy).toHaveBeenCalled();
       plugin.unload();
     });
   });
@@ -583,8 +591,8 @@ describe('Plugin', () => {
     it('should invoke processAllNotes asynchronously during layout-ready', async () => {
       const { plugin } = await loadPluginWithLayoutReady();
 
-      // `processAllNotes` is fired-and-forgotten via `invokeAsyncSafely` from `onLayoutReady`.
-      expect(vi.mocked(invokeAsyncSafely)).toHaveBeenCalled();
+      // `processAllNotes` is fired-and-forgotten from `onLayoutReady`; its observable effect is the
+      // Mocked `loop` being driven (already awaited inside `loadPluginWithLayoutReady`).
       expect(vi.mocked(loop)).toHaveBeenCalled();
       plugin.unload();
     });
@@ -738,14 +746,19 @@ describe('Plugin', () => {
   });
 
   describe('handleMetadataCacheChanged', () => {
-    it('should invoke processFrontmatterLinksInFile asynchronously', () => {
+    it('should invoke processFrontmatterLinksInFile asynchronously', async () => {
       const plugin = createPlugin();
       const tfile = makeTFile('file.md');
       const cache = strictProxy<CachedMetadata>({ frontmatter: {} });
+      const processSpy = vi.spyOn(castTo<ProcessFrontmatterLinksInFileAccess>(plugin), 'processFrontmatterLinksInFile')
+        .mockResolvedValue(undefined);
 
       plugin['handleMetadataCacheChanged'](tfile, 'content', cache);
 
-      expect(vi.mocked(invokeAsyncSafely)).toHaveBeenCalledWith(expect.any(Function));
+      // The handler fires `processFrontmatterLinksInFile` fire-and-forget via the real
+      // `invokeAsyncSafely`; drain it before asserting the observable effect.
+      await waitForAllAsyncOperations();
+      expect(processSpy).toHaveBeenCalled();
     });
 
     it('should process frontmatter links in the changed file', async () => {
@@ -754,13 +767,9 @@ describe('Plugin', () => {
       const cache = strictProxy<CachedMetadata>({ frontmatter: {} });
       const processSpy = vi.spyOn(castTo<ProcessFrontmatterLinksInFileAccess>(plugin), 'processFrontmatterLinksInFile')
         .mockResolvedValue(undefined);
-      const pendingPromises: Promise<unknown>[] = [];
-      vi.mocked(invokeAsyncSafely).mockImplementation((fn: () => unknown) => {
-        pendingPromises.push(Promise.resolve(fn()));
-      });
 
       plugin['handleMetadataCacheChanged'](tfile, 'content', cache);
-      await Promise.all(pendingPromises);
+      await waitForAllAsyncOperations();
 
       expect(processSpy).toHaveBeenCalledWith(tfile, cache, 'content');
     });
@@ -1314,15 +1323,12 @@ describe('Plugin', () => {
           openLinkText
         }
       });
-      const pendingPromises: Promise<unknown>[] = [];
-      vi.mocked(invokeAsyncSafely).mockImplementation((fn: () => unknown) => {
-        pendingPromises.push(Promise.resolve(fn()));
-      });
       const target = createLinkTarget({ isExternalUrl: false, isWikilink: false, url: 'note.md' });
       const evt = castTo<MouseEvent>({ button: 0, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
 
       plugin['handleMouseDown'](evt);
-      await Promise.all(pendingPromises);
+      // The handler opens the link fire-and-forget via the real `invokeAsyncSafely`; drain it.
+      await waitForAllAsyncOperations();
 
       expect(openLinkText).toHaveBeenCalledWith('note.md', 'current.md', false);
       target.remove();
