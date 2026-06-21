@@ -14,6 +14,7 @@ import {
 } from 'obsidian-dev-utils/object-utils';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 import {
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -24,25 +25,20 @@ import {
 import type { Plugin } from './plugin.ts';
 
 type AnyFn = (...args: never[]) => unknown;
+interface LoadedChild {
+  load(): void;
+  unload(): void;
+}
+
 type RenderFn = (el: HTMLElement, data: unknown, ctx: PropertyRenderContext) => unknown;
 
 interface WidgetWithRender {
   render: RenderFn;
 }
 
-vi.mock('obsidian-dev-utils/obsidian/components/monkey-around-component', () => {
-  class MonkeyAroundComponent {
-    public registerPatch(obj: Record<string, AnyFn>, factories: Record<string, (next: AnyFn) => AnyFn>): void {
-      for (const [key, factory] of Object.entries(factories)) {
-        const original = obj[key];
-        if (typeof original === 'function') {
-          obj[key] = factory(original);
-        }
-      }
-    }
-  }
-  return { MonkeyAroundComponent };
-});
+// Children loaded via the mock plugin's `addChild`, tracked so they can be unloaded
+// After each test to remove the real prototype patches the source installs.
+const loadedChildren: LoadedChild[] = [];
 
 vi.mock('obsidian-dev-utils/object-utils', async (importOriginal) => {
   const actual = await importOriginal<typeof import('obsidian-dev-utils/object-utils')>();
@@ -56,7 +52,13 @@ vi.mock('obsidian-dev-utils/object-utils', async (importOriginal) => {
 import { patchTextPropertyWidgetComponent } from './text-property-widget-component.ts';
 
 function createMockPlugin(): Plugin {
-  const addChildFn = vi.fn().mockImplementation(<T>(child: T) => child);
+  // The real MonkeyAroundComponent throws on registerPatch unless it is loaded, so the
+  // Mock plugin's addChild loads each child (the real lifecycle) and tracks it for unload.
+  const addChildFn = vi.fn().mockImplementation(<T>(child: T): T => {
+    castTo<LoadedChild>(child).load();
+    loadedChildren.push(castTo<LoadedChild>(child));
+    return child;
+  });
   const mockWidget = {
     render: vi.fn().mockImplementation((el: HTMLElement, value: unknown, _ctx: PropertyRenderContext): TextPropertyWidgetComponent => {
       const component = createMockTextPropertyWidgetComponent();
@@ -106,6 +108,15 @@ function createMockTextPropertyWidgetComponent(): TextPropertyWidgetComponent {
     value: ''
   });
 }
+
+afterEach(() => {
+  // Unload all children loaded via addChild to remove the real prototype patches
+  // (e.g. AbstractInputSuggest.prototype, TextPropertyWidgetComponent.prototype) before the next test.
+  for (const child of loadedChildren) {
+    child.unload();
+  }
+  loadedChildren.length = 0;
+});
 
 describe('patchTextPropertyWidgetComponent', () => {
   it('should create MonkeyAroundComponent children on the plugin', async () => {
@@ -485,8 +496,9 @@ function makeSuggest(
   AbstractInputSuggestCls: AbstractInputSuggestCtor,
   textInputEl: HTMLDivElement
 ): AbstractInputSuggest<MySearchResult> {
+  // `textInputEl` is exposed via a getter-only bridge that returns the constructor's element,
+  // So it is supplied through the constructor rather than assigned afterwards.
   const suggest = new AbstractInputSuggestCls(castTo<App>({}), textInputEl);
-  castTo<TextInputElHolder>(suggest).textInputEl = textInputEl;
   return suggest;
 }
 
@@ -520,6 +532,24 @@ describe('getValue patch', () => {
     suggest.getValue();
 
     expect(suggestProto.selectSuggestion).not.toBe(original);
+  });
+
+  it('should not re-register the selectSuggestion patch on a second getValue call', async () => {
+    const suggestProto: SuggestProto = { selectSuggestion: vi.fn() };
+    const original = suggestProto.selectSuggestion;
+    const { AbstractInputSuggestCls } = await freshSuggestModule(suggestProto);
+
+    const textInputEl = activeDocument.createElement('div');
+    textInputEl.textContent = 'Value';
+    const suggest = makeSuggest(AbstractInputSuggestCls, textInputEl);
+
+    suggest.getValue();
+    const afterFirstCall = suggestProto.selectSuggestion;
+    // The second call must hit the already-patched skip branch and leave the patch untouched.
+    suggest.getValue();
+
+    expect(afterFirstCall).not.toBe(original);
+    expect(suggestProto.selectSuggestion).toBe(afterFirstCall);
   });
 
   it('should slice the value to the open-bracket region when the input is patched', async () => {
