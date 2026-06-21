@@ -63,6 +63,8 @@ import {
   getMarkdownFilesSorted,
   trashSafe
 } from 'obsidian-dev-utils/obsidian/vault';
+import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
+import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 
 import { registerFrontmatterLinksEditorExtension } from './frontmatter-links-editor-extension.ts';
 import { FrontmatterMarkdownLinksCache } from './frontmatter-markdown-links-cache.ts';
@@ -72,7 +74,6 @@ import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
 import { patchTextPropertyWidgetComponent } from './text-property-widget-component.ts';
 import { isSourceMode } from './utils.ts';
-import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 
 type BasesNoteGetFn = BasesNote['get'];
 type GetClickableTokenAtFn = Editor['getClickableTokenAt'];
@@ -90,28 +91,29 @@ export class Plugin extends PluginBase {
   private isBasesExternalLinkPatched = false;
   private isBasesViewPatched = false;
   private isEditorPatched = false;
-  private monkeyAroundComponent!: MonkeyAroundComponent;
-  private pluginSettingsComponent!: PluginSettingsComponent;
+  private readonly monkeyAroundComponent = new MonkeyAroundComponent();
+  private pluginSettingsComponent?: PluginSettingsComponent;
 
- protected override onloadImpl(): void {
-    this.monkeyAroundComponent = this.addChild(new MonkeyAroundComponent());
-    this.pluginSettingsComponent = this.addChild(
+  protected override onloadImpl(): void {
+    this.addChild(this.monkeyAroundComponent);
+    const pluginSettingsComponent = this.addChild(
       new PluginSettingsComponent({
         dataHandler: new PluginDataHandler(this),
         pluginEventSource: new PluginEventSourceImpl(this)
       })
     );
+    this.pluginSettingsComponent = pluginSettingsComponent;
     this.addChild(
       new PluginSettingsTabComponent({
         plugin: this,
         pluginSettingsTab: new PluginSettingsTab({
           plugin: this,
-          pluginSettingsComponent: this.pluginSettingsComponent
+          pluginSettingsComponent
         })
       })
     );
     this.addChild(
-      new CallbackLayoutReadyComponent(app, () => {
+      new CallbackLayoutReadyComponent(this.app, () => {
         this.onLayoutReady();
       })
     );
@@ -450,7 +452,7 @@ export class Plugin extends PluginBase {
         app: this.app,
         pluginId: this.manifest.id,
         settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
-          shouldHandleRenames: this.pluginSettingsComponent.settings.shouldHandleRenames
+          shouldHandleRenames: ensureNonNullable(this.pluginSettingsComponent).settings.shouldHandleRenames
         })
       })
     );
@@ -546,7 +548,7 @@ export class Plugin extends PluginBase {
       },
       progressBarTitle: 'Frontmatter Markdown Links: Initializing...',
       shouldContinueOnError: true,
-      shouldShowProgressBar: this.pluginSettingsComponent.settings.shouldShowInitializationNotice
+      shouldShowProgressBar: ensureNonNullable(this.pluginSettingsComponent).settings.shouldShowInitializationNotice
     });
 
     for (const filePath of cachedFilePaths) {
