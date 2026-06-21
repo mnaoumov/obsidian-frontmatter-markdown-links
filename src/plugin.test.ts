@@ -131,14 +131,6 @@ interface NoteGetAccess {
   noteGet: AnyFn;
 }
 
-interface ObsidianDevUtilsStateApp {
-  obsidianDevUtilsState: object;
-}
-
-interface ObsidianDevUtilsStateHolder {
-  value: unknown;
-}
-
 interface OnLayoutReadyAccess {
   onLayoutReady(): void;
 }
@@ -276,29 +268,6 @@ vi.mock('obsidian-dev-utils/async', async (importOriginal) => {
   };
 });
 
-// The REAL `PluginBase` (and the dev-utils notice/context/debug children it loads) read a shared-state
-// Bag off the app via `getObsidianDevUtilsState`. The strict App mock has no such bag, so stub just
-// This one utility. It memoizes per key (like the real holder) so state registered during load — e.g.
-// The rename/delete handler's settings-builder map — persists and can be exercised by later triggers.
-const { obsidianDevUtilsStateByKey } = vi.hoisted(() => ({
-  obsidianDevUtilsStateByKey: new Map<string, ObsidianDevUtilsStateHolder>()
-}));
-
-vi.mock('obsidian-dev-utils/obsidian/app', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('obsidian-dev-utils/obsidian/app')>();
-  return {
-    ...actual,
-    getObsidianDevUtilsState: vi.fn((_app: unknown, key: string, defaultValue: unknown) => {
-      let state = obsidianDevUtilsStateByKey.get(key);
-      if (!state) {
-        state = { value: defaultValue };
-        obsidianDevUtilsStateByKey.set(key, state);
-      }
-      return state;
-    })
-  };
-});
-
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { loop } from 'obsidian-dev-utils/obsidian/loop';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
@@ -345,10 +314,6 @@ function createConfiguredApp(): App {
     cb();
   });
   const app = appMock.asOriginalType__();
-  // The async-operation-tracking setup pre-loads dev-utils' `app` module, so dev-utils' INTERNAL
-  // Relative `getObsidianDevUtilsState` call bypasses the public-specifier mock and reads
-  // `app.obsidianDevUtilsState` directly off the strict-proxy App; seed the bag so it does not throw.
-  castTo<ObsidianDevUtilsStateApp>(app).obsidianDevUtilsState = {};
   // The real RenameDeleteHandlerComponent (added during `onLayoutReady`) loads a child that
   // Monkey-patches `fileManager.runAsyncLinkUpdate`; the strict FileManager mock throws on that
   // Unmocked member, so provide it as a thin stub for the patch to wrap.
@@ -480,8 +445,6 @@ afterEach(() => {
     component.unload();
   }
   loadedMonkeyAroundComponents.length = 0;
-
-  obsidianDevUtilsStateByKey.clear();
 
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- restore the global `app` saved in `beforeEach`.
   window.app = castTo<App>(savedGlobalApp);
