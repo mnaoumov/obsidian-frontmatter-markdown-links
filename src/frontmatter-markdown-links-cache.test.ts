@@ -10,6 +10,8 @@ import {
   vi
 } from 'vitest';
 
+import { FrontmatterMarkdownLinksCache } from './frontmatter-markdown-links-cache.ts';
+
 interface CacheWithMockDb {
   cache: FrontmatterMarkdownLinksCache;
   flushStoreActions(): void;
@@ -25,36 +27,6 @@ interface MockTFileLike {
 interface MockTFileStat {
   mtime: number;
 }
-
-const { capturedDebounceCallbacks } = vi.hoisted(() => ({
-  capturedDebounceCallbacks: [] as (() => void)[]
-}));
-
-vi.mock('obsidian', () => ({
-  debounce: (fn: () => void): () => void => {
-    capturedDebounceCallbacks.push(fn);
-    return (): void => {
-      // No-op so store actions are never flushed automatically.
-    };
-  }
-}));
-
-vi.mock('obsidian-dev-utils/array', () => ({
-  filterInPlace: (arr: unknown[], predicate: (item: unknown) => boolean): void => {
-    const toRemove: number[] = [];
-    for (let i = 0; i < arr.length; i++) {
-      if (!predicate(arr[i])) {
-        toRemove.unshift(i);
-      }
-    }
-    for (const idx of toRemove) {
-      arr.splice(idx, 1);
-    }
-  }
-}));
-
-// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { FrontmatterMarkdownLinksCache } from './frontmatter-markdown-links-cache.ts';
 
 function makeIdbOpenRequest(db: IDBDatabase, upgradeNewVersion?: number): IDBOpenDBRequest {
   const handlers: Partial<Record<string, (evt?: unknown) => void>> = {};
@@ -96,6 +68,17 @@ function makeTFile(path: string, mtime = 0): MockTFileLike {
 }
 
 describe('FrontmatterMarkdownLinksCache', () => {
+  beforeEach(() => {
+    // The real `debounce` schedules a `setTimeout`; fake timers keep store-action flushes
+    // Under the test's control instead of firing 5s later (and throwing on the uninitialized db).
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
   describe('getFilePaths', () => {
     it('should return empty array when no files added', () => {
       const cache = new FrontmatterMarkdownLinksCache();
@@ -435,16 +418,15 @@ describe('FrontmatterMarkdownLinksCache', () => {
       const transactionMock = vi.fn().mockReturnValue({ commit: vi.fn(), objectStore: objectStoreMock });
       const mockDb = castTo<IDBDatabase>({ transaction: transactionMock });
 
-      const countBefore = capturedDebounceCallbacks.length;
       const cache = new FrontmatterMarkdownLinksCache();
       // Set the private _db directly to skip init() overhead.
       cache['_db'] = mockDb;
 
       return { cache, flushStoreActions, objectStoreMock, transactionMock };
 
-      // The constructor calls debounce() exactly once; our mock pushes the fn at index countBefore.
+      // Fire the real debounced callback by flushing the pending fake timer.
       function flushStoreActions(): void {
-        capturedDebounceCallbacks[countBefore]?.();
+        vi.runAllTimers();
       }
     }
 
