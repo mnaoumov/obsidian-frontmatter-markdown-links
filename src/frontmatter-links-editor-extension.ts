@@ -5,8 +5,6 @@ import type {
 import type { App } from 'obsidian';
 import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 
-import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
-
 import { syntaxTree } from '@codemirror/language';
 import { RangeSetBuilder } from '@codemirror/state';
 import {
@@ -21,6 +19,7 @@ import {
   parseLinks
 } from 'obsidian-dev-utils/obsidian/link';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
+import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 
 import type { Plugin } from './plugin.ts';
 
