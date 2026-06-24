@@ -65,13 +65,14 @@ class LinkWidget extends WidgetType {
 }
 
 export class FrontMatterLinksViewPlugin implements PluginValue {
-  public get decorations(): DecorationSet {
-    return this._decorations;
-  }
-
   private _decorations: DecorationSet;
 
   private isSourceMode: boolean;
+
+  private get decorations(): DecorationSet {
+    return this._decorations;
+  }
+
   public constructor(view: EditorView, private readonly app: App) {
     this.isSourceMode = isSourceMode(this.app);
     this._decorations = this.buildDecorations(view);
