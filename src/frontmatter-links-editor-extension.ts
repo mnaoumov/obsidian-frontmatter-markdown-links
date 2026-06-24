@@ -1,3 +1,4 @@
+import type { Extension } from '@codemirror/state';
 import type {
   DecorationSet,
   PluginValue
@@ -21,10 +22,8 @@ import {
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 
-import type { Plugin } from './plugin.ts';
-
 import { getDataAttributes } from './link-data.ts';
-import { isSourceMode } from './utils.ts';
+import { isSourceMode } from './source-mode.ts';
 
 interface GroupDescription {
   cssClass: string;
@@ -39,17 +38,47 @@ interface LinkStylingInfo {
   to: number;
 }
 
-class FrontMatterLinksViewPlugin implements PluginValue {
+class LinkWidget extends WidgetType {
+  public constructor(private readonly parseLinkResult: ParseLinkResult, private readonly isInQuotes: boolean) {
+    super();
+  }
+
+  public override toDOM(): HTMLElement {
+    return createSpan({
+      cls: this.isInQuotes ? '' : 'cm-hmd-frontmatter cm-string'
+    }, (span) => {
+      span.createSpan({
+        cls: 'cm-hmd-internal-link'
+      }, (span2) => {
+        span2.createEl('a', {
+          attr: getDataAttributes({
+            isExternalUrl: this.parseLinkResult.isExternal,
+            isWikilink: this.parseLinkResult.isWikilink,
+            url: this.parseLinkResult.url
+          }),
+          cls: 'cm-underline',
+          text: this.parseLinkResult.alias ?? this.parseLinkResult.url
+        });
+      });
+    });
+  }
+}
+
+export class FrontMatterLinksViewPlugin implements PluginValue {
   public get decorations(): DecorationSet {
     return this._decorations;
   }
 
   private _decorations: DecorationSet;
-  private isSourceMode: boolean;
 
+  private isSourceMode: boolean;
   public constructor(view: EditorView, private readonly app: App) {
     this.isSourceMode = isSourceMode(this.app);
     this._decorations = this.buildDecorations(view);
+  }
+
+  public static createEditorExtension(app: App): Extension {
+    return ViewPlugin.define((view) => new FrontMatterLinksViewPlugin(view, app), { decorations: (value) => value.decorations });
   }
 
   public update(update: ViewUpdate): void {
@@ -168,37 +197,6 @@ class FrontMatterLinksViewPlugin implements PluginValue {
       }
     }
   }
-}
-
-class LinkWidget extends WidgetType {
-  public constructor(private readonly parseLinkResult: ParseLinkResult, private readonly isInQuotes: boolean) {
-    super();
-  }
-
-  public override toDOM(): HTMLElement {
-    return createSpan({
-      cls: this.isInQuotes ? '' : 'cm-hmd-frontmatter cm-string'
-    }, (span) => {
-      span.createSpan({
-        cls: 'cm-hmd-internal-link'
-      }, (span2) => {
-        span2.createEl('a', {
-          attr: getDataAttributes({
-            isExternalUrl: this.parseLinkResult.isExternal,
-            isWikilink: this.parseLinkResult.isWikilink,
-            url: this.parseLinkResult.url
-          }),
-          cls: 'cm-underline',
-          text: this.parseLinkResult.alias ?? this.parseLinkResult.url
-        });
-      });
-    });
-  }
-}
-
-export function registerFrontmatterLinksEditorExtension(plugin: Plugin): void {
-  const viewPlugin = ViewPlugin.define((view) => new FrontMatterLinksViewPlugin(view, plugin.app), { decorations: (value) => value.decorations });
-  plugin.registerEditorExtension(viewPlugin);
 }
 
 function getLinkStylingInfos(value: string): LinkStylingInfo[] {

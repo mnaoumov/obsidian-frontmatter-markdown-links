@@ -1,0 +1,494 @@
+import type {
+  BasesContext,
+  BasesView,
+  ExtractConstructor
+} from '@obsidian-typings/obsidian-public-latest';
+import type {
+  App,
+  CachedMetadata,
+  FrontmatterLinkCache
+} from 'obsidian';
+import type { AbortSignalComponent } from 'obsidian-dev-utils/obsidian/components/abort-signal-component';
+import type { EditorExtensionRegistrar } from 'obsidian-dev-utils/obsidian/editor-extension-registrar';
+import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/frontmatter-link-cache-with-offsets';
+
+import {
+  InternalPluginName,
+  ViewType
+} from '@obsidian-typings/obsidian-public-latest/implementations';
+import {
+  Keymap,
+  MarkdownView,
+  parseYaml,
+  TAbstractFile,
+  TFile,
+  WorkspaceLeaf
+} from 'obsidian';
+import { filterInPlace } from 'obsidian-dev-utils/array';
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely,
+  requestAnimationFrameAsync
+} from 'obsidian-dev-utils/async';
+import { getNestedPropertyValue } from 'obsidian-dev-utils/object-utils';
+import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
+import { LayoutReadyComponent } from 'obsidian-dev-utils/obsidian/components/layout-ready-component';
+import {
+  parseLinks,
+  splitSubpath
+} from 'obsidian-dev-utils/obsidian/link';
+import { loop } from 'obsidian-dev-utils/obsidian/loop';
+import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
+import {
+  getMarkdownFilesSorted,
+  trashSafe
+} from 'obsidian-dev-utils/obsidian/vault';
+
+import type { LinkFixer } from './link-fixer.ts';
+import type { PatchedInputElementMap } from './patched-input-element-map.ts';
+import type { PluginSettingsComponent } from './plugin-settings-component.ts';
+
+import { FrontMatterLinksViewPlugin } from './frontmatter-links-editor-extension.ts';
+import { FrontmatterMarkdownLinksCache } from './frontmatter-markdown-links-cache.ts';
+import { getLinkData } from './link-data.ts';
+import { AbstractInputSuggestGetValuePatchComponent } from './patches/abstract-input-suggest-get-value-patch-component.ts';
+import { BasesNoteGetPatchComponent } from './patches/bases-note-get-patch-component.ts';
+import { EditorGetClickableTokenAtPatchComponent } from './patches/editor-get-clickable-token-at-patch-component.ts';
+import { MenuShowAtMouseEventPatchComponent } from './patches/menu-show-at-mouse-event-patch-component.ts';
+import { MultitextPropertyWidgetRenderPatchComponent } from './patches/multitext-property-widget-render-patch-component.ts';
+import { TextPropertyWidgetRenderPatchComponent } from './patches/text-property-widget-render-patch-component.ts';
+import { isSourceMode } from './source-mode.ts';
+
+interface FrontmatterMarkdownLinksComponentConstructorParams {
+  readonly abortSignalComponent: AbortSignalComponent;
+  readonly app: App;
+  readonly editorExtensionRegistrar: EditorExtensionRegistrar;
+  readonly linkFixer: LinkFixer;
+  readonly patchedInputElementMap: PatchedInputElementMap;
+  readonly pluginSettingsComponent: PluginSettingsComponent;
+}
+
+export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
+  private readonly abortSignalComponent: AbortSignalComponent;
+  private readonly currentlyProcessingFiles = new Set<string>();
+  private readonly editorExtensionRegistrar: EditorExtensionRegistrar;
+  private frontmatterMarkdownLinksCache = new FrontmatterMarkdownLinksCache();
+  private isBasesViewPatched = false;
+  private isEditorPatched = false;
+  private readonly linkFixer: LinkFixer;
+  private readonly patchedInputElementMap: PatchedInputElementMap;
+  private readonly pluginSettingsComponent: PluginSettingsComponent;
+
+  public constructor(params: FrontmatterMarkdownLinksComponentConstructorParams) {
+    super(params.app);
+    this.abortSignalComponent = params.abortSignalComponent;
+    this.editorExtensionRegistrar = params.editorExtensionRegistrar;
+    this.linkFixer = params.linkFixer;
+    this.patchedInputElementMap = params.patchedInputElementMap;
+    this.pluginSettingsComponent = params.pluginSettingsComponent;
+  }
+
+  public override onload(): void {
+    super.onload();
+
+    const textPropertyWidget = this.app.metadataTypeManager.registeredTypeWidgets.text;
+
+    this.addChild(
+      new TextPropertyWidgetRenderPatchComponent({
+        patchedInputElementMap: this.patchedInputElementMap,
+        textPropertyWidget
+      })
+    );
+
+    this.addChild(
+      new AbstractInputSuggestGetValuePatchComponent({
+        patchedInputElementMap: this.patchedInputElementMap
+      })
+    );
+
+    const multitextPropertyWidget = this.app.metadataTypeManager.registeredTypeWidgets.multitext;
+
+    this.addChild(
+      new MultitextPropertyWidgetRenderPatchComponent({
+        app: this.app,
+        multitextPropertyWidget
+      })
+    );
+
+    this.editorExtensionRegistrar.registerEditorExtension(FrontMatterLinksViewPlugin.createEditorExtension(this.app));
+
+    this.register(() => {
+      invokeAsyncSafely(this.clearMetadataCache.bind(this));
+    });
+    this.register(this.refreshMarkdownViews.bind(this));
+    this.refreshMarkdownViews();
+  }
+
+  protected override async onLayoutReady(): Promise<void> {
+    await this.processAllNotes();
+    this.registerEvent(this.app.metadataCache.on('changed', this.handleMetadataCacheChanged.bind(this)));
+    this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
+    this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
+    this.registerEvent(this.app.workspace.on('file-open', this.handleFileOpen.bind(this)));
+    this.handleFileOpen();
+
+    this.addChild(new MenuShowAtMouseEventPatchComponent(this.app));
+
+    const allWindowsEventComponent = this.addChild(new AllWindowsEventComponent(this.app));
+    allWindowsEventComponent.registerAllDocumentsDomEvent('mousedown', this.handleMouseDown.bind(this), { capture: true });
+    allWindowsEventComponent.registerAllDocumentsDomEvent('mouseover', this.handleMouseOver.bind(this), { capture: true });
+
+    invokeAsyncSafely(async () => {
+      await this.handleActiveLeafChange(this.app.workspace.getLeavesOfType(ViewType.Bases)[0] ?? null);
+
+      if (!this.isBasesViewPatched) {
+        this.registerEvent(this.app.workspace.on('active-leaf-change', convertAsyncToSync(this.handleActiveLeafChange.bind(this))));
+      }
+    });
+  }
+
+  private async clearMetadataCache(): Promise<void> {
+    for (const filePath of this.frontmatterMarkdownLinksCache.getFilePaths()) {
+      const cache = this.app.metadataCache.getCache(filePath);
+      if (!cache?.frontmatterLinks) {
+        continue;
+      }
+
+      const keys = new Set(this.frontmatterMarkdownLinksCache.getKeys(filePath));
+      cache.frontmatterLinks = cache.frontmatterLinks.filter((link) => !keys.has(link.key));
+      if (cache.frontmatterLinks.length === 0) {
+        delete cache.frontmatterLinks;
+      }
+
+      const file = this.app.vault.getFileByPath(filePath);
+      if (!file) {
+        continue;
+      }
+      const data = await this.app.vault.read(file);
+      this.app.metadataCache.trigger('changed', file, data, cache);
+    }
+  }
+
+  private async handleActiveLeafChange(leaf: null | WorkspaceLeaf): Promise<void> {
+    if (this.isBasesViewPatched) {
+      return;
+    }
+
+    const basesPlugin = this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Bases);
+    if (!basesPlugin) {
+      return;
+    }
+
+    if (!leaf) {
+      return;
+    }
+
+    if (leaf.view.getViewType() !== ViewType.Bases) {
+      return;
+    }
+
+    await leaf.loadIfDeferred();
+    await requestAnimationFrameAsync();
+
+    const basesView = leaf.view as BasesView;
+    const basesContextCtor = basesView.controller.ctx.constructor as ExtractConstructor<BasesContext>;
+
+    let mdFile = this.app.vault.getMarkdownFiles()[0];
+    let shouldDeleteMdFile = false;
+    if (!mdFile) {
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- window.crypto is the Web Crypto API, available in Obsidian's Electron renderer; the rule incorrectly flags it as a Node experimental builtin.
+      mdFile = await this.app.vault.create(`__TEMP__${window.crypto.randomUUID()}.md`, '');
+      shouldDeleteMdFile = true;
+    }
+
+    const ctx = new basesContextCtor(this.app, {}, {}, mdFile);
+
+    this.addChild(
+      new BasesNoteGetPatchComponent({
+        basesNote: ctx._local.note,
+        linkFixer: this.linkFixer
+      })
+    );
+
+    if (shouldDeleteMdFile) {
+      await trashSafe(this.app, mdFile);
+    }
+
+    this.isBasesViewPatched = true;
+  }
+
+  private handleDelete(file: TAbstractFile): void {
+    this.frontmatterMarkdownLinksCache.delete(file.path);
+  }
+
+  private handleFileOpen(): void {
+    if (this.isEditorPatched) {
+      return;
+    }
+
+    if (!this.app.workspace.activeEditor?.editor) {
+      return;
+    }
+
+    this.isEditorPatched = true;
+
+    this.addChild(
+      new EditorGetClickableTokenAtPatchComponent({
+        editor: this.app.workspace.activeEditor.editor
+      })
+    );
+  }
+
+  private handleMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): void {
+    invokeAsyncSafely(async () => {
+      await this.processFrontmatterLinksInFile(file, cache, data);
+    });
+  }
+
+  private handleMouseDown(evt: MouseEvent): void {
+    const RIGHT_BUTTON = 2;
+    if (evt.button === RIGHT_BUTTON) {
+      return;
+    }
+
+    if (!Keymap.isModEvent(evt) && isSourceMode(this.app)) {
+      return;
+    }
+
+    const target = evt.target as HTMLElement | undefined;
+    if (!target) {
+      return;
+    }
+
+    const linkData = getLinkData(target);
+    if (!linkData) {
+      return;
+    }
+
+    evt.preventDefault();
+    evt.stopImmediatePropagation();
+
+    target.addEventListener('click', (evt2) => {
+      evt2.preventDefault();
+      evt2.stopImmediatePropagation();
+    }, { capture: true, once: true });
+
+    if (linkData.isExternalUrl) {
+      window.open(linkData.url, evt.button === 1 ? 'tab' : '');
+    } else {
+      const activeFile = this.app.workspace.getActiveFile();
+      if (!activeFile) {
+        return;
+      }
+
+      invokeAsyncSafely(() => this.app.workspace.openLinkText(linkData.url, activeFile.path, Keymap.isModEvent(evt)));
+    }
+  }
+
+  private handleMouseOver(evt: MouseEvent): void {
+    const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+    const target = evt.target as HTMLElement;
+    const linkData = getLinkData(target);
+    if (!linkData) {
+      return;
+    }
+
+    if (linkData.isExternalUrl) {
+      return;
+    }
+
+    evt.preventDefault();
+
+    this.app.workspace.trigger('hover-link', {
+      event: evt,
+      hoverParent: this,
+      linktext: linkData.url,
+      source: markdownView?.getHoverSource() ?? 'source',
+      targetEl: target
+    });
+  }
+
+  private handleRename(file: TAbstractFile, oldPath: string): void {
+    if (!(file instanceof TFile)) {
+      return;
+    }
+
+    this.frontmatterMarkdownLinksCache.rename(oldPath, file);
+  }
+
+  private async processAllNotes(): Promise<void> {
+    this.frontmatterMarkdownLinksCache = new FrontmatterMarkdownLinksCache();
+    await this.frontmatterMarkdownLinksCache.init(this.app);
+
+    const cachedFilePaths = new Set(this.frontmatterMarkdownLinksCache.getFilePaths());
+
+    await loop({
+      abortSignal: this.abortSignalComponent.abortSignal,
+      buildNoticeMessage: (note, iterationStr) => `Processing frontmatter links ${iterationStr} - ${note.path}`,
+      items: getMarkdownFilesSorted(this.app),
+      processItem: async (note) => {
+        cachedFilePaths.delete(note.path);
+        if (this.frontmatterMarkdownLinksCache.isCacheValid(note)) {
+          const frontmatterMarkdownLinksCacheLinks = this.frontmatterMarkdownLinksCache.getLinks(note);
+          if (frontmatterMarkdownLinksCacheLinks.length === 0) {
+            return;
+          }
+          const cache = await getCacheSafe(this.app, note);
+          if (!cache) {
+            return;
+          }
+          cache.frontmatterLinks ??= [];
+
+          const obsidianLinkMap = new Map<string, FrontmatterLinkCache>();
+
+          for (const link of cache.frontmatterLinks) {
+            obsidianLinkMap.set(link.key, link);
+          }
+
+          const frontmatterMarkdownLinksCacheKeys = new Set(frontmatterMarkdownLinksCacheLinks.map((link) => link.key));
+          filterInPlace(cache.frontmatterLinks, (link) => !frontmatterMarkdownLinksCacheKeys.has(link.key));
+
+          const newLinks: FrontmatterLinkCache[] = [];
+
+          for (const link of frontmatterMarkdownLinksCacheLinks) {
+            const value = getNestedPropertyValue((cache.frontmatter ?? {}) as Record<string, unknown>, link.key);
+            if (value !== link.original) {
+              this.frontmatterMarkdownLinksCache.deleteKey(note.path, link.key);
+              const obsidianLink = obsidianLinkMap.get(link.key);
+              if (obsidianLink) {
+                cache.frontmatterLinks.push(obsidianLink);
+                obsidianLinkMap.delete(link.key);
+              }
+              continue;
+            }
+
+            cache.frontmatterLinks.push(link);
+            newLinks.push(link);
+          }
+
+          for (const link of newLinks) {
+            this.updateResolvedOrUnresolvedLinksCache(link.link, note.path);
+          }
+          return;
+        }
+
+        const cache = await getCacheSafe(this.app, note);
+        if (!cache) {
+          return;
+        }
+        await this.processFrontmatterLinksInFile(note, cache);
+      },
+      progressBarTitle: 'Frontmatter Markdown Links: Initializing...',
+      shouldContinueOnError: true,
+      shouldShowProgressBar: this.pluginSettingsComponent.settings.shouldShowInitializationNotice
+    });
+
+    for (const filePath of cachedFilePaths) {
+      this.frontmatterMarkdownLinksCache.delete(filePath);
+    }
+  }
+
+  private processFrontmatterLinks(value: unknown, key: string, cache: CachedMetadata, filePath: string): boolean {
+    if (typeof value === 'string') {
+      this.frontmatterMarkdownLinksCache.deleteKey(filePath, key);
+      const parseLinkResults = parseLinks(value);
+      const isSingleLink = parseLinkResults[0]?.raw === value;
+
+      let hasFrontmatterLinks = false;
+
+      filterInPlace(cache.frontmatterLinks ?? [], (link) => {
+        return link.key !== key;
+      });
+
+      for (const parseLinkResult of parseLinkResults) {
+        if (parseLinkResult.isExternal) {
+          continue;
+        }
+
+        cache.frontmatterLinks ??= [];
+
+        const link: FrontmatterLinkCache = isSingleLink
+          ? {
+            key,
+            link: parseLinkResult.url,
+            original: value
+          }
+          : {
+            endOffset: parseLinkResult.endOffset,
+            key,
+            link: parseLinkResult.url,
+            original: value,
+            startOffset: parseLinkResult.startOffset
+          } as FrontmatterLinkCacheWithOffsets;
+
+        link.displayText = parseLinkResult.alias ?? parseLinkResult.url;
+
+        cache.frontmatterLinks.push(link);
+
+        if (!isSingleLink || !parseLinkResult.isWikilink) {
+          hasFrontmatterLinks = true;
+          this.frontmatterMarkdownLinksCache.add(filePath, link);
+          this.updateResolvedOrUnresolvedLinksCache(link.link, filePath);
+        }
+      }
+
+      return hasFrontmatterLinks;
+    }
+
+    if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+
+    let hasFrontmatterLinks = false;
+
+    for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
+      const hasChildFrontmatterLinks = this.processFrontmatterLinks(childValue, key ? `${key}.${childKey}` : childKey, cache, filePath);
+      hasFrontmatterLinks ||= hasChildFrontmatterLinks;
+    }
+
+    return hasFrontmatterLinks;
+  }
+
+  private async processFrontmatterLinksInFile(file: TFile, cache: CachedMetadata, data?: string): Promise<void> {
+    this.frontmatterMarkdownLinksCache.updateFile(file);
+
+    if (this.currentlyProcessingFiles.has(file.path)) {
+      return;
+    }
+
+    const hasFrontmatterLinks = this.processFrontmatterLinks(cache.frontmatter, '', cache, file.path);
+    if (!hasFrontmatterLinks) {
+      return;
+    }
+
+    this.currentlyProcessingFiles.add(file.path);
+    data ??= await this.app.vault.read(file);
+    this.app.metadataCache.trigger('changed', file, data, cache);
+    this.currentlyProcessingFiles.delete(file.path);
+  }
+
+  private refreshMarkdownViews(): void {
+    for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
+      if (!(leaf.view instanceof MarkdownView)) {
+        continue;
+      }
+
+      const frontmatter = parseYaml(leaf.view.rawFrontmatter) as Record<string, unknown>;
+      leaf.view.metadataEditor.synchronize({});
+      leaf.view.metadataEditor.synchronize(frontmatter);
+    }
+  }
+
+  private updateResolvedOrUnresolvedLinksCache(link: string, notePath: string): void {
+    const { linkPath } = splitSubpath(link);
+    const resolvedFile = this.app.metadataCache.getFirstLinkpathDest(linkPath, notePath);
+    const linksCacheMap = resolvedFile ? this.app.metadataCache.resolvedLinks : this.app.metadataCache.unresolvedLinks;
+    const linksCacheForNote = linksCacheMap[notePath] ?? {};
+    linksCacheMap[notePath] = linksCacheForNote;
+
+    const resolvedLinkPath = resolvedFile?.path ?? linkPath;
+    linksCacheForNote[resolvedLinkPath] ??= 0;
+    linksCacheForNote[resolvedLinkPath]++;
+  }
+}
