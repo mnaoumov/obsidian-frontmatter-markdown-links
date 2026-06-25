@@ -13,8 +13,6 @@ import {
   vi
 } from 'vitest';
 
-import type { LinkData } from '../link-data.ts';
-
 import { attachLinkData } from '../link-data.ts';
 import { EditorGetClickableTokenAtPatchComponent } from './editor-get-clickable-token-at-patch-component.ts';
 
@@ -36,6 +34,8 @@ interface EditorWithProto {
 }
 
 type GetClickableTokenAtFn = (this: unknown, pos: EditorPosition) => unknown;
+
+type LinkData = Parameters<typeof attachLinkData>[1];
 
 let loadedComponent: EditorGetClickableTokenAtPatchComponent | null = null;
 

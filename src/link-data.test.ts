@@ -4,13 +4,13 @@ import {
   it
 } from 'vitest';
 
-import type { LinkData } from './link-data.ts';
-
 import {
   attachLinkData,
   getDataAttributes,
   getLinkData
 } from './link-data.ts';
+
+type LinkData = NonNullable<ReturnType<typeof getLinkData>>;
 
 describe('attachLinkData', () => {
   it('should set the data attribute on the element', () => {
