@@ -1,13 +1,13 @@
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
-export interface LinkData {
+interface Dataset {
+  frontmatterMarkdownLinksLinkData: string;
+}
+
+interface LinkData {
   isExternalUrl: boolean;
   isWikilink: boolean;
   url: string;
-}
-
-interface Dataset {
-  frontmatterMarkdownLinksLinkData: string;
 }
 
 export function attachLinkData(el: HTMLElement, linkData: LinkData): void {
