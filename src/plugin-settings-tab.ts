@@ -11,7 +11,10 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
       .setName('Should show initialization notice')
       .setDesc('Whether to show a notice when the plugin is being initialized')
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldShowInitializationNotice');
+        this.bind({
+          propertyName: 'shouldShowInitializationNotice',
+          valueComponent: toggle
+        });
       });
 
     new Setting(this.containerEl)
@@ -26,7 +29,10 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
         f.appendText('⚠️ Default Obsidian link update mechanism can ruin some of your frontmatter links.');
       }))
       .addToggle((toggle) => {
-        this.bind(toggle, 'shouldHandleRenames');
+        this.bind({
+          propertyName: 'shouldHandleRenames',
+          valueComponent: toggle
+        });
       });
   }
 }

@@ -9,6 +9,7 @@ import type {
   FrontmatterLinkCache
 } from 'obsidian';
 import type { AbortSignalComponent } from 'obsidian-dev-utils/obsidian/components/abort-signal-component';
+import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
 import type { EditorExtensionRegistrar } from 'obsidian-dev-utils/obsidian/editor-extension-registrar';
 import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/frontmatter-link-cache-with-offsets';
 
@@ -65,6 +66,7 @@ interface FrontmatterMarkdownLinksComponentConstructorParams {
   readonly editorExtensionRegistrar: EditorExtensionRegistrar;
   readonly linkFixer: LinkFixer;
   readonly patchedInputElementMap: PatchedInputElementMap;
+  readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
@@ -77,6 +79,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
   private isEditorPatched = false;
   private readonly linkFixer: LinkFixer;
   private readonly patchedInputElementMap: PatchedInputElementMap;
+  private readonly pluginNoticeComponent: PluginNoticeComponent;
   private readonly pluginSettingsComponent: PluginSettingsComponent;
 
   public constructor(params: FrontmatterMarkdownLinksComponentConstructorParams) {
@@ -85,6 +88,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     this.editorExtensionRegistrar = params.editorExtensionRegistrar;
     this.linkFixer = params.linkFixer;
     this.patchedInputElementMap = params.patchedInputElementMap;
+    this.pluginNoticeComponent = params.pluginNoticeComponent;
     this.pluginSettingsComponent = params.pluginSettingsComponent;
   }
 
@@ -135,8 +139,16 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     this.addChild(new MenuShowAtMouseEventPatchComponent(this.app));
 
     const allWindowsEventComponent = this.addChild(new AllWindowsEventComponent(this.app));
-    allWindowsEventComponent.registerAllDocumentsDomEvent('mousedown', this.handleMouseDown.bind(this), { capture: true });
-    allWindowsEventComponent.registerAllDocumentsDomEvent('mouseover', this.handleMouseOver.bind(this), { capture: true });
+    allWindowsEventComponent.registerAllDocumentsDomEvent({
+      callback: this.handleMouseDown.bind(this),
+      options: { capture: true },
+      type: 'mousedown'
+    });
+    allWindowsEventComponent.registerAllDocumentsDomEvent({
+      callback: this.handleMouseOver.bind(this),
+      options: { capture: true },
+      type: 'mouseover'
+    });
 
     invokeAsyncSafely(async () => {
       await this.handleActiveLeafChange(this.app.workspace.getLeavesOfType(ViewType.Bases)[0] ?? null);
@@ -327,6 +339,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
       abortSignal: this.abortSignalComponent.abortSignal,
       buildNoticeMessage: (note, iterationStr) => `Processing frontmatter links ${iterationStr} - ${note.path}`,
       items: getMarkdownFilesSorted(this.app),
+      pluginNoticeComponent: this.pluginNoticeComponent,
       processItem: async (note) => {
         cachedFilePaths.delete(note.path);
         if (this.frontmatterMarkdownLinksCache.isCacheValid(note)) {

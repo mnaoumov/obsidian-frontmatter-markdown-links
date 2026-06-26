@@ -25,7 +25,7 @@ let app: AppOriginal;
 beforeEach(() => {
   vi.clearAllMocks();
   app = App.createConfigured__().asOriginalType__();
-  vi.spyOn(PluginSettingsTabBase.prototype, 'bind').mockImplementation((valueComponent) => valueComponent);
+  vi.spyOn(PluginSettingsTabBase.prototype, 'bind').mockImplementation((params) => params.valueComponent);
 });
 
 describe('PluginSettingsTab', () => {
@@ -76,7 +76,7 @@ describe('PluginSettingsTab', () => {
 });
 
 function boundKeys(): unknown[] {
-  return vi.mocked(PluginSettingsTabBase.prototype.bind).mock.calls.map((call) => call[1]);
+  return vi.mocked(PluginSettingsTabBase.prototype.bind).mock.calls.map((call) => call[0].propertyName);
 }
 
 function createMockSettingsComponent(): PluginSettingsComponentBase<PluginSettings> {

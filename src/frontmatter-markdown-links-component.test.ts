@@ -3,11 +3,13 @@ import type {
   CachedMetadata,
   Editor,
   FrontMatterCache,
+  Notice as NoticeOriginal,
   TAbstractFile,
   TFile,
   WorkspaceLeaf
 } from 'obsidian';
 import type { AbortSignalComponent } from 'obsidian-dev-utils/obsidian/components/abort-signal-component';
+import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
 import type { EditorExtensionRegistrar } from 'obsidian-dev-utils/obsidian/editor-extension-registrar';
 
 import { ViewType } from '@obsidian-typings/obsidian-public-latest/implementations';
@@ -273,6 +275,7 @@ function createComponent(options: CreateComponentOptions = {}): FrontmatterMarkd
     editorExtensionRegistrar,
     linkFixer,
     patchedInputElementMap,
+    pluginNoticeComponent: createMockPluginNoticeComponent(),
     pluginSettingsComponent
   });
 }
@@ -306,6 +309,12 @@ function createMockApp(): App {
       getLeavesOfType: vi.fn().mockReturnValue([]),
       on: vi.fn().mockReturnValue({})
     }
+  });
+}
+
+function createMockPluginNoticeComponent(): PluginNoticeComponent {
+  return strictProxy<PluginNoticeComponent>({
+    showNotice: castTo<PluginNoticeComponent['showNotice']>(vi.fn(() => strictProxy<NoticeOriginal>({ hide: vi.fn(), setMessage: vi.fn() })))
   });
 }
 
@@ -408,6 +417,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         editorExtensionRegistrar: registrar,
         linkFixer,
         patchedInputElementMap,
+        pluginNoticeComponent: createMockPluginNoticeComponent(),
         pluginSettingsComponent
       });
     }
