@@ -971,6 +971,37 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       target.remove();
     });
 
+    it('should block the follow-up auxclick after a middle-click so the note does not open twice', () => {
+      const component = createComponent();
+      const openLinkText = vi.fn().mockResolvedValue(undefined);
+      setApp(
+        component,
+        strictProxy<App>({
+          workspace: {
+            getActiveFile: vi.fn().mockReturnValue(makeTFile('current.md')),
+            getActiveViewOfType: vi.fn().mockReturnValue(null),
+            openLinkText
+          }
+        })
+      );
+      const MIDDLE_BUTTON = 1;
+      const target = createLinkTarget({ isExternalUrl: false, isWikilink: false, url: 'note.md' });
+      const evt = castTo<MouseEvent>({ button: MIDDLE_BUTTON, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
+
+      component['handleMouseDown'](evt);
+
+      // Browsers fire `auxclick` (not `click`) for the middle button. Obsidian's native handler opens
+      // The link on this event, so the plugin must swallow it to avoid opening the note a second time.
+      const auxclickEvt = new MouseEvent('auxclick', { bubbles: true, button: MIDDLE_BUTTON, cancelable: true });
+      const auxclickPreventSpy = vi.spyOn(auxclickEvt, 'preventDefault');
+      const auxclickStopSpy = vi.spyOn(auxclickEvt, 'stopImmediatePropagation');
+      target.dispatchEvent(auxclickEvt);
+
+      expect(auxclickPreventSpy).toHaveBeenCalled();
+      expect(auxclickStopSpy).toHaveBeenCalled();
+      target.remove();
+    });
+
     it('should open an external URL in the same tab on left-click', () => {
       const component = createComponent();
       setApp(

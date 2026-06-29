@@ -280,10 +280,12 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     evt.preventDefault();
     evt.stopImmediatePropagation();
 
-    target.addEventListener('click', (evt2) => {
-      evt2.preventDefault();
-      evt2.stopImmediatePropagation();
-    }, { capture: true, once: true });
+    // The plugin opens the link itself on `mousedown`, so the browser's follow-up activation event must
+    // Be swallowed to stop Obsidian's native handler from opening the link a second time. A left-click
+    // Produces `click`, while a middle-click produces `auxclick` (no `click` fires for non-primary
+    // Buttons) - both must be blocked. Whichever fires removes both listeners so neither lingers.
+    target.addEventListener('click', swallowFollowUpEvent, { capture: true });
+    target.addEventListener('auxclick', swallowFollowUpEvent, { capture: true });
 
     if (linkData.isExternalUrl) {
       window.open(linkData.url, evt.button === 1 ? 'tab' : '');
@@ -294,6 +296,13 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
       }
 
       invokeAsyncSafely(() => this.app.workspace.openLinkText(linkData.url, activeFile.path, Keymap.isModEvent(evt)));
+    }
+
+    function swallowFollowUpEvent(evt2: Event): void {
+      evt2.preventDefault();
+      evt2.stopImmediatePropagation();
+      target?.removeEventListener('click', swallowFollowUpEvent, { capture: true });
+      target?.removeEventListener('auxclick', swallowFollowUpEvent, { capture: true });
     }
   }
 
