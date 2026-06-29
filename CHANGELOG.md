@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.6.36
+
+- fix: re #34 \[BUG\] When middle-clicking on a markdown link in a property of type "List", note opens twice instead of once.
+- chore: sort tsconfig types
+
 ## 2.6.35
 
 - refactor: new template
