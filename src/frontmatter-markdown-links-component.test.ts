@@ -157,7 +157,7 @@ vi.mock('./patches/editor-get-clickable-token-at-patch-component.ts', async () =
 
 // Stub the bases context constructor extraction (a runtime-coupled sibling module tested on its own).
 // The component test drives the patching orchestration, so the resolved constructor is set per run.
-vi.mock('./constructors/get-bases-context-constructor.ts', () => ({
+vi.mock('obsidian-dev-utils/obsidian/constructors/get-bases-context-constructor', () => ({
   getBasesContextConstructor: vi.fn()
 }));
 
@@ -435,14 +435,16 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const { app, registerEditorExtension, synchronize } = createLifecycleApp();
       const registrar = strictProxy<EditorExtensionRegistrar>({ registerEditorExtension });
       const component = createLifecycleComponent(app, registrar);
-      component.load();
+      // Spy before `load()`: the unload cleanup binds `clearMetadataCache` at load time.
+      // The spy must therefore be in place before load for the registered cleanup to pick it up.
       const clearSpy = vi.spyOn(castTo<ClearMetadataCacheAccess>(component), 'clearMetadataCache')
         .mockResolvedValue(undefined);
+      component.load();
       synchronize.mockClear();
 
       component.unload();
 
-      // The unload-time cleanup fires `clearMetadataCache` fire-and-forget via the real `invokeAsyncSafely`.
+      // The unload-time cleanup fires `clearMetadataCache` fire-and-forget via the real `convertAsyncToSync`.
       await waitForAllAsyncOperations();
       expect(clearSpy).toHaveBeenCalled();
       // The registered cleanup runs `refreshMarkdownViews` again on unload.
@@ -821,7 +823,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
   describe('handleMouseDown', () => {
     function createLinkTarget(linkData: LinkDataShape): HTMLElement {
-      const target = activeDocument.createDiv();
+      const target = createDiv();
       target.setAttribute('data-frontmatter-markdown-links-link-data', JSON.stringify(linkData));
       activeDocument.body.appendChild(target);
       return target;
@@ -843,7 +845,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
     it('should do nothing when the target has no link data', () => {
       const component = createComponent();
-      const target = activeDocument.createDiv();
+      const target = createDiv();
       const evt = castTo<MouseEvent>({
         button: 0,
         preventDefault: vi.fn(),
@@ -1023,7 +1025,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
   describe('handleMouseOver', () => {
     it('should do nothing when the target has no link data', () => {
       const component = createComponent();
-      const target = activeDocument.createDiv();
+      const target = createDiv();
       const evt = castTo<MouseEvent>({
         preventDefault: vi.fn(),
         target
@@ -1046,7 +1048,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           }
         })
       );
-      const target = activeDocument.createDiv();
+      const target = createDiv();
       target.setAttribute(
         'data-frontmatter-markdown-links-link-data',
         JSON.stringify({ isExternalUrl: true, isWikilink: false, url: 'https://example.com' })
@@ -1073,7 +1075,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           }
         })
       );
-      const target = activeDocument.createDiv();
+      const target = createDiv();
       target.setAttribute(
         'data-frontmatter-markdown-links-link-data',
         JSON.stringify({ isExternalUrl: false, isWikilink: false, url: 'target/note.md' })
@@ -1103,7 +1105,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           }
         })
       );
-      const target = activeDocument.createDiv();
+      const target = createDiv();
       target.setAttribute(
         'data-frontmatter-markdown-links-link-data',
         JSON.stringify({ isExternalUrl: false, isWikilink: false, url: 'note.md' })

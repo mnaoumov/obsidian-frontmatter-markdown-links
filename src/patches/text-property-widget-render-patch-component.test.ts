@@ -69,12 +69,12 @@ function createSelection(overrides: Partial<Selection>): Selection {
 }
 
 function createWidgetComponent(value: string): TextPropertyWidgetComponent {
-  const inputEl = castTo<TextPropertyWidgetComponent['inputEl']>(activeDocument.createDiv());
+  const inputEl = castTo<TextPropertyWidgetComponent['inputEl']>(createDiv());
   inputEl.hide = vi.fn();
   inputEl.show = vi.fn();
-  const containerEl = activeDocument.createDiv();
+  const containerEl = createDiv();
   // Add a `metadata-link` element so `containerEl.find('.metadata-link')` resolves a real element.
-  const metadataLinkEl = activeDocument.createSpan();
+  const metadataLinkEl = createSpan();
   metadataLinkEl.addClass('metadata-link');
   metadataLinkEl.hide = vi.fn();
   containerEl.appendChild(metadataLinkEl);
@@ -134,7 +134,7 @@ describe('TextPropertyWidgetRenderPatchComponent', () => {
     const originalRender = widgetObj.render;
     loadPatch(widgetObj, new PatchedInputElementMap());
 
-    const el = activeDocument.createDiv();
+    const el = createDiv();
     const ctx = createContext();
     const result = widgetObj.render(el, 42, ctx);
 
@@ -146,7 +146,7 @@ describe('TextPropertyWidgetRenderPatchComponent', () => {
     const widgetObj = createWidgetObj();
     loadPatch(widgetObj, new PatchedInputElementMap());
 
-    const el = activeDocument.createDiv();
+    const el = createDiv();
     const result = widgetObj.render(el, 'plain text', createContext());
 
     expect(result).toBeDefined();
@@ -159,9 +159,9 @@ describe('TextPropertyWidgetRenderPatchComponent', () => {
     const childSpy = vi.spyOn(TextPropertyWidgetRenderPatchComponent.prototype, 'addChild');
     loadPatch(widgetObj, new PatchedInputElementMap());
 
-    const el1 = activeDocument.createDiv();
+    const el1 = createDiv();
     widgetObj.render(el1, 'first', createContext());
-    const el2 = activeDocument.createDiv();
+    const el2 = createDiv();
     widgetObj.render(el2, 'second', createContext());
 
     expect(childSpy).toHaveBeenCalledTimes(1);
@@ -174,7 +174,7 @@ describe('TextPropertyWidgetRenderPatchComponent', () => {
     const ctx = castTo<PropertyRenderContext>({ onChange, sourcePath: 'test.md' });
     loadPatch(widgetObj, new PatchedInputElementMap());
 
-    const el = activeDocument.createDiv();
+    const el = createDiv();
     widgetObj.render(el, 'plain', ctx);
 
     // The patched context is the last argument the original render received for the main widget.
@@ -189,7 +189,7 @@ describe('TextPropertyWidgetRenderPatchComponent', () => {
     const patchedInputElementMap = new PatchedInputElementMap();
     loadPatch(widgetObj, patchedInputElementMap);
 
-    const el = activeDocument.createDiv();
+    const el = createDiv();
     const widget = widgetObj.render(el, 'text [a](x.md) and [b](y.md)', createContext());
 
     expect(widget.inputEl.hide).toHaveBeenCalledTimes(1);
@@ -205,7 +205,7 @@ describe('TextPropertyWidgetRenderPatchComponent', () => {
     loadPatch(widgetObj, new PatchedInputElementMap());
     vi.spyOn(activeWindow, 'getSelection').mockReturnValue(createSelection({}));
 
-    const el = activeDocument.createDiv();
+    const el = createDiv();
     const widget = widgetObj.render(el, 'text [a](x.md) and [b](y.md)', createContext());
     widget.inputEl.appendChild(activeDocument.createTextNode('text [a](x.md) and [b](y.md)'));
     const focusSpy = vi.spyOn(widget.inputEl, 'focus');
@@ -226,7 +226,7 @@ describe('TextPropertyWidgetRenderPatchComponent', () => {
     loadPatch(widgetObj, new PatchedInputElementMap());
     vi.spyOn(activeWindow, 'getSelection').mockReturnValue(createSelection({}));
 
-    const el = activeDocument.createDiv();
+    const el = createDiv();
     const widget = widgetObj.render(el, 'text [a](x.md) and [b](y.md)', createContext());
     widget.inputEl.appendChild(activeDocument.createTextNode('seed'));
     const focusSpy = vi.spyOn(widget.inputEl, 'focus');
@@ -244,7 +244,7 @@ describe('TextPropertyWidgetRenderPatchComponent', () => {
     loadPatch(widgetObj, new PatchedInputElementMap());
     vi.spyOn(activeWindow, 'getSelection').mockReturnValue(createSelection({}));
 
-    const el = activeDocument.createDiv();
+    const el = createDiv();
     const widget = widgetObj.render(el, 'text [a](x.md) and [b](y.md)', createContext());
     const focusSpy = vi.spyOn(widget.inputEl, 'focus');
     const addRange = vi.fn();

@@ -70,7 +70,7 @@ function loadPatch(suggest: TestSuggest, patchedInputElementMap: PatchedInputEle
 
 describe('AbstractInputSuggestSelectSuggestionPatchComponent', () => {
   it('should delegate to the fallback when the input element is not patched', () => {
-    const textInputEl = activeDocument.createDiv();
+    const textInputEl = createDiv();
     const suggest = createSuggest(textInputEl);
     const patchedInputElementMap = new PatchedInputElementMap();
     loadPatch(suggest, patchedInputElementMap);
@@ -84,7 +84,7 @@ describe('AbstractInputSuggestSelectSuggestionPatchComponent', () => {
   });
 
   it('should splice the selected value into the original text when the input element is patched', () => {
-    const textInputEl = activeDocument.createDiv();
+    const textInputEl = createDiv();
     textInputEl.textContent = 'Foo [[bar';
     const suggest = createSuggest(textInputEl);
     const patchedInputElementMap = new PatchedInputElementMap();

@@ -37,7 +37,7 @@ describe('BasesExternalLinkRenderToPatchComponent', () => {
     component.load();
     loadedComponent = component;
 
-    const containerEl = activeDocument.createDiv();
+    const containerEl = createDiv();
     castTo<RenderToFn>(proto.renderTo).call(basesExternalLink, containerEl);
 
     expect(originalRenderTo).toHaveBeenCalledTimes(1);

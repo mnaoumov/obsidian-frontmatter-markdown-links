@@ -60,7 +60,7 @@ function createEditor(node: Node, fallbackToken: ClickableToken | null): EditorW
 }
 
 function createFrontmatterEl(): HTMLElement {
-  const frontmatterEl = activeDocument.createDiv();
+  const frontmatterEl = createDiv();
   frontmatterEl.addClass('cm-hmd-frontmatter');
   activeDocument.body.appendChild(frontmatterEl);
   return frontmatterEl;
@@ -100,7 +100,7 @@ function stubFindWithoutLinkEnd(frontmatterEl: HTMLElement, linkEl: HTMLElement)
 describe('EditorGetClickableTokenAtPatchComponent', () => {
   it('should return the token from fallback when it exists', () => {
     const token: ClickableToken = { end: createPos(), start: createPos(), text: 'x', type: 'internal-link' };
-    const node = activeDocument.createDiv();
+    const node = createDiv();
     const { editor, proto } = createEditor(node, token);
     loadPatch(editor);
 
@@ -110,7 +110,7 @@ describe('EditorGetClickableTokenAtPatchComponent', () => {
   });
 
   it('should return null when there is no frontmatter element', () => {
-    const node = activeDocument.createDiv();
+    const node = createDiv();
     const { editor, proto } = createEditor(node, null);
     loadPatch(editor);
 
@@ -120,7 +120,7 @@ describe('EditorGetClickableTokenAtPatchComponent', () => {
   });
 
   it('should use parentElement when the node is not an HTMLElement', () => {
-    const parent = activeDocument.createDiv();
+    const parent = createDiv();
     const textNode = activeDocument.createTextNode('text');
     parent.appendChild(textNode);
     const { editor, proto } = createEditor(textNode, null);
