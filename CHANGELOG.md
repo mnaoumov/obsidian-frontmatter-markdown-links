@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.37
+
+- fix: re #32 \[BUG\] An unhandled error occurred upon opening a base file
+
 ## 2.6.36
 
 - fix: re #34 \[BUG\] When middle-clicking on a markdown link in a property of type "List", note opens twice instead of once.
