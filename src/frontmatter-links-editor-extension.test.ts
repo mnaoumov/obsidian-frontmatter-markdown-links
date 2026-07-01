@@ -99,7 +99,7 @@ vi.mock('@codemirror/view', () => ({
   ViewUpdate: vi.fn(),
   WidgetType: class WidgetType {
     public toDOM(): HTMLElement {
-      return activeDocument.createSpan();
+      return createSpan();
     }
   }
 }));

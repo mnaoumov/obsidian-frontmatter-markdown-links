@@ -37,7 +37,7 @@ describe('BasesListRenderToPatchComponent', () => {
     component.load();
     loadedComponent = component;
 
-    const containerEl = activeDocument.createDiv();
+    const containerEl = createDiv();
     castTo<RenderToFn>(proto.renderTo).call(basesList, containerEl);
 
     expect(originalRenderTo).toHaveBeenCalledTimes(1);
