@@ -62,7 +62,7 @@ describe('MultitextPropertyWidgetRenderPatchComponent', () => {
     const widget = castTo<PropertyWidget<MultitextPropertyWidgetComponent>>({ render: renderImpl });
     loadPatch(widget);
 
-    const containerEl = activeDocument.createElement('div');
+    const containerEl = activeDocument.createDiv();
     const result = castTo<RenderFn>(widget.render).call(widget, containerEl, ['item1'], createContext());
 
     expect(result).toBeDefined();
@@ -78,7 +78,7 @@ describe('MultitextPropertyWidgetRenderPatchComponent', () => {
     const widget = castTo<PropertyWidget<MultitextPropertyWidgetComponent>>({ render: renderImpl });
     loadPatch(widget);
 
-    const containerEl = activeDocument.createElement('div');
+    const containerEl = activeDocument.createDiv();
     castTo<RenderFn>(widget.render).call(widget, containerEl, ['item1'], createContext());
     renderImpl.mockClear();
 

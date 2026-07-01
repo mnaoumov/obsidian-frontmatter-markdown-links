@@ -22,8 +22,8 @@ interface LinkFixerInternals {
 }
 
 function createAnchorIn(href: string): AnchorInContainer {
-  const containerEl = activeDocument.createElement('div');
-  const aEl = activeDocument.createElement('a');
+  const containerEl = activeDocument.createDiv();
+  const aEl = activeDocument.createEl('a');
   aEl.href = href;
   containerEl.appendChild(aEl);
   return { aEl, containerEl };

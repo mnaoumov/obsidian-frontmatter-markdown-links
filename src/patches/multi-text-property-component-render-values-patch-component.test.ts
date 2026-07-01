@@ -55,7 +55,7 @@ function callRenderValues(proto: RenderValuesProto, target: MultiselectLike): vo
 
 function createTarget(proto: RenderValuesProto, values: string[]): MultiselectLike {
   const target = castTo<MultiselectLike>(Object.create(proto));
-  target.rootEl = activeDocument.createElement('div');
+  target.rootEl = activeDocument.createDiv();
   target.values = values;
   return target;
 }
@@ -205,7 +205,7 @@ describe('MultiTextPropertyComponentRenderValuesPatchComponent', () => {
   });
 
   it('should skip when a multi-link pill content element has no parent', () => {
-    const orphanContentEl = activeDocument.createElement('div');
+    const orphanContentEl = activeDocument.createDiv();
     orphanContentEl.addClass('multi-select-pill-content');
     const proto: RenderValuesProto = {
       renderValues: vi.fn(function renderValues(this: MultiselectLike): void {

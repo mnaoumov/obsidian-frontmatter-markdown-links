@@ -7,7 +7,7 @@ import {
 import { PatchedInputElementMap } from './patched-input-element-map.ts';
 
 function createInputEl(): HTMLDivElement {
-  return activeDocument.createElement('div');
+  return activeDocument.createDiv();
 }
 
 describe('PatchedInputElementMap', () => {

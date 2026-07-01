@@ -80,7 +80,7 @@ function setCaretOffset(offset: null | number): void {
 
 describe('AbstractInputSuggestGetValuePatchComponent', () => {
   it('should return the original value when the input element is not patched', () => {
-    const textInputEl = activeDocument.createElement('div');
+    const textInputEl = activeDocument.createDiv();
     textInputEl.textContent = 'Unpatched value';
     const suggest = createSuggest(textInputEl);
     loadPatch(new PatchedInputElementMap());
@@ -91,7 +91,7 @@ describe('AbstractInputSuggestGetValuePatchComponent', () => {
   });
 
   it('should add the select-suggestion patch child only once across multiple calls', () => {
-    const textInputEl = activeDocument.createElement('div');
+    const textInputEl = activeDocument.createDiv();
     textInputEl.textContent = 'Value';
     const suggest = createSuggest(textInputEl);
     loadPatch(new PatchedInputElementMap());
@@ -104,7 +104,7 @@ describe('AbstractInputSuggestGetValuePatchComponent', () => {
   });
 
   it('should slice the value to the open-bracket region when the input element is patched', () => {
-    const textInputEl = activeDocument.createElement('div');
+    const textInputEl = activeDocument.createDiv();
     textInputEl.textContent = 'Foo [[bar';
     const suggest = createSuggest(textInputEl);
     const patchedInputElementMap = new PatchedInputElementMap();
@@ -119,7 +119,7 @@ describe('AbstractInputSuggestGetValuePatchComponent', () => {
   });
 
   it('should return the full value when there is no open bracket before the caret', () => {
-    const textInputEl = activeDocument.createElement('div');
+    const textInputEl = activeDocument.createDiv();
     textInputEl.textContent = 'Plain value';
     const suggest = createSuggest(textInputEl);
     const patchedInputElementMap = new PatchedInputElementMap();
@@ -133,7 +133,7 @@ describe('AbstractInputSuggestGetValuePatchComponent', () => {
   });
 
   it('should return the full value when a close bracket follows the open bracket before the caret', () => {
-    const textInputEl = activeDocument.createElement('div');
+    const textInputEl = activeDocument.createDiv();
     textInputEl.textContent = '[[done]] more';
     const suggest = createSuggest(textInputEl);
     const patchedInputElementMap = new PatchedInputElementMap();
@@ -147,7 +147,7 @@ describe('AbstractInputSuggestGetValuePatchComponent', () => {
   });
 
   it('should treat the caret offset as zero when there is no selection', () => {
-    const textInputEl = activeDocument.createElement('div');
+    const textInputEl = activeDocument.createDiv();
     textInputEl.textContent = '[[bar';
     const suggest = createSuggest(textInputEl);
     const patchedInputElementMap = new PatchedInputElementMap();

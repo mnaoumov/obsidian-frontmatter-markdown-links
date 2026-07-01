@@ -12,7 +12,6 @@ import type { AbortSignalComponent } from 'obsidian-dev-utils/obsidian/component
 import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
 import type { EditorExtensionRegistrar } from 'obsidian-dev-utils/obsidian/editor-extension-registrar';
 
-import { ViewType } from '@obsidian-typings/obsidian-public-latest/implementations';
 import { waitForAllAsyncOperations } from 'obsidian-dev-utils/async';
 import { noopAsync } from 'obsidian-dev-utils/function';
 import { castTo } from 'obsidian-dev-utils/object-utils';
@@ -25,6 +24,7 @@ import {
 } from 'obsidian-test-mocks/obsidian';
 import {
   afterEach,
+  beforeEach,
   describe,
   expect,
   it,
@@ -107,14 +107,6 @@ interface WorkspaceLeavesAndOnLike {
   on: AnyFn;
 }
 
-interface WorkspaceOnApp {
-  workspace: WorkspaceOnLike;
-}
-
-interface WorkspaceOnLike {
-  on: AnyFn;
-}
-
 class BasesNoteProto {
   public data: Record<string, unknown> = {};
   public get(key: string): unknown {
@@ -162,6 +154,12 @@ vi.mock('./patches/editor-get-clickable-token-at-patch-component.ts', async () =
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   return { EditorGetClickableTokenAtPatchComponent: class extends Component {} };
 });
+
+// Stub the bases context constructor extraction (a runtime-coupled sibling module tested on its own).
+// The component test drives the patching orchestration, so the resolved constructor is set per run.
+vi.mock('./constructors/get-bases-context-constructor.ts', () => ({
+  getBasesContextConstructor: vi.fn()
+}));
 
 vi.mock('./frontmatter-links-editor-extension.ts', () => ({
   FrontMatterLinksViewPlugin: { createEditorExtension: vi.fn().mockReturnValue([]) }
@@ -220,17 +218,11 @@ vi.mock('obsidian-dev-utils/obsidian/loop', async (importOriginal) => {
   };
 });
 
-// Keep the REAL `invokeAsyncSafely`/`convertAsyncToSync` so fire-and-forget work is tracked and can be
-// Drained via `waitForAllAsyncOperations()`. Only stub `requestAnimationFrameAsync`, whose real rAF
-// Never resolves under jsdom.
-vi.mock('obsidian-dev-utils/async', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('obsidian-dev-utils/async')>();
-  return {
-    ...actual,
-    requestAnimationFrameAsync: vi.fn().mockResolvedValue(undefined)
-  };
-});
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import type { BasesContextConstructor } from 'obsidian-dev-utils/obsidian/constructors/get-bases-context-constructor';
 
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import { getBasesContextConstructor } from 'obsidian-dev-utils/obsidian/constructors/get-bases-context-constructor';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { loop } from 'obsidian-dev-utils/obsidian/loop';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
@@ -338,6 +330,10 @@ afterEach(() => {
   vi.mocked(getMarkdownFilesSorted).mockReset().mockReturnValue([]);
   vi.mocked(trashSafe).mockReset().mockResolvedValue(undefined);
   vi.mocked(loop).mockReset().mockResolvedValue(undefined);
+});
+
+beforeEach(() => {
+  vi.mocked(getBasesContextConstructor).mockResolvedValue(castTo<BasesContextConstructor>(MockBasesContext));
 });
 
 describe('FrontmatterMarkdownLinksComponent', () => {
@@ -473,66 +469,20 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       }
     });
 
-    it('should register an active-leaf-change listener when no bases view is patched', async () => {
+    it('should patch the bases note during onLayoutReady', async () => {
       vi.useFakeTimers();
       try {
         const { app, registerEditorExtension } = createLifecycleApp();
-        const onLeafChange = vi.fn().mockReturnValue({});
-        castTo<WorkspaceOnApp>(app).workspace.on = vi.fn((name: string, callback: AnyFn): unknown => {
-          if (name === 'active-leaf-change') {
-            return onLeafChange(name, callback);
-          }
-          return {};
-        });
-        const registrar = strictProxy<EditorExtensionRegistrar>({ registerEditorExtension });
-        const component = createLifecycleComponent(app, registrar);
-
-        component.load();
-        await vi.runAllTimersAsync();
-
-        expect(onLeafChange).toHaveBeenCalledWith('active-leaf-change', expect.any(Function));
-        component.unload();
-      } finally {
-        vi.useRealTimers();
-      }
-    });
-
-    it('should not register an active-leaf-change listener once the bases view is patched', async () => {
-      vi.useFakeTimers();
-      try {
-        const { app, registerEditorExtension } = createLifecycleApp();
-        const onLeafChange = vi.fn().mockReturnValue({});
-        const basesLeaf = castTo<WorkspaceLeaf>({
-          loadIfDeferred: vi.fn().mockResolvedValue(undefined),
-          view: {
-            controller: { ctx: new MockBasesContext() },
-            getViewType: vi.fn().mockReturnValue(ViewType.Bases)
-          }
-        });
         const augmented = castTo<LifecycleAugmentApp>(app);
-        augmented.internalPlugins.getEnabledPluginById = vi.fn().mockReturnValue({});
         augmented.vault.getMarkdownFiles = vi.fn().mockReturnValue([makeTFile('existing.md')]);
-        augmented.workspace.getLeavesOfType = vi.fn((viewType: string) => {
-          if (viewType === ViewType.Bases) {
-            return [basesLeaf];
-          }
-          return [];
-        });
-        augmented.workspace.on = vi.fn((name: string, callback: AnyFn): unknown => {
-          if (name === 'active-leaf-change') {
-            return onLeafChange(name, callback);
-          }
-          return {};
-        });
         const registrar = strictProxy<EditorExtensionRegistrar>({ registerEditorExtension });
         const component = createLifecycleComponent(app, registrar);
 
         component.load();
         await vi.runAllTimersAsync();
+        await waitForAllAsyncOperations();
 
-        // The bases view got patched during onLayoutReady, so the active-leaf-change listener is not added.
-        expect(component['isBasesViewPatched']).toBe(true);
-        expect(onLeafChange).not.toHaveBeenCalled();
+        expect(vi.mocked(getBasesContextConstructor)).toHaveBeenCalledWith(app);
         component.unload();
       } finally {
         vi.useRealTimers();
@@ -644,7 +594,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const processSpy = vi.spyOn(castTo<ProcessFrontmatterLinksInFileAccess>(component), 'processFrontmatterLinksInFile')
         .mockResolvedValue(undefined);
 
-      component['handleMetadataCacheChanged'](tfile, 'content', cache);
+      await component['handleMetadataCacheChanged'](tfile, 'content', cache);
 
       // The handler fires `processFrontmatterLinksInFile` fire-and-forget via the real `invokeAsyncSafely`.
       await waitForAllAsyncOperations();
@@ -871,7 +821,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
   describe('handleMouseDown', () => {
     function createLinkTarget(linkData: LinkDataShape): HTMLElement {
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       target.setAttribute('data-frontmatter-markdown-links-link-data', JSON.stringify(linkData));
       activeDocument.body.appendChild(target);
       return target;
@@ -893,7 +843,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
     it('should do nothing when the target has no link data', () => {
       const component = createComponent();
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       const evt = castTo<MouseEvent>({
         button: 0,
         preventDefault: vi.fn(),
@@ -1073,7 +1023,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
   describe('handleMouseOver', () => {
     it('should do nothing when the target has no link data', () => {
       const component = createComponent();
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       const evt = castTo<MouseEvent>({
         preventDefault: vi.fn(),
         target
@@ -1096,7 +1046,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           }
         })
       );
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       target.setAttribute(
         'data-frontmatter-markdown-links-link-data',
         JSON.stringify({ isExternalUrl: true, isWikilink: false, url: 'https://example.com' })
@@ -1123,7 +1073,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           }
         })
       );
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       target.setAttribute(
         'data-frontmatter-markdown-links-link-data',
         JSON.stringify({ isExternalUrl: false, isWikilink: false, url: 'target/note.md' })
@@ -1153,7 +1103,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           }
         })
       );
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       target.setAttribute(
         'data-frontmatter-markdown-links-link-data',
         JSON.stringify({ isExternalUrl: false, isWikilink: false, url: 'note.md' })
@@ -1462,89 +1412,22 @@ describe('FrontmatterMarkdownLinksComponent', () => {
     });
   });
 
-  describe('handleActiveLeafChange', () => {
-    function createBasesLeaf(): WorkspaceLeaf {
-      const ctx = new MockBasesContext();
-      return castTo<WorkspaceLeaf>({
-        loadIfDeferred: vi.fn().mockResolvedValue(undefined),
-        view: {
-          controller: { ctx },
-          getViewType: vi.fn().mockReturnValue(ViewType.Bases)
-        }
-      });
-    }
-
-    function createAppWithBasesEnabled(overrides: Partial<App>): App {
-      return castTo<App>({
-        internalPlugins: {
-          getEnabledPluginById: vi.fn().mockReturnValue({})
-        },
-        ...overrides
-      });
-    }
-
-    it('should return early when the bases view is already patched', async () => {
-      const component = createComponent();
-      component['isBasesViewPatched'] = true;
-      const getEnabledPluginById = vi.fn();
-      setApp(component, castTo<App>({ internalPlugins: { getEnabledPluginById } }));
-
-      await component['handleActiveLeafChange'](createBasesLeaf());
-
-      expect(getEnabledPluginById).not.toHaveBeenCalled();
-    });
-
-    it('should return early when the bases plugin is not enabled', async () => {
-      const component = createComponent();
-      setApp(
-        component,
-        castTo<App>({
-          internalPlugins: { getEnabledPluginById: vi.fn().mockReturnValue(null) }
-        })
-      );
-
-      await component['handleActiveLeafChange'](createBasesLeaf());
-
-      expect(component['isBasesViewPatched']).toBe(false);
-    });
-
-    it('should return early when the leaf is null', async () => {
-      const component = createComponent();
-      setApp(component, createAppWithBasesEnabled({}));
-
-      await component['handleActiveLeafChange'](null);
-
-      expect(component['isBasesViewPatched']).toBe(false);
-    });
-
-    it('should return early when the leaf view is not a bases view', async () => {
-      const component = createComponent();
-      setApp(component, createAppWithBasesEnabled({}));
-      const leaf = castTo<WorkspaceLeaf>({
-        view: { getViewType: vi.fn().mockReturnValue('markdown') }
-      });
-
-      await component['handleActiveLeafChange'](leaf);
-
-      expect(component['isBasesViewPatched']).toBe(false);
-    });
-
+  describe('patchBasesNote', () => {
     it('should patch the note using an existing markdown file', async () => {
       const component = createComponent();
       const existingFile = makeTFile('existing.md');
       setApp(
         component,
-        createAppWithBasesEnabled({
+        castTo<App>({
           vault: castTo<App['vault']>({
             getMarkdownFiles: vi.fn().mockReturnValue([existingFile])
           })
         })
       );
 
-      const leaf = createBasesLeaf();
-      await component['handleActiveLeafChange'](leaf);
+      await component['patchBasesNote']();
 
-      expect(component['isBasesViewPatched']).toBe(true);
+      expect(vi.mocked(getBasesContextConstructor)).toHaveBeenCalledWith(getApp(component));
       expect(vi.mocked(trashSafe)).not.toHaveBeenCalled();
     });
 
@@ -1554,7 +1437,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const create = vi.fn().mockResolvedValue(tempFile);
       setApp(
         component,
-        createAppWithBasesEnabled({
+        castTo<App>({
           vault: castTo<App['vault']>({
             create,
             getMarkdownFiles: vi.fn().mockReturnValue([])
@@ -1562,11 +1445,10 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         })
       );
 
-      await component['handleActiveLeafChange'](createBasesLeaf());
+      await component['patchBasesNote']();
 
       expect(create).toHaveBeenCalled();
       expect(vi.mocked(trashSafe)).toHaveBeenCalledWith(getApp(component), tempFile);
-      expect(component['isBasesViewPatched']).toBe(true);
     });
   });
 });

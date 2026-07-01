@@ -1,9 +1,4 @@
 import type {
-  BasesContext,
-  BasesView,
-  ExtractConstructor
-} from '@obsidian-typings/obsidian-public-latest';
-import type {
   App,
   CachedMetadata,
   FrontmatterLinkCache
@@ -14,26 +9,21 @@ import type { EditorExtensionRegistrar } from 'obsidian-dev-utils/obsidian/edito
 import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/frontmatter-link-cache-with-offsets';
 
 import {
-  InternalPluginName,
-  ViewType
-} from '@obsidian-typings/obsidian-public-latest/implementations';
-import {
   Keymap,
   MarkdownView,
   parseYaml,
   TAbstractFile,
-  TFile,
-  WorkspaceLeaf
+  TFile
 } from 'obsidian';
 import { filterInPlace } from 'obsidian-dev-utils/array';
 import {
   convertAsyncToSync,
-  invokeAsyncSafely,
-  requestAnimationFrameAsync
+  invokeAsyncSafely
 } from 'obsidian-dev-utils/async';
 import { getNestedPropertyValue } from 'obsidian-dev-utils/object-utils';
 import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
 import { LayoutReadyComponent } from 'obsidian-dev-utils/obsidian/components/layout-ready-component';
+import { getBasesContextConstructor } from 'obsidian-dev-utils/obsidian/constructors/get-bases-context-constructor';
 import {
   parseLinks,
   splitSubpath
@@ -75,7 +65,6 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
   private readonly currentlyProcessingFiles = new Set<string>();
   private readonly editorExtensionRegistrar: EditorExtensionRegistrar;
   private frontmatterMarkdownLinksCache = new FrontmatterMarkdownLinksCache();
-  private isBasesViewPatched = false;
   private isEditorPatched = false;
   private readonly linkFixer: LinkFixer;
   private readonly patchedInputElementMap: PatchedInputElementMap;
@@ -121,16 +110,14 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
     this.editorExtensionRegistrar.registerEditorExtension(FrontMatterLinksViewPlugin.createEditorExtension(this.app));
 
-    this.register(() => {
-      invokeAsyncSafely(this.clearMetadataCache.bind(this));
-    });
+    this.register(convertAsyncToSync(this.clearMetadataCache.bind(this)));
     this.register(this.refreshMarkdownViews.bind(this));
     this.refreshMarkdownViews();
   }
 
   protected override async onLayoutReady(): Promise<void> {
     await this.processAllNotes();
-    this.registerEvent(this.app.metadataCache.on('changed', this.handleMetadataCacheChanged.bind(this)));
+    this.registerEvent(this.app.metadataCache.on('changed', convertAsyncToSync(this.handleMetadataCacheChanged.bind(this))));
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
     this.registerEvent(this.app.workspace.on('file-open', this.handleFileOpen.bind(this)));
@@ -150,13 +137,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
       type: 'mouseover'
     });
 
-    invokeAsyncSafely(async () => {
-      await this.handleActiveLeafChange(this.app.workspace.getLeavesOfType(ViewType.Bases)[0] ?? null);
-
-      if (!this.isBasesViewPatched) {
-        this.registerEvent(this.app.workspace.on('active-leaf-change', convertAsyncToSync(this.handleActiveLeafChange.bind(this))));
-      }
-    });
+    await this.patchBasesNote();
   }
 
   private async clearMetadataCache(): Promise<void> {
@@ -181,54 +162,6 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     }
   }
 
-  private async handleActiveLeafChange(leaf: null | WorkspaceLeaf): Promise<void> {
-    if (this.isBasesViewPatched) {
-      return;
-    }
-
-    const basesPlugin = this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Bases);
-    if (!basesPlugin) {
-      return;
-    }
-
-    if (!leaf) {
-      return;
-    }
-
-    if (leaf.view.getViewType() !== ViewType.Bases) {
-      return;
-    }
-
-    await leaf.loadIfDeferred();
-    await requestAnimationFrameAsync();
-
-    const basesView = leaf.view as BasesView;
-    const basesContextCtor = basesView.controller.ctx.constructor as ExtractConstructor<BasesContext>;
-
-    let mdFile = this.app.vault.getMarkdownFiles()[0];
-    let shouldDeleteMdFile = false;
-    if (!mdFile) {
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- window.crypto is the Web Crypto API, available in Obsidian's Electron renderer; the rule incorrectly flags it as a Node experimental builtin.
-      mdFile = await this.app.vault.create(`__TEMP__${window.crypto.randomUUID()}.md`, '');
-      shouldDeleteMdFile = true;
-    }
-
-    const ctx = new basesContextCtor(this.app, {}, {}, mdFile);
-
-    this.addChild(
-      new BasesNoteGetPatchComponent({
-        basesNote: ctx._local.note,
-        linkFixer: this.linkFixer
-      })
-    );
-
-    if (shouldDeleteMdFile) {
-      await trashSafe(this.app, mdFile);
-    }
-
-    this.isBasesViewPatched = true;
-  }
-
   private handleDelete(file: TAbstractFile): void {
     this.frontmatterMarkdownLinksCache.delete(file.path);
   }
@@ -251,10 +184,8 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     );
   }
 
-  private handleMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): void {
-    invokeAsyncSafely(async () => {
-      await this.processFrontmatterLinksInFile(file, cache, data);
-    });
+  private async handleMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): Promise<void> {
+    await this.processFrontmatterLinksInFile(file, cache, data);
   }
 
   private handleMouseDown(evt: MouseEvent): void {
@@ -336,6 +267,31 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     }
 
     this.frontmatterMarkdownLinksCache.rename(oldPath, file);
+  }
+
+  private async patchBasesNote(): Promise<void> {
+    const basesContextCtor = await getBasesContextConstructor(this.app);
+
+    let mdFile = this.app.vault.getMarkdownFiles()[0];
+    let shouldDeleteMdFile = false;
+    if (!mdFile) {
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- window.crypto is the Web Crypto API, available in Obsidian's Electron renderer; the rule incorrectly flags it as a Node experimental builtin.
+      mdFile = await this.app.vault.create(`__TEMP__${window.crypto.randomUUID()}.md`, '');
+      shouldDeleteMdFile = true;
+    }
+
+    const ctx = new basesContextCtor(this.app, {}, {}, mdFile);
+
+    this.addChild(
+      new BasesNoteGetPatchComponent({
+        basesNote: ctx._local.note,
+        linkFixer: this.linkFixer
+      })
+    );
+
+    if (shouldDeleteMdFile) {
+      await trashSafe(this.app, mdFile);
+    }
   }
 
   private async processAllNotes(): Promise<void> {
