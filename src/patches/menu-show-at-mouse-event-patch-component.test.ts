@@ -48,7 +48,7 @@ function callShowAtMouseEvent(menu: MenuType, evt: MouseEvent): unknown {
 }
 
 function createLinkTarget(linkData: LinkDataShape): HTMLElement {
-  const target = activeDocument.createElement('div');
+  const target = activeDocument.createDiv();
   target.setAttribute('data-frontmatter-markdown-links-link-data', JSON.stringify(linkData));
   activeDocument.body.appendChild(target);
   return target;
@@ -82,7 +82,7 @@ describe('MenuShowAtMouseEventPatchComponent', () => {
     const app = strictProxy<App>({});
     loadPatch(app);
     const menu = createMenu();
-    const target = activeDocument.createElement('div');
+    const target = activeDocument.createDiv();
     const evt = castTo<MouseEvent>({ target });
 
     const result = callShowAtMouseEvent(menu, evt);

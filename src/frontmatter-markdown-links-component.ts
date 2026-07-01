@@ -16,10 +16,14 @@ import {
   TFile
 } from 'obsidian';
 import { filterInPlace } from 'obsidian-dev-utils/array';
-import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely
+} from 'obsidian-dev-utils/async';
 import { getNestedPropertyValue } from 'obsidian-dev-utils/object-utils';
 import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
 import { LayoutReadyComponent } from 'obsidian-dev-utils/obsidian/components/layout-ready-component';
+import { getBasesContextConstructor } from 'obsidian-dev-utils/obsidian/constructors/get-bases-context-constructor';
 import {
   parseLinks,
   splitSubpath
@@ -35,7 +39,6 @@ import type { LinkFixer } from './link-fixer.ts';
 import type { PatchedInputElementMap } from './patched-input-element-map.ts';
 import type { PluginSettingsComponent } from './plugin-settings-component.ts';
 
-import { getBasesContextConstructor } from './constructors/get-bases-context-constructor.ts';
 import { FrontMatterLinksViewPlugin } from './frontmatter-links-editor-extension.ts';
 import { FrontmatterMarkdownLinksCache } from './frontmatter-markdown-links-cache.ts';
 import { getLinkData } from './link-data.ts';
@@ -107,16 +110,14 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
     this.editorExtensionRegistrar.registerEditorExtension(FrontMatterLinksViewPlugin.createEditorExtension(this.app));
 
-    this.register(() => {
-      invokeAsyncSafely(this.clearMetadataCache.bind(this));
-    });
+    this.register(convertAsyncToSync(this.clearMetadataCache.bind(this)));
     this.register(this.refreshMarkdownViews.bind(this));
     this.refreshMarkdownViews();
   }
 
   protected override async onLayoutReady(): Promise<void> {
     await this.processAllNotes();
-    this.registerEvent(this.app.metadataCache.on('changed', this.handleMetadataCacheChanged.bind(this)));
+    this.registerEvent(this.app.metadataCache.on('changed', convertAsyncToSync(this.handleMetadataCacheChanged.bind(this))));
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
     this.registerEvent(this.app.workspace.on('file-open', this.handleFileOpen.bind(this)));
@@ -183,10 +184,8 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     );
   }
 
-  private handleMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): void {
-    invokeAsyncSafely(async () => {
-      await this.processFrontmatterLinksInFile(file, cache, data);
-    });
+  private async handleMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): Promise<void> {
+    await this.processFrontmatterLinksInFile(file, cache, data);
   }
 
   private handleMouseDown(evt: MouseEvent): void {

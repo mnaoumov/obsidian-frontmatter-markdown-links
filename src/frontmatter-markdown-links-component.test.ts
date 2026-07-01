@@ -219,6 +219,11 @@ vi.mock('obsidian-dev-utils/obsidian/loop', async (importOriginal) => {
 });
 
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import type { BasesContextConstructor } from 'obsidian-dev-utils/obsidian/constructors/get-bases-context-constructor';
+
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import { getBasesContextConstructor } from 'obsidian-dev-utils/obsidian/constructors/get-bases-context-constructor';
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { loop } from 'obsidian-dev-utils/obsidian/loop';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
@@ -228,11 +233,6 @@ import {
   trashSafe
 } from 'obsidian-dev-utils/obsidian/vault';
 
-// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import type { BasesContextConstructor } from './constructors/get-bases-context-constructor.ts';
-
-// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { getBasesContextConstructor } from './constructors/get-bases-context-constructor.ts';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { FrontmatterMarkdownLinksComponent } from './frontmatter-markdown-links-component.ts';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
@@ -594,7 +594,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const processSpy = vi.spyOn(castTo<ProcessFrontmatterLinksInFileAccess>(component), 'processFrontmatterLinksInFile')
         .mockResolvedValue(undefined);
 
-      component['handleMetadataCacheChanged'](tfile, 'content', cache);
+      await component['handleMetadataCacheChanged'](tfile, 'content', cache);
 
       // The handler fires `processFrontmatterLinksInFile` fire-and-forget via the real `invokeAsyncSafely`.
       await waitForAllAsyncOperations();
@@ -821,7 +821,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
   describe('handleMouseDown', () => {
     function createLinkTarget(linkData: LinkDataShape): HTMLElement {
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       target.setAttribute('data-frontmatter-markdown-links-link-data', JSON.stringify(linkData));
       activeDocument.body.appendChild(target);
       return target;
@@ -843,7 +843,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
     it('should do nothing when the target has no link data', () => {
       const component = createComponent();
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       const evt = castTo<MouseEvent>({
         button: 0,
         preventDefault: vi.fn(),
@@ -1023,7 +1023,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
   describe('handleMouseOver', () => {
     it('should do nothing when the target has no link data', () => {
       const component = createComponent();
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       const evt = castTo<MouseEvent>({
         preventDefault: vi.fn(),
         target
@@ -1046,7 +1046,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           }
         })
       );
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       target.setAttribute(
         'data-frontmatter-markdown-links-link-data',
         JSON.stringify({ isExternalUrl: true, isWikilink: false, url: 'https://example.com' })
@@ -1073,7 +1073,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           }
         })
       );
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       target.setAttribute(
         'data-frontmatter-markdown-links-link-data',
         JSON.stringify({ isExternalUrl: false, isWikilink: false, url: 'target/note.md' })
@@ -1103,7 +1103,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           }
         })
       );
-      const target = activeDocument.createElement('div');
+      const target = activeDocument.createDiv();
       target.setAttribute(
         'data-frontmatter-markdown-links-link-data',
         JSON.stringify({ isExternalUrl: false, isWikilink: false, url: 'note.md' })

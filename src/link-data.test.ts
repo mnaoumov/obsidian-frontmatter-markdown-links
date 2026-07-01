@@ -14,7 +14,7 @@ type LinkData = NonNullable<ReturnType<typeof getLinkData>>;
 
 describe('attachLinkData', () => {
   it('should set the data attribute on the element', () => {
-    const el = activeDocument.createElement('div');
+    const el = activeDocument.createDiv();
     const linkData: LinkData = { isExternalUrl: false, isWikilink: true, url: 'some/note' };
 
     attachLinkData(el, linkData);
@@ -23,7 +23,7 @@ describe('attachLinkData', () => {
   });
 
   it('should serialize isExternalUrl true', () => {
-    const el = activeDocument.createElement('div');
+    const el = activeDocument.createDiv();
     const linkData: LinkData = { isExternalUrl: true, isWikilink: false, url: 'https://example.com' };
 
     attachLinkData(el, linkData);
@@ -64,7 +64,7 @@ describe('getDataAttributes', () => {
 
 describe('getLinkData', () => {
   it('should return null when element has no link data ancestor', () => {
-    const el = activeDocument.createElement('span');
+    const el = activeDocument.createSpan();
     activeDocument.body.appendChild(el);
 
     const result = getLinkData(el);
@@ -74,9 +74,9 @@ describe('getLinkData', () => {
   });
 
   it('should return null when closest ancestor has no dataset value', () => {
-    const parent = activeDocument.createElement('div');
+    const parent = activeDocument.createDiv();
     parent.setAttribute('data-frontmatter-markdown-links-link-data', '');
-    const child = activeDocument.createElement('span');
+    const child = activeDocument.createSpan();
     parent.appendChild(child);
     activeDocument.body.appendChild(parent);
 
@@ -87,10 +87,10 @@ describe('getLinkData', () => {
   });
 
   it('should return parsed link data from ancestor', () => {
-    const parent = activeDocument.createElement('div');
+    const parent = activeDocument.createDiv();
     const linkData: LinkData = { isExternalUrl: false, isWikilink: true, url: 'target/note' };
     parent.setAttribute('data-frontmatter-markdown-links-link-data', JSON.stringify(linkData));
-    const child = activeDocument.createElement('span');
+    const child = activeDocument.createSpan();
     parent.appendChild(child);
     activeDocument.body.appendChild(parent);
 
@@ -101,7 +101,7 @@ describe('getLinkData', () => {
   });
 
   it('should return link data from the element itself when it has the attribute', () => {
-    const el = activeDocument.createElement('div');
+    const el = activeDocument.createDiv();
     const linkData: LinkData = { isExternalUrl: true, isWikilink: false, url: 'https://test.com' };
     el.setAttribute('data-frontmatter-markdown-links-link-data', JSON.stringify(linkData));
     activeDocument.body.appendChild(el);
