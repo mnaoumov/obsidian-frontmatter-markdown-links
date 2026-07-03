@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.7.0
+
+- feat: re #33 render mixed-text wikilinks in Bases formula cells
+
 ## 2.6.37
 
 - fix: re #32 \[BUG\] An unhandled error occurred upon opening a base file
