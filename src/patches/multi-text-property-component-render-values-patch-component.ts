@@ -1,23 +1,12 @@
 import type { Multiselect } from '@obsidian-typings/obsidian-public-latest';
 import type { App } from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
 
 import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
 import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
-import {
-  parseLinks,
-  splitSubpath
-} from 'obsidian-dev-utils/obsidian/link';
+import { parseLinks } from 'obsidian-dev-utils/obsidian/link';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
-import { attachLinkData } from '../link-data.ts';
-import { extractDisplayText } from '../parse-link-result.ts';
-
-interface AddClassToElementAndParentParams {
-  readonly childEl: HTMLElement;
-  readonly className: string;
-  readonly isSingleValue: boolean;
-}
+import { renderLinkChild } from '../render-links.ts';
 
 interface MultiTextPropertyComponentRenderValuesPatchComponentConstructorParams {
   readonly app: App;
@@ -61,7 +50,12 @@ export class MultiTextPropertyComponentRenderValuesPatchComponent extends Monkey
           const isSingleValue = firstParseLinkResult.raw === value;
 
           if (isSingleValue) {
-            renderChild(el, firstParseLinkResult);
+            renderLinkChild({
+              app,
+              childEl: el,
+              parseLinkResult: firstParseLinkResult,
+              shouldClassParent: isSingleValue
+            });
             continue;
           }
 
@@ -100,50 +94,20 @@ export class MultiTextPropertyComponentRenderValuesPatchComponent extends Monkey
             }
 
             const childEl = el.createDiv();
-            renderChild(childEl, parseLinkResult);
+            renderLinkChild({
+              app,
+              childEl,
+              parseLinkResult,
+              shouldClassParent: isSingleValue
+            });
             startOffset = parseLinkResult.endOffset;
           }
 
           if (startOffset < value.length) {
             el.createDiv({ text: value.slice(startOffset) });
           }
-
-          function renderChild(childEl: HTMLElement, parseLinkResult: ParseLinkResult): void {
-            childEl.setText('');
-            childEl.createSpan({ text: extractDisplayText(parseLinkResult) });
-            if (parseLinkResult.isExternal) {
-              childEl.addClass('external-link');
-            } else {
-              addClassToElementAndParent({
-                childEl,
-                className: 'internal-link',
-                isSingleValue
-              });
-              const resolvedLink = app.metadataCache.getFirstLinkpathDest(splitSubpath(parseLinkResult.url).linkPath, app.workspace.getActiveFile()?.path ?? '');
-              if (!resolvedLink) {
-                addClassToElementAndParent({
-                  childEl,
-                  className: 'is-unresolved',
-                  isSingleValue
-                });
-              }
-            }
-            childEl.setAttribute('title', parseLinkResult.url);
-            attachLinkData(childEl, {
-              isExternalUrl: parseLinkResult.isExternal,
-              isWikilink: parseLinkResult.isWikilink,
-              url: parseLinkResult.url
-            });
-          }
         }
       }
     });
-  }
-}
-
-function addClassToElementAndParent(params: AddClassToElementAndParentParams): void {
-  params.childEl.addClass(params.className);
-  if (params.isSingleValue) {
-    params.childEl.parentElement?.addClass(params.className);
   }
 }
