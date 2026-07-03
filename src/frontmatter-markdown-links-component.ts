@@ -284,6 +284,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
     this.addChild(
       new BasesNoteGetPatchComponent({
+        app: this.app,
         basesNote: ctx._local.note,
         linkFixer: this.linkFixer
       })
