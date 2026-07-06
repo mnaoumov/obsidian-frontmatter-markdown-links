@@ -8,6 +8,7 @@ import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/componen
 import type { EditorExtensionRegistrar } from 'obsidian-dev-utils/obsidian/editor-extension-registrar';
 import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/frontmatter-link-cache-with-offsets';
 
+import { getBasesContextConstructor } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   Keymap,
   MarkdownView,
@@ -23,7 +24,6 @@ import {
 import { getNestedPropertyValue } from 'obsidian-dev-utils/object-utils';
 import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
 import { LayoutReadyComponent } from 'obsidian-dev-utils/obsidian/components/layout-ready-component';
-import { getBasesContextConstructor } from 'obsidian-dev-utils/obsidian/constructors/get-bases-context-constructor';
 import {
   parseLinks,
   splitSubpath
@@ -270,7 +270,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
   }
 
   private async patchBasesNote(): Promise<void> {
-    const basesContextCtor = await getBasesContextConstructor(this.app);
+    const basesContextCtor = getBasesContextConstructor(this.app);
 
     let mdFile = this.app.vault.getMarkdownFiles()[0];
     let shouldDeleteMdFile = false;
