@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.7.1
+
+- fix: re #36
+
 ## 2.7.0
 
 - feat: re #33 render mixed-text wikilinks in Bases formula cells
