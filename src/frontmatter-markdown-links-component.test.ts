@@ -157,7 +157,7 @@ vi.mock('./patches/editor-get-clickable-token-at-patch-component.ts', async () =
 
 // Stub the bases context constructor extraction (a runtime-coupled sibling module tested on its own).
 // The component test drives the patching orchestration, so the resolved constructor is set per run.
-vi.mock('obsidian-dev-utils/obsidian/constructors/get-bases-context-constructor', () => ({
+vi.mock('@obsidian-typings/obsidian-public-latest/implementations', () => ({
   getBasesContextConstructor: vi.fn()
 }));
 
@@ -219,10 +219,7 @@ vi.mock('obsidian-dev-utils/obsidian/loop', async (importOriginal) => {
 });
 
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import type { BasesContextConstructor } from 'obsidian-dev-utils/obsidian/constructors/get-bases-context-constructor';
-
-// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { getBasesContextConstructor } from 'obsidian-dev-utils/obsidian/constructors/get-bases-context-constructor';
+import { getBasesContextConstructor } from '@obsidian-typings/obsidian-public-latest/implementations';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { loop } from 'obsidian-dev-utils/obsidian/loop';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
@@ -333,7 +330,7 @@ afterEach(() => {
 });
 
 beforeEach(() => {
-  vi.mocked(getBasesContextConstructor).mockResolvedValue(castTo<BasesContextConstructor>(MockBasesContext));
+  vi.mocked(getBasesContextConstructor).mockReturnValue(castTo<ReturnType<typeof getBasesContextConstructor>>(MockBasesContext));
 });
 
 describe('FrontmatterMarkdownLinksComponent', () => {
