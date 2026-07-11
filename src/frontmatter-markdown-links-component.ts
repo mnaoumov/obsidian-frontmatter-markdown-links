@@ -60,6 +60,30 @@ interface FrontmatterMarkdownLinksComponentConstructorParams {
   readonly pluginSettingsComponent: PluginSettingsComponent;
 }
 
+interface FrontmatterMarkdownLinksComponentHandleMetadataCacheChangedParams {
+  readonly cache: CachedMetadata;
+  readonly data: string;
+  readonly file: TFile;
+}
+
+interface FrontmatterMarkdownLinksComponentProcessFrontmatterLinksInFileParams {
+  readonly cache: CachedMetadata;
+  readonly data?: string;
+  readonly file: TFile;
+}
+
+interface FrontmatterMarkdownLinksComponentProcessFrontmatterLinksParams {
+  readonly cache: CachedMetadata;
+  readonly filePath: string;
+  readonly key: string;
+  readonly value: unknown;
+}
+
+interface FrontmatterMarkdownLinksComponentUpdateResolvedOrUnresolvedLinksCacheParams {
+  readonly link: string;
+  readonly notePath: string;
+}
+
 export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
   private readonly abortSignalComponent: AbortSignalComponent;
   private readonly currentlyProcessingFiles = new Set<string>();
@@ -117,7 +141,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
   protected override async onLayoutReady(): Promise<void> {
     await this.processAllNotes();
-    this.registerEvent(this.app.metadataCache.on('changed', convertAsyncToSync(this.handleMetadataCacheChanged.bind(this))));
+    this.registerEvent(this.app.metadataCache.on('changed', convertAsyncToSync((file, data, cache) => this.handleMetadataCacheChanged({ cache, data, file }))));
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
     this.registerEvent(this.app.workspace.on('file-open', this.handleFileOpen.bind(this)));
@@ -184,8 +208,9 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     );
   }
 
-  private async handleMetadataCacheChanged(file: TFile, data: string, cache: CachedMetadata): Promise<void> {
-    await this.processFrontmatterLinksInFile(file, cache, data);
+  private async handleMetadataCacheChanged(params: FrontmatterMarkdownLinksComponentHandleMetadataCacheChangedParams): Promise<void> {
+    const { cache, data, file } = params;
+    await this.processFrontmatterLinksInFile({ cache, data, file });
   }
 
   private handleMouseDown(evt: MouseEvent): void {
@@ -333,7 +358,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
           for (const link of frontmatterMarkdownLinksCacheLinks) {
             const value = getNestedPropertyValue((cache.frontmatter ?? {}) as Record<string, unknown>, link.key);
             if (value !== link.original) {
-              this.frontmatterMarkdownLinksCache.deleteKey(note.path, link.key);
+              this.frontmatterMarkdownLinksCache.deleteKey({ filePath: note.path, key: link.key });
               const obsidianLink = obsidianLinkMap.get(link.key);
               if (obsidianLink) {
                 cache.frontmatterLinks.push(obsidianLink);
@@ -347,7 +372,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
           }
 
           for (const link of newLinks) {
-            this.updateResolvedOrUnresolvedLinksCache(link.link, note.path);
+            this.updateResolvedOrUnresolvedLinksCache({ link: link.link, notePath: note.path });
           }
           return;
         }
@@ -356,7 +381,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
         if (!cache) {
           return;
         }
-        await this.processFrontmatterLinksInFile(note, cache);
+        await this.processFrontmatterLinksInFile({ cache, file: note });
       },
       progressBarTitle: 'Frontmatter Markdown Links: Initializing...',
       shouldContinueOnError: true,
@@ -368,9 +393,10 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     }
   }
 
-  private processFrontmatterLinks(value: unknown, key: string, cache: CachedMetadata, filePath: string): boolean {
+  private processFrontmatterLinks(params: FrontmatterMarkdownLinksComponentProcessFrontmatterLinksParams): boolean {
+    const { cache, filePath, key, value } = params;
     if (typeof value === 'string') {
-      this.frontmatterMarkdownLinksCache.deleteKey(filePath, key);
+      this.frontmatterMarkdownLinksCache.deleteKey({ filePath, key });
       const parseLinkResults = parseLinks(value);
       const isSingleLink = parseLinkResults[0]?.raw === value;
 
@@ -408,7 +434,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
         if (!isSingleLink || !parseLinkResult.isWikilink) {
           hasFrontmatterLinks = true;
           this.frontmatterMarkdownLinksCache.add(filePath, link);
-          this.updateResolvedOrUnresolvedLinksCache(link.link, filePath);
+          this.updateResolvedOrUnresolvedLinksCache({ link: link.link, notePath: filePath });
         }
       }
 
@@ -422,27 +448,28 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     let hasFrontmatterLinks = false;
 
     for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
-      const hasChildFrontmatterLinks = this.processFrontmatterLinks(childValue, key ? `${key}.${childKey}` : childKey, cache, filePath);
+      const hasChildFrontmatterLinks = this.processFrontmatterLinks({ cache, filePath, key: key ? `${key}.${childKey}` : childKey, value: childValue });
       hasFrontmatterLinks ||= hasChildFrontmatterLinks;
     }
 
     return hasFrontmatterLinks;
   }
 
-  private async processFrontmatterLinksInFile(file: TFile, cache: CachedMetadata, data?: string): Promise<void> {
+  private async processFrontmatterLinksInFile(params: FrontmatterMarkdownLinksComponentProcessFrontmatterLinksInFileParams): Promise<void> {
+    const { cache, file } = params;
     this.frontmatterMarkdownLinksCache.updateFile(file);
 
     if (this.currentlyProcessingFiles.has(file.path)) {
       return;
     }
 
-    const hasFrontmatterLinks = this.processFrontmatterLinks(cache.frontmatter, '', cache, file.path);
+    const hasFrontmatterLinks = this.processFrontmatterLinks({ cache, filePath: file.path, key: '', value: cache.frontmatter });
     if (!hasFrontmatterLinks) {
       return;
     }
 
     this.currentlyProcessingFiles.add(file.path);
-    data ??= await this.app.vault.read(file);
+    const data = params.data ?? await this.app.vault.read(file);
     this.app.metadataCache.trigger('changed', file, data, cache);
     this.currentlyProcessingFiles.delete(file.path);
   }
@@ -459,7 +486,8 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     }
   }
 
-  private updateResolvedOrUnresolvedLinksCache(link: string, notePath: string): void {
+  private updateResolvedOrUnresolvedLinksCache(params: FrontmatterMarkdownLinksComponentUpdateResolvedOrUnresolvedLinksCacheParams): void {
+    const { link, notePath } = params;
     const { linkPath } = splitSubpath(link);
     const resolvedFile = this.app.metadataCache.getFirstLinkpathDest(linkPath, notePath);
     const linksCacheMap = resolvedFile ? this.app.metadataCache.resolvedLinks : this.app.metadataCache.unresolvedLinks;

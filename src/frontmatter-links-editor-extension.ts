@@ -31,6 +31,12 @@ interface GroupDescription {
   regExp: RegExp;
 }
 
+interface HandleValueParams {
+  readonly endIndex: number;
+  readonly isInQuotes: boolean;
+  readonly startIndex: number;
+}
+
 interface LinkStylingInfo {
   cssClass: string;
   from: number;
@@ -109,7 +115,7 @@ export class FrontMatterLinksViewPlugin implements PluginValue {
         enter(node) {
           const lineNumber = view.state.doc.lineAt(node.from).number;
           if (lineNumber !== previousLineNumber) {
-            handleValue(valueStartIndex, valueEndIndex, false);
+            handleValue({ endIndex: valueEndIndex, isInQuotes: false, startIndex: valueStartIndex });
             previousLineNumber = lineNumber;
             wasColonProcessed = false;
             valueStartIndex = NO_INDEX;
@@ -135,7 +141,7 @@ export class FrontMatterLinksViewPlugin implements PluginValue {
           }
 
           if (node.name === 'hmd-frontmatter_string') {
-            handleValue(node.from + 1, node.to - 1, true);
+            handleValue({ endIndex: node.to - 1, isInQuotes: true, startIndex: node.from + 1 });
             valueStartIndex = NO_INDEX;
             valueEndIndex = NO_INDEX;
           }
@@ -144,12 +150,13 @@ export class FrontMatterLinksViewPlugin implements PluginValue {
         to
       });
 
-      handleValue(valueStartIndex, valueEndIndex, false);
+      handleValue({ endIndex: valueEndIndex, isInQuotes: false, startIndex: valueStartIndex });
     }
 
     return builder.finish();
 
-    function handleValue(startIndex: number, endIndex: number, isInQuotes: boolean): void {
+    function handleValue(params: HandleValueParams): void {
+      const { endIndex, isInQuotes, startIndex } = params;
       if (startIndex === NO_INDEX) {
         return;
       }

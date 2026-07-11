@@ -182,7 +182,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
       const cache = new FrontmatterMarkdownLinksCache();
 
       expect(() => {
-        cache.deleteKey('nonexistent.md', 'key1');
+        cache.deleteKey({ filePath: 'nonexistent.md', key: 'key1' });
       }).not.toThrow();
     });
 
@@ -190,7 +190,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
       const cache = new FrontmatterMarkdownLinksCache();
       cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
 
-      cache.deleteKey('file.md', 'nonexistentKey');
+      cache.deleteKey({ filePath: 'file.md', key: 'nonexistentKey' });
 
       expect(cache.getLinks(makeTFile('file.md') as Parameters<typeof cache.getLinks>[0])).toHaveLength(1);
     });
@@ -200,7 +200,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
       cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
       cache.add('file.md', makeLink('key2', 'link2', 'orig2'));
 
-      cache.deleteKey('file.md', 'key1');
+      cache.deleteKey({ filePath: 'file.md', key: 'key1' });
 
       const links = cache.getLinks(makeTFile('file.md') as Parameters<typeof cache.getLinks>[0]);
       expect(links).toHaveLength(1);
@@ -211,7 +211,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
       const cache = new FrontmatterMarkdownLinksCache();
       cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
 
-      cache.deleteKey('file.md', 'key1');
+      cache.deleteKey({ filePath: 'file.md', key: 'key1' });
 
       expect(cache.getFilePaths()).not.toContain('file.md');
     });
@@ -458,7 +458,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
       // Add two links then delete one key (leaves one remaining - triggers put not delete).
       cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
       cache.add('file.md', makeLink('key2', 'link2', 'orig2'));
-      cache.deleteKey('file.md', 'key1');
+      cache.deleteKey({ filePath: 'file.md', key: 'key1' });
 
       flushStoreActions();
 

@@ -63,6 +63,10 @@ interface ComponentModuleActual {
   Component: new () => object;
 }
 
+interface HandleMetadataCacheChangedAccess {
+  handleMetadataCacheChanged: AnyFn;
+}
+
 interface InternalPluginsLike {
   getEnabledPluginById: AnyFn;
 }
@@ -468,6 +472,34 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       }
     });
 
+    it('should route metadataCache changed events through the handleMetadataCacheChanged adapter', async () => {
+      vi.useFakeTimers();
+      try {
+        const { app, metadataCacheOn, registerEditorExtension } = createLifecycleApp();
+        const registrar = strictProxy<EditorExtensionRegistrar>({ registerEditorExtension });
+        const component = createLifecycleComponent(app, registrar);
+        const handleSpy = vi.spyOn(castTo<HandleMetadataCacheChangedAccess>(component), 'handleMetadataCacheChanged')
+          .mockResolvedValue(undefined);
+
+        component.load();
+        // `LayoutReadyComponent.onload` schedules the protected `onLayoutReady` via `window.setTimeout(0)`.
+        await vi.runAllTimersAsync();
+
+        // `onLayoutReady` registers exactly one metadataCache listener (the 'changed' adapter).
+        const changedHandler = castTo<(file: TFile, data: string, cache: CachedMetadata) => void>(metadataCacheOn.mock.calls[0]?.[1]);
+        const tfile = makeTFile('changed.md');
+        const cache = castTo<CachedMetadata>({});
+
+        // The adapter arrow unpacks the positional 'changed' event args into the params-object call.
+        changedHandler(tfile, 'content', cache);
+
+        expect(handleSpy).toHaveBeenCalledWith({ cache, data: 'content', file: tfile });
+        component.unload();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('should patch the bases note during onLayoutReady', async () => {
       vi.useFakeTimers();
       try {
@@ -593,11 +625,11 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const processSpy = vi.spyOn(castTo<ProcessFrontmatterLinksInFileAccess>(component), 'processFrontmatterLinksInFile')
         .mockResolvedValue(undefined);
 
-      await component['handleMetadataCacheChanged'](tfile, 'content', cache);
+      await component['handleMetadataCacheChanged']({ cache, data: 'content', file: tfile });
 
       // The handler fires `processFrontmatterLinksInFile` fire-and-forget via the real `invokeAsyncSafely`.
       await waitForAllAsyncOperations();
-      expect(processSpy).toHaveBeenCalledWith(tfile, cache, 'content');
+      expect(processSpy).toHaveBeenCalledWith({ cache, data: 'content', file: tfile });
     });
   });
 
@@ -606,7 +638,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      const result = component['processFrontmatterLinks'](null, 'key', cache, 'file.md');
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: null });
 
       expect(result).toBe(false);
     });
@@ -615,7 +647,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      const result = component['processFrontmatterLinks'](42, 'key', cache, 'file.md');
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: 42 });
 
       expect(result).toBe(false);
     });
@@ -624,7 +656,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      const result = component['processFrontmatterLinks']('plain text', 'key', cache, 'file.md');
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: 'plain text' });
 
       expect(result).toBe(false);
     });
@@ -633,7 +665,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      const result = component['processFrontmatterLinks']('https://example.com', 'key', cache, 'file.md');
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: 'https://example.com' });
 
       expect(result).toBe(false);
     });
@@ -642,7 +674,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      const result = component['processFrontmatterLinks']('[note](target.md)', 'key', cache, 'file.md');
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: '[note](target.md)' });
 
       expect(result).toBe(true);
       expect(cache.frontmatterLinks?.length).toBeGreaterThan(0);
@@ -652,7 +684,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      const result = component['processFrontmatterLinks']({ nested: '[note](target.md)' }, 'key', cache, 'file.md');
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: { nested: '[note](target.md)' } });
 
       expect(result).toBe(true);
     });
@@ -661,7 +693,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      const result = component['processFrontmatterLinks']({}, '', cache, 'file.md');
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: '', value: {} });
 
       expect(result).toBe(false);
     });
@@ -670,7 +702,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      const result = component['processFrontmatterLinks']('[[some/note]]', 'key', cache, 'file.md');
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: '[[some/note]]' });
 
       expect(result).toBe(false);
     });
@@ -679,7 +711,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      component['processFrontmatterLinks']('[My Note](target.md)', 'key', cache, 'file.md');
+      component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: '[My Note](target.md)' });
 
       expect(cache.frontmatterLinks?.[0]?.displayText).toBe('My Note');
     });
@@ -688,7 +720,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      component['processFrontmatterLinks']('[](target.md)', 'key', cache, 'file.md');
+      component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: '[](target.md)' });
 
       expect(cache.frontmatterLinks?.[0]?.displayText).toBe('target.md');
     });
@@ -702,7 +734,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         ]
       };
 
-      component['processFrontmatterLinks']('[note](target.md)', 'key', cache, 'file.md');
+      component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: '[note](target.md)' });
 
       const keyLinks = (cache.frontmatterLinks ?? []).filter((link) => link.key === 'key');
       expect(keyLinks).toHaveLength(1);
@@ -714,7 +746,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      component['processFrontmatterLinks']('text [a](x.md) and [b](y.md)', 'key', cache, 'file.md');
+      component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: 'text [a](x.md) and [b](y.md)' });
 
       const offsetLink = (cache.frontmatterLinks ?? []).find((link) => 'startOffset' in link);
       expect(offsetLink).toBeDefined();
@@ -728,7 +760,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: '[note](target.md)' }) };
       component['currentlyProcessingFiles'].add('file.md');
 
-      await component['processFrontmatterLinksInFile'](tfile, cache);
+      await component['processFrontmatterLinksInFile']({ cache, file: tfile });
 
       expect(getApp(component).metadataCache.trigger).not.toHaveBeenCalled();
     });
@@ -738,7 +770,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const tfile = makeTFile('file.md');
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'plain text' }) };
 
-      await component['processFrontmatterLinksInFile'](tfile, cache);
+      await component['processFrontmatterLinksInFile']({ cache, file: tfile });
 
       expect(getApp(component).metadataCache.trigger).not.toHaveBeenCalled();
     });
@@ -748,7 +780,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const tfile = makeTFile('file.md');
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: '[note](target.md)' }) };
 
-      await component['processFrontmatterLinksInFile'](tfile, cache, 'content');
+      await component['processFrontmatterLinksInFile']({ cache, data: 'content', file: tfile });
 
       expect(getApp(component).metadataCache.trigger).toHaveBeenCalledWith('changed', tfile, 'content', cache);
     });
@@ -759,7 +791,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: '[note](target.md)' }) };
       vi.mocked(getApp(component).vault.read).mockResolvedValue('file content');
 
-      await component['processFrontmatterLinksInFile'](tfile, cache);
+      await component['processFrontmatterLinksInFile']({ cache, file: tfile });
 
       expect(getApp(component).vault.read).toHaveBeenCalledWith(tfile);
     });
@@ -769,7 +801,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const tfile = makeTFile('file.md');
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: '[note](target.md)' }) };
 
-      await component['processFrontmatterLinksInFile'](tfile, cache, 'content');
+      await component['processFrontmatterLinksInFile']({ cache, data: 'content', file: tfile });
 
       expect(component['currentlyProcessingFiles'].has('file.md')).toBe(false);
     });
@@ -1189,7 +1221,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const tfile = makeTFile('target.md');
       vi.mocked(getApp(component).metadataCache.getFirstLinkpathDest).mockReturnValue(tfile);
 
-      component['updateResolvedOrUnresolvedLinksCache']('target.md', 'note.md');
+      component['updateResolvedOrUnresolvedLinksCache']({ link: 'target.md', notePath: 'note.md' });
 
       expect(getApp(component).metadataCache.resolvedLinks['note.md']?.['target.md']).toBe(1);
     });
@@ -1198,7 +1230,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       vi.mocked(getApp(component).metadataCache.getFirstLinkpathDest).mockReturnValue(null);
 
-      component['updateResolvedOrUnresolvedLinksCache']('unknown.md', 'note.md');
+      component['updateResolvedOrUnresolvedLinksCache']({ link: 'unknown.md', notePath: 'note.md' });
 
       expect(getApp(component).metadataCache.unresolvedLinks['note.md']?.['unknown.md']).toBe(1);
     });
@@ -1207,8 +1239,8 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       vi.mocked(getApp(component).metadataCache.getFirstLinkpathDest).mockReturnValue(null);
 
-      component['updateResolvedOrUnresolvedLinksCache']('link1.md', 'note.md');
-      component['updateResolvedOrUnresolvedLinksCache']('link1.md', 'note.md');
+      component['updateResolvedOrUnresolvedLinksCache']({ link: 'link1.md', notePath: 'note.md' });
+      component['updateResolvedOrUnresolvedLinksCache']({ link: 'link1.md', notePath: 'note.md' });
 
       expect(getApp(component).metadataCache.unresolvedLinks['note.md']?.['link1.md']).toBe(2);
     });
@@ -1304,7 +1336,8 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
       await processItem(note);
 
-      expect(processSpy).toHaveBeenCalledWith(note, expect.any(Object));
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any(...) is an asymmetric matcher typed `any`.
+      expect(processSpy).toHaveBeenCalledWith({ cache: expect.any(Object), file: note });
     });
 
     it('should return early for invalid-cache notes when no cache is available', async () => {
@@ -1361,7 +1394,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
       await processItem(note);
 
-      expect(cacheInstance.deleteKey).toHaveBeenCalledWith('note.md', 'key');
+      expect(cacheInstance.deleteKey).toHaveBeenCalledWith({ filePath: 'note.md', key: 'key' });
     });
 
     it('should keep matching links and update the resolved-links cache', async () => {
@@ -1378,7 +1411,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
       await processItem(note);
 
-      expect(updateSpy).toHaveBeenCalledWith('target.md', 'note.md');
+      expect(updateSpy).toHaveBeenCalledWith({ link: 'target.md', notePath: 'note.md' });
     });
 
     it('should not restore an obsidian link when none exists for a changed key', async () => {
@@ -1394,7 +1427,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
       await processItem(note);
 
-      expect(cacheInstance.deleteKey).toHaveBeenCalledWith('note.md', 'key');
+      expect(cacheInstance.deleteKey).toHaveBeenCalledWith({ filePath: 'note.md', key: 'key' });
     });
 
     it('should default to an empty frontmatter object when the cache has none', async () => {
@@ -1407,7 +1440,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
       await processItem(note);
 
-      expect(cacheInstance.deleteKey).toHaveBeenCalledWith('note.md', 'key');
+      expect(cacheInstance.deleteKey).toHaveBeenCalledWith({ filePath: 'note.md', key: 'key' });
     });
   });
 

@@ -13,11 +13,23 @@ import type { PatchedInputElementMap } from '../patched-input-element-map.ts';
 import { getCaretCharacterOffset } from '../selection.ts';
 import { TextPropertyWidgetComponentRenderPatchComponent } from './text-property-widget-component-render-patch-component.ts';
 
+interface CreateChildWidgetParams {
+  readonly widgetEndOffset: number;
+  readonly widgetStartOffset: number;
+}
+
 type RenderTextPropertyWidgetComponentFn = MetadataTypeManagerRegisteredTypeWidgetsRecord['text']['render'];
 
 interface TextPropertyWidgetRenderPatchComponentConstructorParams {
   readonly patchedInputElementMap: PatchedInputElementMap;
   readonly textPropertyWidget: PropertyWidget<TextPropertyWidgetComponent>;
+}
+
+interface TextPropertyWidgetRenderPatchComponentRenderWidgetParams {
+  readonly containerEl: HTMLElement;
+  readonly context: PropertyRenderContext;
+  readonly data: unknown;
+  readonly originalMethod: RenderTextPropertyWidgetComponentFn;
 }
 
 export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponent {
@@ -39,17 +51,13 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
         originalArgs: [containerEl, data, context],
         originalMethod
       }) => {
-        return this.renderWidget(containerEl, data, context, originalMethod);
+        return this.renderWidget({ containerEl, context, data, originalMethod });
       }
     });
   }
 
-  private renderWidget(
-    containerEl: HTMLElement,
-    data: unknown,
-    context: PropertyRenderContext,
-    originalMethod: RenderTextPropertyWidgetComponentFn
-  ): TextPropertyWidgetComponent {
+  private renderWidget(params: TextPropertyWidgetRenderPatchComponentRenderWidgetParams): TextPropertyWidgetComponent {
+    const { containerEl, context, data, originalMethod } = params;
     if (typeof data !== 'string') {
       return originalMethod(containerEl, data, context);
     }
@@ -76,7 +84,7 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
         context.onChange(newValue);
         window.requestAnimationFrame(() => {
           containerEl.empty();
-          this.renderWidget(containerEl, newValue, context, originalMethod);
+          this.renderWidget({ containerEl, context, data: newValue, originalMethod });
         });
       }
     };
@@ -91,12 +99,12 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
       let startOffset = 0;
 
       for (const parseLinkResult of parseLinkResults) {
-        createChildWidget(startOffset, parseLinkResult.startOffset);
-        createChildWidget(parseLinkResult.startOffset, parseLinkResult.endOffset);
+        createChildWidget({ widgetEndOffset: parseLinkResult.startOffset, widgetStartOffset: startOffset });
+        createChildWidget({ widgetEndOffset: parseLinkResult.endOffset, widgetStartOffset: parseLinkResult.startOffset });
         startOffset = parseLinkResult.endOffset;
       }
 
-      createChildWidget(startOffset, str.length);
+      createChildWidget({ widgetEndOffset: str.length, widgetStartOffset: startOffset });
     }
 
     const widget = originalMethod(containerEl, str, ctxWithRerenderOnChange);
@@ -121,7 +129,7 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
       metadataLinkEl?.hide();
     }
 
-    function createChildWidget(widgetStartOffset: number, widgetEndOffset: number): void {
+    function createChildWidget({ widgetEndOffset, widgetStartOffset }: CreateChildWidgetParams): void {
       if (widgetStartOffset >= widgetEndOffset) {
         return;
       }

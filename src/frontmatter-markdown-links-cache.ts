@@ -17,6 +17,11 @@ interface FrontmatterLinkEntry {
   links: FrontmatterLinkCache[];
 }
 
+interface FrontmatterMarkdownLinksCacheDeleteKeyParams {
+  readonly filePath: string;
+  readonly key: string;
+}
+
 interface StoreAction {
   action(store: IDBObjectStore): void;
   storeName: string;
@@ -66,7 +71,8 @@ export class FrontmatterMarkdownLinksCache {
     });
   }
 
-  public deleteKey(filePath: string, key: string): void {
+  public deleteKey(params: FrontmatterMarkdownLinksCacheDeleteKeyParams): void {
+    const { filePath, key } = params;
     const links = this.fileFrontmatterLinkCacheMap.get(filePath);
     if (!links) {
       return;
