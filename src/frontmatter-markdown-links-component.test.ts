@@ -1289,7 +1289,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
       const loopParams = vi.mocked(loop).mock.calls[0]?.[0];
       const note = makeTFile('some/note.md');
-      const message = loopParams?.buildNoticeMessage(note, '1/10');
+      const message = loopParams?.buildNoticeMessage({ item: note, iterationStr: '1/10' });
       expect(message).toContain('some/note.md');
     });
 
@@ -1331,7 +1331,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const note = makeTFile('note.md');
       const processSpy = vi.spyOn(castTo<ProcessFrontmatterLinksInFileAccess>(component), 'processFrontmatterLinksInFile')
         .mockResolvedValue(undefined);
-      vi.mocked(getCacheSafe).mockResolvedValue({});
+      vi.mocked(getCacheSafe).mockResolvedValue({ features: [] });
       const { processItem } = await captureProcessItem(component);
 
       await processItem(note);
@@ -1388,6 +1388,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'expected-original' }]);
       const obsidianLink = { displayText: 'obs', key: 'key', link: 'obs-target.md', original: 'obs' };
       vi.mocked(getCacheSafe).mockResolvedValue({
+        features: [],
         frontmatter: castTo<FrontMatterCache>({ key: 'different-value' }),
         frontmatterLinks: [obsidianLink]
       });
@@ -1404,6 +1405,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       cacheInstance.isCacheValid.mockReturnValue(true);
       cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'expected-original' }]);
       vi.mocked(getCacheSafe).mockResolvedValue({
+        features: [],
         frontmatter: castTo<FrontMatterCache>({ key: 'expected-original' }),
         frontmatterLinks: []
       });
@@ -1421,6 +1423,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       cacheInstance.isCacheValid.mockReturnValue(true);
       cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'expected-original' }]);
       vi.mocked(getCacheSafe).mockResolvedValue({
+        features: [],
         frontmatter: castTo<FrontMatterCache>({ key: 'changed-value' }),
         frontmatterLinks: []
       });
@@ -1436,7 +1439,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const { cacheInstance, processItem } = await captureProcessItem(component);
       cacheInstance.isCacheValid.mockReturnValue(true);
       cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'orig' }]);
-      vi.mocked(getCacheSafe).mockResolvedValue({ frontmatterLinks: [] });
+      vi.mocked(getCacheSafe).mockResolvedValue({ features: [], frontmatterLinks: [] });
 
       await processItem(note);
 

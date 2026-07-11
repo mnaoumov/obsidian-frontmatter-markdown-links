@@ -2,7 +2,7 @@ import type { TextPropertyWidgetComponent } from '@obsidian-typings/obsidian-pub
 
 import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
 import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
-import { parseLink } from 'obsidian-dev-utils/obsidian/link';
+import { parseLink } from 'obsidian-dev-utils/obsidian/parse-link';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
 interface TextPropertyWidgetComponentRenderPatchComponentConstructorParams {

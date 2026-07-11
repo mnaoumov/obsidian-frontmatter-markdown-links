@@ -1,10 +1,8 @@
 import type { App } from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/parse-link';
 
-import {
-  parseLinks,
-  splitSubpath
-} from 'obsidian-dev-utils/obsidian/link';
+import { splitSubpath } from 'obsidian-dev-utils/obsidian/link';
+import { parseLinks } from 'obsidian-dev-utils/obsidian/parse-link';
 
 import { attachLinkData } from './link-data.ts';
 import { extractDisplayText } from './parse-link-result.ts';

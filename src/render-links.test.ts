@@ -1,8 +1,8 @@
 import type { App } from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/parse-link';
 
 import { castTo } from 'obsidian-dev-utils/object-utils';
-import { parseLinks } from 'obsidian-dev-utils/obsidian/link';
+import { parseLinks } from 'obsidian-dev-utils/obsidian/parse-link';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 import {

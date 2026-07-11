@@ -1,4 +1,4 @@
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/parse-link';
 
 import { castTo } from 'obsidian-dev-utils/object-utils';
 import {
@@ -133,6 +133,7 @@ describe('LinkFixer', () => {
         endOffset: 0,
         isEmbed: false,
         isExternal: true,
+        isFileUrl: false,
         isWikilink: false,
         raw: 'https://example.com',
         startOffset: 0,

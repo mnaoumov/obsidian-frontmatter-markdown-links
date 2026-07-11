@@ -1,6 +1,6 @@
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/parse-link';
 
-import { parseLink } from 'obsidian-dev-utils/obsidian/link';
+import { parseLink } from 'obsidian-dev-utils/obsidian/parse-link';
 
 export const EXTERNAL_LINK_PREFIX = 'https://EXTERNAL_LINK_PREFIX.com/';
 

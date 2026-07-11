@@ -6,7 +6,7 @@ import type {
 } from '@obsidian-typings/obsidian-public-latest';
 
 import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
-import { parseLinks } from 'obsidian-dev-utils/obsidian/link';
+import { parseLinks } from 'obsidian-dev-utils/obsidian/parse-link';
 
 import type { PatchedInputElementMap } from '../patched-input-element-map.ts';
 

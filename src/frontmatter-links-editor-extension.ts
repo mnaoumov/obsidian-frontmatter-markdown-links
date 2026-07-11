@@ -4,7 +4,7 @@ import type {
   PluginValue
 } from '@codemirror/view';
 import type { App } from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/link';
+import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/parse-link';
 
 import { syntaxTree } from '@codemirror/language';
 import { RangeSetBuilder } from '@codemirror/state';
@@ -18,7 +18,7 @@ import {
 import {
   parseLink,
   parseLinks
-} from 'obsidian-dev-utils/obsidian/link';
+} from 'obsidian-dev-utils/obsidian/parse-link';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
 

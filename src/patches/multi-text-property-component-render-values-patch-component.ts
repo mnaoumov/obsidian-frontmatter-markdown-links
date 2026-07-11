@@ -3,7 +3,7 @@ import type { App } from 'obsidian';
 
 import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
 import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
-import { parseLinks } from 'obsidian-dev-utils/obsidian/link';
+import { parseLinks } from 'obsidian-dev-utils/obsidian/parse-link';
 import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
 import { renderLinkChild } from '../render-links.ts';

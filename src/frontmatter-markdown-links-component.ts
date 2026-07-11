@@ -24,12 +24,10 @@ import {
 import { getNestedPropertyValue } from 'obsidian-dev-utils/object-utils';
 import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
 import { LayoutReadyComponent } from 'obsidian-dev-utils/obsidian/components/layout-ready-component';
-import {
-  parseLinks,
-  splitSubpath
-} from 'obsidian-dev-utils/obsidian/link';
+import { splitSubpath } from 'obsidian-dev-utils/obsidian/link';
 import { loop } from 'obsidian-dev-utils/obsidian/loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
+import { parseLinks } from 'obsidian-dev-utils/obsidian/parse-link';
 import {
   getMarkdownFilesSorted,
   trashSafe
@@ -328,7 +326,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
     await loop({
       abortSignal: this.abortSignalComponent.abortSignal,
-      buildNoticeMessage: (note, iterationStr) => `Processing frontmatter links ${iterationStr} - ${note.path}`,
+      buildNoticeMessage: ({ item, iterationStr }) => `Processing frontmatter links ${iterationStr} - ${item.path}`,
       items: getMarkdownFilesSorted(this.app),
       pluginNoticeComponent: this.pluginNoticeComponent,
       processItem: async (note) => {

@@ -4,7 +4,7 @@ import { castTo } from 'obsidian-dev-utils/object-utils';
 import {
   parseLink,
   parseLinks
-} from 'obsidian-dev-utils/obsidian/link';
+} from 'obsidian-dev-utils/obsidian/parse-link';
 import {
   afterEach,
   beforeEach,
@@ -69,8 +69,8 @@ const { mockDecoration, mockSyntaxTreeFactory, mockViewPluginDefine } = vi.hoist
   };
 });
 
-vi.mock('obsidian-dev-utils/obsidian/link', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('obsidian-dev-utils/obsidian/link')>();
+vi.mock('obsidian-dev-utils/obsidian/parse-link', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('obsidian-dev-utils/obsidian/parse-link')>();
   return {
     ...actual,
     parseLink: vi.fn(actual.parseLink),
@@ -479,6 +479,7 @@ describe('getLinkStylingInfos - link type variations', () => {
       hasAngleBrackets: false,
       isEmbed: false,
       isExternal: false,
+      isFileUrl: false,
       isWikilink: false,
       raw: fakeRaw,
       startOffset: 0,
@@ -503,6 +504,7 @@ describe('getLinkStylingInfos - link type variations', () => {
       hasAngleBrackets: false,
       isEmbed: false,
       isExternal: false,
+      isFileUrl: false,
       isWikilink: false,
       raw: emptyRaw,
       startOffset: 0,
@@ -514,6 +516,7 @@ describe('getLinkStylingInfos - link type variations', () => {
       hasAngleBrackets: false,
       isEmbed: false,
       isExternal: false,
+      isFileUrl: false,
       isWikilink: false,
       raw: emptyRaw,
       startOffset: 0,
