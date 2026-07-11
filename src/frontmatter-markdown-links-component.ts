@@ -21,13 +21,16 @@ import {
   convertAsyncToSync,
   invokeAsyncSafely
 } from 'obsidian-dev-utils/async';
-import { getNestedPropertyValue } from 'obsidian-dev-utils/object-utils';
+import {
+  getNestedPropertyValue,
+  normalizeOptionalProperties
+} from 'obsidian-dev-utils/object-utils';
 import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
 import { LayoutReadyComponent } from 'obsidian-dev-utils/obsidian/components/layout-ready-component';
 import { splitSubpath } from 'obsidian-dev-utils/obsidian/link';
 import { loop } from 'obsidian-dev-utils/obsidian/loop';
 import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
-import { parseLinks } from 'obsidian-dev-utils/obsidian/parse-link';
+import { parseFrontmatterLinks } from 'obsidian-dev-utils/obsidian/parse-link';
 import {
   getMarkdownFilesSorted,
   trashSafe
@@ -73,8 +76,6 @@ interface FrontmatterMarkdownLinksComponentProcessFrontmatterLinksInFileParams {
 interface FrontmatterMarkdownLinksComponentProcessFrontmatterLinksParams {
   readonly cache: CachedMetadata;
   readonly filePath: string;
-  readonly key: string;
-  readonly value: unknown;
 }
 
 interface FrontmatterMarkdownLinksComponentUpdateResolvedOrUnresolvedLinksCacheParams {
@@ -392,65 +393,44 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
   }
 
   private processFrontmatterLinks(params: FrontmatterMarkdownLinksComponentProcessFrontmatterLinksParams): boolean {
-    const { cache, filePath, key, value } = params;
-    if (typeof value === 'string') {
-      this.frontmatterMarkdownLinksCache.deleteKey({ filePath, key });
-      const parseLinkResults = parseLinks(value);
-      const isSingleLink = parseLinkResults[0]?.raw === value;
+    const { cache, filePath } = params;
 
-      let hasFrontmatterLinks = false;
+    // Obsidian natively caches single-value internal frontmatter links (both wikilinks and markdown
+    // Links) as well as single links held as array elements, so the plugin only needs to contribute
+    // Links embedded within a multi-link string value - the one shape Obsidian does not cache. Those
+    // Are exactly the `multiValueFrontmatterLinks` from `parseFrontmatterLinks`, each carrying the
+    // Offsets into its frontmatter value.
+    const { multiValueFrontmatterLinks } = parseFrontmatterLinks(cache.frontmatter);
 
-      filterInPlace(cache.frontmatterLinks ?? [], (link) => {
-        return link.key !== key;
-      });
-
-      for (const parseLinkResult of parseLinkResults) {
-        if (parseLinkResult.isExternal) {
-          continue;
-        }
-
-        cache.frontmatterLinks ??= [];
-
-        const link: FrontmatterLinkCache = isSingleLink
-          ? {
-            key,
-            link: parseLinkResult.url,
-            original: value
-          }
-          : {
-            endOffset: parseLinkResult.endOffset,
-            key,
-            link: parseLinkResult.url,
-            original: value,
-            startOffset: parseLinkResult.startOffset
-          } as FrontmatterLinkCacheWithOffsets;
-
-        link.displayText = parseLinkResult.alias ?? parseLinkResult.url;
-
-        cache.frontmatterLinks.push(link);
-
-        if (!isSingleLink || !parseLinkResult.isWikilink) {
-          hasFrontmatterLinks = true;
-          this.frontmatterMarkdownLinksCache.add(filePath, link);
-          this.updateResolvedOrUnresolvedLinksCache({ link: link.link, notePath: filePath });
-        }
-      }
-
-      return hasFrontmatterLinks;
+    // Drop the plugin's previous contribution for this file before re-adding the current one.
+    for (const staleKey of new Set(this.frontmatterMarkdownLinksCache.getKeys(filePath))) {
+      this.frontmatterMarkdownLinksCache.deleteKey({ filePath, key: staleKey });
     }
 
-    if (typeof value !== 'object' || value === null) {
+    if (multiValueFrontmatterLinks.length === 0) {
       return false;
     }
 
-    let hasFrontmatterLinks = false;
+    cache.frontmatterLinks ??= [];
+    const contributedKeys = new Set(multiValueFrontmatterLinks.map((reference) => reference.key));
+    filterInPlace(cache.frontmatterLinks, (link) => !contributedKeys.has(link.key));
 
-    for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
-      const hasChildFrontmatterLinks = this.processFrontmatterLinks({ cache, filePath, key: key ? `${key}.${childKey}` : childKey, value: childValue });
-      hasFrontmatterLinks ||= hasChildFrontmatterLinks;
+    for (const reference of multiValueFrontmatterLinks) {
+      const link = normalizeOptionalProperties<FrontmatterLinkCacheWithOffsets>({
+        displayText: reference.displayText,
+        endOffset: reference.endOffset,
+        key: reference.key,
+        link: reference.link,
+        original: reference.original,
+        startOffset: reference.startOffset
+      });
+
+      cache.frontmatterLinks.push(link);
+      this.frontmatterMarkdownLinksCache.add(filePath, link);
+      this.updateResolvedOrUnresolvedLinksCache({ link: link.link, notePath: filePath });
     }
 
-    return hasFrontmatterLinks;
+    return true;
   }
 
   private async processFrontmatterLinksInFile(params: FrontmatterMarkdownLinksComponentProcessFrontmatterLinksInFileParams): Promise<void> {
@@ -461,7 +441,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
       return;
     }
 
-    const hasFrontmatterLinks = this.processFrontmatterLinks({ cache, filePath: file.path, key: '', value: cache.frontmatter });
+    const hasFrontmatterLinks = this.processFrontmatterLinks({ cache, filePath: file.path });
     if (!hasFrontmatterLinks) {
       return;
     }

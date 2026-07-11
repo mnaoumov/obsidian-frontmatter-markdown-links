@@ -634,122 +634,93 @@ describe('FrontmatterMarkdownLinksComponent', () => {
   });
 
   describe('processFrontmatterLinks', () => {
-    it('should return false for a null value', () => {
+    it('should return false when there is no frontmatter', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: null });
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
       expect(result).toBe(false);
     });
 
-    it('should return false for a number value', () => {
+    it('should return false for frontmatter with no links', () => {
       const component = createComponent();
-      const cache: CachedMetadata = {};
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'plain text' }) };
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: 42 });
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
       expect(result).toBe(false);
     });
 
-    it('should return false for a plain string with no links', () => {
+    it('should return false for an external-only link value', () => {
       const component = createComponent();
-      const cache: CachedMetadata = {};
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'https://example.com' }) };
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: 'plain text' });
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
       expect(result).toBe(false);
     });
 
-    it('should return false for an external-only link string', () => {
+    it('should not contribute single-value internal links (Obsidian caches those natively)', () => {
       const component = createComponent();
-      const cache: CachedMetadata = {};
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ markdown: '[note](target.md)', wiki: '[[some/note]]' }) };
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: 'https://example.com' });
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
       expect(result).toBe(false);
+      expect(cache.frontmatterLinks ?? []).toHaveLength(0);
     });
 
-    it('should return true and populate frontmatterLinks for an internal markdown link', () => {
+    it('should return true and populate offset-based links for a multi-link string value', () => {
       const component = createComponent();
-      const cache: CachedMetadata = {};
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'text [a](x.md) and [b](y.md)' }) };
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: '[note](target.md)' });
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
       expect(result).toBe(true);
-      expect(cache.frontmatterLinks?.length).toBeGreaterThan(0);
+      const links = cache.frontmatterLinks ?? [];
+      expect(links).toHaveLength(2);
+      expect(links.every((link) => 'startOffset' in link && 'endOffset' in link)).toBe(true);
+      expect(links.map((link) => link.link).sort()).toEqual(['x.md', 'y.md']);
     });
 
-    it('should process a nested object recursively', () => {
+    it('should process multi-link values nested in an object', () => {
       const component = createComponent();
-      const cache: CachedMetadata = {};
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ outer: { inner: 'text [a](x.md) and [b](y.md)' } }) };
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: { nested: '[note](target.md)' } });
+      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
       expect(result).toBe(true);
-    });
-
-    it('should return false for an empty object', () => {
-      const component = createComponent();
-      const cache: CachedMetadata = {};
-
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: '', value: {} });
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false for a single wikilink value', () => {
-      const component = createComponent();
-      const cache: CachedMetadata = {};
-
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: '[[some/note]]' });
-
-      expect(result).toBe(false);
+      expect((cache.frontmatterLinks ?? []).every((link) => link.key === 'outer.inner')).toBe(true);
     });
 
     it('should populate displayText from the alias', () => {
       const component = createComponent();
-      const cache: CachedMetadata = {};
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'see [My Note](target.md) and [Other](other.md)' }) };
 
-      component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: '[My Note](target.md)' });
+      component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
       expect(cache.frontmatterLinks?.[0]?.displayText).toBe('My Note');
     });
 
-    it('should populate displayText from the url when there is no alias', () => {
+    it('should drop the previous contribution for a key before reprocessing', () => {
       const component = createComponent();
-      const cache: CachedMetadata = {};
-
-      component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: '[](target.md)' });
-
-      expect(cache.frontmatterLinks?.[0]?.displayText).toBe('target.md');
-    });
-
-    it('should drop existing frontmatter links for the same key before reprocessing', () => {
-      const component = createComponent();
+      const mockCache = castTo<CacheGetKeysAccess & ValidCacheInstance>(component['frontmatterMarkdownLinksCache']);
+      mockCache.getKeys.mockReturnValue(['key']);
       const cache: CachedMetadata = {
+        frontmatter: castTo<FrontMatterCache>({ key: 'text [a](x.md) and [b](y.md)' }),
         frontmatterLinks: [
-          { displayText: 'old', key: 'key', link: 'old-target', original: 'old' },
+          { displayText: 'stale', key: 'key', link: 'stale-target', original: 'stale' },
           { displayText: 'other', key: 'other', link: 'other-target', original: 'other' }
         ]
       };
 
-      component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: '[note](target.md)' });
+      component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
+      expect(mockCache.deleteKey).toHaveBeenCalledWith({ filePath: 'file.md', key: 'key' });
       const keyLinks = (cache.frontmatterLinks ?? []).filter((link) => link.key === 'key');
-      expect(keyLinks).toHaveLength(1);
-      expect(keyLinks[0]?.link).toBe('target.md');
+      expect(keyLinks.map((link) => link.link).sort()).toEqual(['x.md', 'y.md']);
       expect((cache.frontmatterLinks ?? []).map((link) => link.key)).toContain('other');
-    });
-
-    it('should create offset-based links for multi-link values', () => {
-      const component = createComponent();
-      const cache: CachedMetadata = {};
-
-      component['processFrontmatterLinks']({ cache, filePath: 'file.md', key: 'key', value: 'text [a](x.md) and [b](y.md)' });
-
-      const offsetLink = (cache.frontmatterLinks ?? []).find((link) => 'startOffset' in link);
-      expect(offsetLink).toBeDefined();
     });
   });
 
@@ -757,7 +728,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
     it('should skip when already processing the same file', async () => {
       const component = createComponent();
       const tfile = makeTFile('file.md');
-      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: '[note](target.md)' }) };
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'text [a](x.md) and [b](y.md)' }) };
       component['currentlyProcessingFiles'].add('file.md');
 
       await component['processFrontmatterLinksInFile']({ cache, file: tfile });
@@ -778,7 +749,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
     it('should trigger a metadataCache change when the frontmatter has links', async () => {
       const component = createComponent();
       const tfile = makeTFile('file.md');
-      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: '[note](target.md)' }) };
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'text [a](x.md) and [b](y.md)' }) };
 
       await component['processFrontmatterLinksInFile']({ cache, data: 'content', file: tfile });
 
@@ -788,7 +759,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
     it('should read the file content when data is not provided', async () => {
       const component = createComponent();
       const tfile = makeTFile('file.md');
-      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: '[note](target.md)' }) };
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'text [a](x.md) and [b](y.md)' }) };
       vi.mocked(getApp(component).vault.read).mockResolvedValue('file content');
 
       await component['processFrontmatterLinksInFile']({ cache, file: tfile });
@@ -799,7 +770,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
     it('should clear the processing state after completion', async () => {
       const component = createComponent();
       const tfile = makeTFile('file.md');
-      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: '[note](target.md)' }) };
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'text [a](x.md) and [b](y.md)' }) };
 
       await component['processFrontmatterLinksInFile']({ cache, data: 'content', file: tfile });
 
