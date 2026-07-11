@@ -50,7 +50,8 @@ key:
 
   await evalInObsidian({
     contextId,
-    fn: async ({ app, context }) => {
+    fn: async ({ app, context, waitUntil }) => {
+      const READY_TIMEOUT_IN_MILLISECONDS = 30_000;
       const baseFile = app.vault.getFileByPath('test.base');
       if (!baseFile) {
         throw new Error('test.base not found');
@@ -58,7 +59,15 @@ key:
       const leaf = app.workspace.getLeaf(true);
       await leaf.openFile(baseFile);
       context.leaf = leaf;
-      await sleep(2500);
+      // Reveal the leaf so the Bases view actually renders even if another suite left the workspace focused elsewhere.
+      await app.workspace.revealLeaf(leaf);
+      // Wait on a readiness signal (the Bases table rendering) rather than a fixed delay, so setup tolerates
+      // The shared Obsidian instance being slow under full-suite load (desktop runs after android).
+      await waitUntil({
+        message: 'Bases table cells to render',
+        predicate: () => Boolean(leaf.view.containerEl.querySelector('.bases-td')),
+        timeoutInMilliseconds: READY_TIMEOUT_IN_MILLISECONDS
+      });
     },
     vaultPath: vault.path
   });
@@ -72,8 +81,11 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
   it('renders the embedded wikilink in a mapped-list formula cell as an internal link', async () => {
     const result = await evalInObsidian({
       contextId,
-      fn: async ({ context }) => {
+      fn: async ({ app, context, waitUntil }) => {
+        const LINK_DATA_TIMEOUT_IN_MILLISECONDS = 25_000;
         const leaf = context.leaf;
+        // Re-activate the leaf so its Bases view keeps rendering even if another suite changed focus under load.
+        await app.workspace.revealLeaf(leaf);
         const containerEl = leaf.view.containerEl;
 
         function findMappedListCell(): HTMLElement | null {
@@ -81,25 +93,19 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
           return cells.find((cell) => cell.textContent.includes('text [[target]]') || Boolean(cell.querySelector('[data-frontmatter-markdown-links-link-data]'))) ?? null;
         }
 
-        let cell: HTMLElement | null = null;
-        for (let attempt = 0; attempt < 40; attempt++) {
-          cell = findMappedListCell();
-          if (cell?.querySelector('[data-frontmatter-markdown-links-link-data]')) {
-            break;
-          }
-          await sleep(250);
-        }
+        await waitUntil({
+          message: 'mapped-list formula cell to render frontmatter-markdown-links link data',
+          predicate: () => Boolean(findMappedListCell()?.querySelector('[data-frontmatter-markdown-links-link-data]')),
+          timeoutInMilliseconds: LINK_DATA_TIMEOUT_IN_MILLISECONDS
+        });
 
         return {
-          hasLinkData: Boolean(cell?.querySelector('[data-frontmatter-markdown-links-link-data]')),
-          html: cell?.innerHTML ?? '(cell not found)',
-          internalLinkCount: cell?.querySelectorAll('.internal-link').length ?? 0
+          internalLinkCount: findMappedListCell()?.querySelectorAll('.internal-link').length ?? 0
         };
       },
       vaultPath: vault.path
     });
 
-    expect(result.hasLinkData).toBe(true);
     // Both the mixed-text element and the pure-wikilink element resolve to `target`.
     expect(result.internalLinkCount).toBeGreaterThanOrEqual(2);
   });
@@ -107,29 +113,30 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
   it('renders the embedded wikilink in a scalar-string formula cell as an internal link', async () => {
     const result = await evalInObsidian({
       contextId,
-      fn: async ({ context }) => {
+      fn: async ({ app, context, waitUntil }) => {
+        const LINK_DATA_TIMEOUT_IN_MILLISECONDS = 25_000;
         const leaf = context.leaf;
+        // Re-activate the leaf so its Bases view keeps rendering even if another suite changed focus under load.
+        await app.workspace.revealLeaf(leaf);
         const containerEl = leaf.view.containerEl;
 
-        let cell: HTMLElement | null = null;
-        for (let attempt = 0; attempt < 40; attempt++) {
-          cell = containerEl.querySelector<HTMLElement>('.bases-td[data-property="formula.mixedScalar"]');
-          if (cell?.querySelector('[data-frontmatter-markdown-links-link-data]')) {
-            break;
-          }
-          await sleep(250);
+        function findScalarCell(): HTMLElement | null {
+          return containerEl.querySelector<HTMLElement>('.bases-td[data-property="formula.mixedScalar"]');
         }
 
+        await waitUntil({
+          message: 'scalar-string formula cell to render frontmatter-markdown-links link data',
+          predicate: () => Boolean(findScalarCell()?.querySelector('[data-frontmatter-markdown-links-link-data]')),
+          timeoutInMilliseconds: LINK_DATA_TIMEOUT_IN_MILLISECONDS
+        });
+
         return {
-          hasLinkData: Boolean(cell?.querySelector('[data-frontmatter-markdown-links-link-data]')),
-          html: cell?.innerHTML ?? '(cell not found)',
-          text: cell?.textContent ?? ''
+          text: findScalarCell()?.textContent ?? ''
         };
       },
       vaultPath: vault.path
     });
 
-    expect(result.hasLinkData).toBe(true);
     expect(result.text).toContain('text');
   });
 });
