@@ -1356,7 +1356,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const note = makeTFile('note.md');
       const { cacheInstance, processItem } = await captureProcessItem(component);
       cacheInstance.isCacheValid.mockReturnValue(true);
-      cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'expected-original' }]);
+      cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', endOffset: 9, key: 'key', link: 'target.md', original: 'expected-original', startOffset: 0 }]);
       const obsidianLink = { displayText: 'obs', key: 'key', link: 'obs-target.md', original: 'obs' };
       vi.mocked(getCacheSafe).mockResolvedValue({
         features: [],
@@ -1374,7 +1374,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const note = makeTFile('note.md');
       const { cacheInstance, processItem } = await captureProcessItem(component);
       cacheInstance.isCacheValid.mockReturnValue(true);
-      cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'expected-original' }]);
+      cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', endOffset: 9, key: 'key', link: 'target.md', original: 'expected-original', startOffset: 0 }]);
       vi.mocked(getCacheSafe).mockResolvedValue({
         features: [],
         frontmatter: castTo<FrontMatterCache>({ key: 'expected-original' }),
@@ -1387,12 +1387,37 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       expect(updateSpy).toHaveBeenCalledWith({ link: 'target.md', notePath: 'note.md' });
     });
 
+    it('should drop a legacy offset-less cached link and restore the obsidian entry', async () => {
+      const component = createComponent();
+      const note = makeTFile('note.md');
+      const { cacheInstance, processItem } = await captureProcessItem(component);
+      cacheInstance.isCacheValid.mockReturnValue(true);
+      // A single-value entry persisted by a version predating Obsidian's native caching: no offsets,
+      // Value unchanged. It must be dropped (not restored) even though its value still matches.
+      cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'expected-original' }]);
+      const obsidianLink = { displayText: 'obs', key: 'key', link: 'target.md', original: 'expected-original' };
+      const frontmatterLinks = [obsidianLink];
+      vi.mocked(getCacheSafe).mockResolvedValue({
+        features: [],
+        frontmatter: castTo<FrontMatterCache>({ key: 'expected-original' }),
+        frontmatterLinks
+      });
+      const updateSpy = vi.spyOn(castTo<UpdateResolvedOrUnresolvedLinksCacheAccess>(component), 'updateResolvedOrUnresolvedLinksCache');
+
+      await processItem(note);
+
+      expect(cacheInstance.deleteKey).toHaveBeenCalledWith({ filePath: 'note.md', key: 'key' });
+      expect(updateSpy).not.toHaveBeenCalled();
+      // Obsidian's own entry for the key is restored so the single link is not lost.
+      expect(frontmatterLinks).toContain(obsidianLink);
+    });
+
     it('should not restore an obsidian link when none exists for a changed key', async () => {
       const component = createComponent();
       const note = makeTFile('note.md');
       const { cacheInstance, processItem } = await captureProcessItem(component);
       cacheInstance.isCacheValid.mockReturnValue(true);
-      cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'expected-original' }]);
+      cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', endOffset: 9, key: 'key', link: 'target.md', original: 'expected-original', startOffset: 0 }]);
       vi.mocked(getCacheSafe).mockResolvedValue({
         features: [],
         frontmatter: castTo<FrontMatterCache>({ key: 'changed-value' }),
@@ -1409,7 +1434,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const note = makeTFile('note.md');
       const { cacheInstance, processItem } = await captureProcessItem(component);
       cacheInstance.isCacheValid.mockReturnValue(true);
-      cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'orig' }]);
+      cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', endOffset: 9, key: 'key', link: 'target.md', original: 'orig', startOffset: 0 }]);
       vi.mocked(getCacheSafe).mockResolvedValue({ features: [], frontmatterLinks: [] });
 
       await processItem(note);

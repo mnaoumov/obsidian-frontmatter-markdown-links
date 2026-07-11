@@ -356,7 +356,12 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
           for (const link of frontmatterMarkdownLinksCacheLinks) {
             const value = getNestedPropertyValue((cache.frontmatter ?? {}) as Record<string, unknown>, link.key);
-            if (value !== link.original) {
+            // Legacy single-value link entries (no offsets) were persisted by versions predating
+            // Obsidian's native caching of single frontmatter links. Drop them so the plugin stops
+            // Shadowing and double-counting the now-native entry; current contributions always carry
+            // Offsets. When such an entry is dropped, restore Obsidian's own entry for that key.
+            const isLegacySingleValueLink = !('startOffset' in link);
+            if (isLegacySingleValueLink || value !== link.original) {
               this.frontmatterMarkdownLinksCache.deleteKey({ filePath: note.path, key: link.key });
               const obsidianLink = obsidianLinkMap.get(link.key);
               if (obsidianLink) {
