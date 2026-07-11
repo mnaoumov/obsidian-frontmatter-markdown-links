@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2.7.2
+
+- test: stabilize Bases integration with waitUntil and leaf reveal
+- chore: update libs
+- fix: drop legacy single-value cached links when restoring on startup
+- refactor: delegate frontmatter parsing to parseFrontmatterLinks
+- test: cover native frontmatter link caching + markdown-link rendering
+- chore: update obsidian-dev-utils to 85.0.0
+- refactor: pass params objects to frontmatter link handlers
+- build: lock typescript to 6.0.3
+
 ## 2.7.1
 
 - fix: re #36
