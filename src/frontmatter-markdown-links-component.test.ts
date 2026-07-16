@@ -377,7 +377,10 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         },
         vault: {
           getFileByPath: vi.fn().mockReturnValue(null),
-          getMarkdownFiles: vi.fn().mockReturnValue([]),
+          // A realistic vault has at least one markdown file.
+          // The real onLayoutReady load path then reaches `patchBasesNote`'s normal branch.
+          // (The temp-file `vault.create` fallback is covered in the `patchBasesNote` describe block.)
+          getMarkdownFiles: vi.fn().mockReturnValue([makeTFile('existing.md')]),
           on: vi.fn().mockReturnValue({}),
           read: vi.fn().mockResolvedValue('')
         },

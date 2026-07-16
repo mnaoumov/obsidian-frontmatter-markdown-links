@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 const SHARED_EXCLUDE = ['node_modules', 'dist'];
 const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+const CDP_COMMAND_TIMEOUT_IN_MILLISECONDS = 60_000;
 const ANDROID_TIMEOUT_IN_MILLISECONDS = 60_000;
 const PERFORMANCE_TIMEOUT_IN_MILLISECONDS = 600_000;
 const HOOK_TIMEOUT_MULTIPLIER = 4;
@@ -59,6 +60,12 @@ export const config = defineConfig({
       {
         test: {
           environment: 'node',
+          environmentOptions: {
+            obsidianTransport: {
+              commandTimeoutInMilliseconds: CDP_COMMAND_TIMEOUT_IN_MILLISECONDS,
+              type: 'obsidian-cdp'
+            }
+          },
           fileParallelism: false,
           globalSetup: ['obsidian-integration-testing/vitest-global-setup'],
           hookTimeout: BIG_TIMEOUT_IN_MILLISECONDS * HOOK_TIMEOUT_MULTIPLIER,
