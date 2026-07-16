@@ -50,7 +50,7 @@ key:
 
   await evalInObsidian({
     contextId,
-    fn: async ({ app, context, waitUntil }) => {
+    async fn({ app, context, lib: { waitUntil } }) {
       const READY_TIMEOUT_IN_MILLISECONDS = 30_000;
       const baseFile = app.vault.getFileByPath('test.base');
       if (!baseFile) {
@@ -81,7 +81,7 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
   it('renders the embedded wikilink in a mapped-list formula cell as an internal link', async () => {
     const result = await evalInObsidian({
       contextId,
-      fn: async ({ app, context, waitUntil }) => {
+      async fn({ app, context, lib: { waitUntil } }) {
         const LINK_DATA_TIMEOUT_IN_MILLISECONDS = 25_000;
         const leaf = context.leaf;
         // Re-activate the leaf so its Bases view keeps rendering even if another suite changed focus under load.
@@ -113,7 +113,7 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
   it('renders the embedded wikilink in a scalar-string formula cell as an internal link', async () => {
     const result = await evalInObsidian({
       contextId,
-      fn: async ({ app, context, waitUntil }) => {
+      async fn({ app, context, lib: { waitUntil } }) {
         const LINK_DATA_TIMEOUT_IN_MILLISECONDS = 25_000;
         const leaf = context.leaf;
         // Re-activate the leaf so its Bases view keeps rendering even if another suite changed focus under load.
