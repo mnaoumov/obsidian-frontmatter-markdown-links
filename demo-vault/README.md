@@ -1,9 +1,8 @@
-# Frontmatter Markdown Links demo vault
+This is an [Obsidian](https://obsidian.md/) vault demonstrating features of the [Frontmatter Markdown Links](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links) plugin.
 
-A small Obsidian vault that demonstrates the [Frontmatter Markdown Links](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links) plugin - it makes markdown-style links written inside YAML frontmatter behave as real, clickable, resolvable links that also count as backlinks, something Obsidian natively does only for `[[wikilinks]]`.
+## Opening this vault
 
-Open [00 Start](<./00 Start.md>) and work through the notes. Open [01 Frontmatter markdown links](<./01 Frontmatter markdown links.md>), click the links in its properties, then check the **Backlinks** pane on [Target note](<./Targets/Target note.md>).
+- **If you already have the plugin installed**, run the **Frontmatter Markdown Links: Open demo vault** command — it downloads and opens the latest demo vault automatically.
+- **Otherwise**, download `frontmatter-markdown-links.demo-vault.zip` from the [plugin releases](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/releases), unzip it, and in Obsidian choose `Manage vaults...` → `Open folder as vault` → select the unzipped folder.
 
-## First open
-
-The first time you open this vault, Obsidian treats it as **untrusted**, so the bundled plugins are listed but not loaded until you **Trust author and enable plugins** and reload. After that, the Demo Vault Helper installs [CodeScript Toolkit](https://github.com/mnaoumov/obsidian-codescript-toolkit) and opens the start note for you.
+On first open, Obsidian treats the vault as untrusted — choose **Trust author and enable plugins** (or enable Community plugins manually), then open [00 Start](<./00 Start.md>).
