@@ -7,6 +7,14 @@
 
 This is a plugin for [Obsidian](https://obsidian.md/) that adds support for markdown links in frontmatter.
 
+## Demo vault
+
+A demo vault with usage examples ships with every release. You can access it via any of the following:
+
+1. Running the **Frontmatter Markdown Links: Open demo vault** command.
+2. Downloading `frontmatter-markdown-links.demo-vault.zip` from the [Releases](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/releases).
+3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
+
 ## Features
 
 ### Markdown links in frontmatter
