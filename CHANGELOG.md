@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2.7.3
+
+- docs: standardize demo-vault README
+- docs: drop per-plugin demo-vault setup notes (bootstrap covered by ODU harness)
+- Merge branch 'T99': create the Frontmatter Markdown Links demo vault (S2)
+- chore: update libs
+- docs: update
+- docs: migrate to AGENTS.md
+
 ## 2.7.2
 
 - test: stabilize Bases integration with waitUntil and leaf reveal
