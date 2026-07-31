@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.8.0
+
+- chore(cspell): add lezer to the dictionary
+- refactor(settings): move the settings tab onto the declarative settings API
+- chore: update libs and clear the npm audit
+- docs: fix the demo vault download instructions
+
 ## 2.7.7
 
 - chore: update libs
