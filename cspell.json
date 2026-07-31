@@ -17,6 +17,7 @@
     "frontmatter",
     "inspectable",
     "Keymap",
+    "lezer",
     "Linkpath",
     "linktext",
     "longtext",
