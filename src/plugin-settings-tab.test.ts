@@ -1,12 +1,14 @@
 import type {
   App as AppOriginal,
-  Plugin
+  Plugin,
+  SettingGroup
 } from 'obsidian';
 import type { PluginSettingsComponentBase } from 'obsidian-dev-utils/obsidian/components/plugin-settings-component';
 
-import { Setting } from 'obsidian';
 import { noopAsync } from 'obsidian-dev-utils/function';
+import { castTo } from 'obsidian-dev-utils/object-utils';
 import { PluginSettingsTabBase } from 'obsidian-dev-utils/obsidian/plugin/plugin-settings-tab';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
@@ -29,39 +31,30 @@ beforeEach(() => {
 });
 
 describe('PluginSettingsTab', () => {
-  it('should create the two expected toggle settings on display', () => {
-    const setNameSpy = vi.spyOn(Setting.prototype, 'setName');
+  it('should declare the two expected toggle settings', () => {
     const tab = createTab();
 
-    tab.displayLegacy();
-
-    const renderedNames = setNameSpy.mock.calls.map((call) => call[0]);
-    expect(renderedNames).toContain('Should show initialization notice');
-    expect(renderedNames).toContain('Should handle renames');
+    const declaredNames = settingNames(tab);
+    expect(declaredNames).toContain('Should show initialization notice');
+    expect(declaredNames).toContain('Should handle renames');
   });
 
   it('should set correct name for first setting', () => {
-    const setNameSpy = vi.spyOn(Setting.prototype, 'setName');
     const tab = createTab();
 
-    tab.displayLegacy();
-
-    expect(setNameSpy).toHaveBeenCalledWith('Should show initialization notice');
+    expect(settingNames(tab)[0]).toBe('Should show initialization notice');
   });
 
   it('should set correct name for second setting', () => {
-    const setNameSpy = vi.spyOn(Setting.prototype, 'setName');
     const tab = createTab();
 
-    tab.displayLegacy();
-
-    expect(setNameSpy).toHaveBeenCalledWith('Should handle renames');
+    expect(settingNames(tab)[1]).toBe('Should handle renames');
   });
 
   it('should bind shouldShowInitializationNotice via addToggle', () => {
     const tab = createTab();
 
-    tab.displayLegacy();
+    renderRows(tab);
 
     expect(boundKeys()).toContain('shouldShowInitializationNotice');
   });
@@ -69,7 +62,7 @@ describe('PluginSettingsTab', () => {
   it('should bind shouldHandleRenames via addToggle', () => {
     const tab = createTab();
 
-    tab.displayLegacy();
+    renderRows(tab);
 
     expect(boundKeys()).toContain('shouldHandleRenames');
   });
@@ -101,4 +94,28 @@ function createTab(): PluginSettingsTab {
   });
   const pluginSettingsComponent = createMockSettingsComponent();
   return new PluginSettingsTab({ plugin, pluginSettingsComponent });
+}
+
+/**
+ * Invokes every declared row's `render` callback the way Obsidian does when the tab is opened, so the
+ * bindings are still exercised now that the rows are declarative.
+ *
+ * @param tab - The settings tab.
+ */
+function renderRows(tab: PluginSettingsTab): void {
+  for (const definition of tab.getSettingDefinitions()) {
+    if ('render' in definition) {
+      definition.render(new SettingEx(tab.containerEl), castTo<SettingGroup>(null));
+    }
+  }
+}
+
+/**
+ * Reads the names of the declared rows.
+ *
+ * @param tab - The settings tab.
+ * @returns The names.
+ */
+function settingNames(tab: PluginSettingsTab): string[] {
+  return tab.getSettingDefinitions().map((definition) => 'name' in definition ? definition.name : '');
 }
