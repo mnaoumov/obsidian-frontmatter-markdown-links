@@ -25,15 +25,30 @@
     }
   }
 
+  // Issue #37: a long value rendered as one non-wrapping line that overflowed, where Obsidian's own
+  // rendering wraps. `white-space: pre` never wraps and `flex: none` never shrinks, so together they
+  // pinned the value to a single max-content line.
+  //
+  // `pre-wrap` keeps the whole reason `pre` was here — the exact spacing around each segment boundary,
+  // which matters because every segment is a separate widget — while allowing wrapping. It is also what
+  // Obsidian's native `.metadata-input-longtext` uses. Shrinking must be allowed alongside it, or a
+  // segment stays at max-content width and its text still cannot wrap.
   .metadata-property-value,
   &.multi-text-property-component {
     display: flex;
-    flex: none;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
     gap: 0;
-    white-space: pre;
+    min-width: 0;
+    white-space: pre-wrap;
   }
 
+  // A non-multiline Bases table row is deliberately one line. That used to fall out of the
+  // `white-space: pre` above; now that the property value wraps (issue #37), say it here instead of
+  // relying on a side effect. `white-space-collapse: preserve` keeps the exact segment spacing, and
+  // `text-wrap: nowrap` is the half that `pre-wrap` would otherwise have given away.
   .bases-table-container:not(.mod-multiline) & .metadata-input-longtext:not(:focus-within) {
     white-space-collapse: preserve;
+    text-wrap: nowrap;
   }
 }
