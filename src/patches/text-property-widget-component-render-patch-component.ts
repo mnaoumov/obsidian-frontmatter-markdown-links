@@ -19,8 +19,8 @@ export class TextPropertyWidgetComponentRenderPatchComponent extends MonkeyAroun
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: getPrototypeOf(this.textPropertyWidgetComponent),
       methodName: 'render',
-      obj: getPrototypeOf(this.textPropertyWidgetComponent),
       patchHandler: ({
         fallback,
         originalThis

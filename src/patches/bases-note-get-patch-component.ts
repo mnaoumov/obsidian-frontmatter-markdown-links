@@ -40,11 +40,11 @@ export class BasesNoteGetPatchComponent extends MonkeyAroundComponent {
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: getPrototypeOf(this.basesNote),
       methodName: 'get',
-      obj: getPrototypeOf(this.basesNote),
       patchHandler: ({
         fallback,
-        originalArgs: [key],
+        originalArguments: [key],
         originalThis
       }) => {
         const value = originalThis.data[key];

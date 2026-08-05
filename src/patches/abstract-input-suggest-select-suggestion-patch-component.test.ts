@@ -16,10 +16,10 @@ import type { MySearchResult } from './abstract-input-suggest-select-suggestion-
 import { PatchedInputElementMap } from '../patched-input-element-map.ts';
 import { AbstractInputSuggestSelectSuggestionPatchComponent } from './abstract-input-suggest-select-suggestion-patch-component.ts';
 
-type SelectSuggestionFn = (this: unknown, value: MySearchResult, evt: KeyboardEvent | MouseEvent) => unknown;
+type SelectSuggestionFunction = (this: unknown, value: MySearchResult, $event: KeyboardEvent | MouseEvent) => unknown;
 
-interface SuggestProtoWithSelect {
-  selectSuggestion: SelectSuggestionFn;
+interface SuggestPrototypeWithSelect {
+  selectSuggestion: SelectSuggestionFunction;
 }
 
 // Minimal concrete subclass so the abstract base can be instantiated and the
@@ -49,9 +49,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function callSelectSuggestion(suggest: TestSuggest, value: MySearchResult, evt: KeyboardEvent | MouseEvent): void {
-  const proto = Object.getPrototypeOf(suggest) as SuggestProtoWithSelect;
-  proto.selectSuggestion.call(suggest, value, evt);
+function callSelectSuggestion(suggest: TestSuggest, value: MySearchResult, $event: KeyboardEvent | MouseEvent): void {
+  const prototype = Object.getPrototypeOf(suggest) as SuggestPrototypeWithSelect;
+  prototype.selectSuggestion.call(suggest, value, $event);
 }
 
 function createSuggest(textInputEl: HTMLDivElement): TestSuggest {
@@ -76,8 +76,8 @@ describe('AbstractInputSuggestSelectSuggestionPatchComponent', () => {
     loadPatch(suggest, patchedInputElementMap);
 
     const value = createSearchResult('chosen');
-    const evt = new MouseEvent('click');
-    callSelectSuggestion(suggest, value, evt);
+    const $event = new MouseEvent('click');
+    callSelectSuggestion(suggest, value, $event);
 
     expect(suggest.lastSelectedValue).toBe(value);
     expect(textInputEl.textContent).toBe('chosen');
@@ -92,8 +92,8 @@ describe('AbstractInputSuggestSelectSuggestionPatchComponent', () => {
     loadPatch(suggest, patchedInputElementMap);
 
     const value = createSearchResult('[[bar|Bar]]');
-    const evt = new MouseEvent('click');
-    callSelectSuggestion(suggest, value, evt);
+    const $event = new MouseEvent('click');
+    callSelectSuggestion(suggest, value, $event);
 
     // The final value should splice: oldValue.slice(0, 4) + newValue + oldValue.slice(9).
     expect(suggest.lastSelectedValue?.text).toBe('Foo [[bar|Bar]]');

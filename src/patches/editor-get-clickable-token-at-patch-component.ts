@@ -19,11 +19,11 @@ export class EditorGetClickableTokenAtPatchComponent extends MonkeyAroundCompone
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: getPrototypeOf(this.editor),
       methodName: 'getClickableTokenAt',
-      obj: getPrototypeOf(this.editor),
       patchHandler: ({
         fallback,
-        originalArgs: [pos],
+        originalArguments: [pos],
         originalThis
       }) => {
         let clickableToken = fallback();

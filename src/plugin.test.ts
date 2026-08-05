@@ -94,8 +94,8 @@ const PLUGIN_MANIFEST: PluginManifest = {
 
 function createConfiguredApp(): App {
   const appMock = AppCls.createConfigured__();
-  appMock.workspace.onLayoutReady = vi.fn((cb: () => void) => {
-    cb();
+  appMock.workspace.onLayoutReady = vi.fn((callback: () => void) => {
+    callback();
   });
   const app = appMock.asOriginalType__();
   // The real RenameDeleteHandlerComponent's parent path monkey-patches `fileManager.runAsyncLinkUpdate`;

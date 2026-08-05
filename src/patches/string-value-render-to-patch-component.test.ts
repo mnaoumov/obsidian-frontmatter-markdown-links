@@ -13,11 +13,11 @@ import {
 
 import { StringValueRenderToPatchComponent } from './string-value-render-to-patch-component.ts';
 
-type GetFirstLinkpathDest = App['metadataCache']['getFirstLinkpathDest'];
-type RenderToFn = (this: StringValueLike, containerEl: HTMLElement) => void;
+type GetFirstLinkpathDestination = App['metadataCache']['getFirstLinkpathDest'];
+type RenderToFunction = (this: StringValueLike, containerEl: HTMLElement) => void;
 
-interface RenderToProto {
-  renderTo: RenderToFn;
+interface RenderToPrototype {
+  renderTo: RenderToFunction;
   toString(this: StringValueLike): string;
 }
 
@@ -33,7 +33,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function createProto(): RenderToProto {
+function createPrototype(): RenderToPrototype {
   return {
     renderTo: vi.fn(function renderTo(this: StringValueLike, containerEl: HTMLElement): void {
       containerEl.setText(this.data);
@@ -44,16 +44,17 @@ function createProto(): RenderToProto {
   };
 }
 
-function createStringValue(proto: RenderToProto, data: string): StringValueLike {
-  const stringValue = castTo<StringValueLike>(Object.create(proto));
+function createStringValue(prototype: RenderToPrototype, data: string): StringValueLike {
+  const stringValue = castTo<StringValueLike>(Object.create(prototype));
   stringValue.data = data;
   return stringValue;
 }
 
-function loadPatch(proto: RenderToProto, getFirstLinkpathDest: GetFirstLinkpathDest = vi.fn().mockReturnValue(null)): void {
+function loadPatch(prototype: RenderToPrototype, getFirstLinkpathDestination: GetFirstLinkpathDestination = vi.fn().mockReturnValue(null)): void {
   const app = strictProxy<App>({
     metadataCache: {
-      getFirstLinkpathDest
+      // eslint-disable-next-line unicorn/name-replacements -- `getFirstLinkpathDest` is an Obsidian `MetadataCache` method name.
+      getFirstLinkpathDest: getFirstLinkpathDestination
     },
     workspace: {
       getActiveFile: vi.fn().mockReturnValue(null)
@@ -61,7 +62,7 @@ function loadPatch(proto: RenderToProto, getFirstLinkpathDest: GetFirstLinkpathD
   });
   const component = new StringValueRenderToPatchComponent({
     app,
-    stringValue: castTo<BasesControl>(createStringValue(proto, 'text'))
+    stringValue: castTo<BasesControl>(createStringValue(prototype, 'text'))
   });
   component.load();
   loadedComponent = component;
@@ -69,12 +70,12 @@ function loadPatch(proto: RenderToProto, getFirstLinkpathDest: GetFirstLinkpathD
 
 describe('StringValueRenderToPatchComponent', () => {
   it('should leave the native plain-text rendering untouched for a string with no links', () => {
-    const proto = createProto();
-    const originalRenderTo = proto.renderTo;
-    loadPatch(proto);
+    const prototype = createPrototype();
+    const originalRenderTo = prototype.renderTo;
+    loadPatch(prototype);
 
     const containerEl = createDiv();
-    castTo<RenderToFn>(proto.renderTo).call(createStringValue(proto, 'no links here'), containerEl);
+    castTo<RenderToFunction>(prototype.renderTo).call(createStringValue(prototype, 'no links here'), containerEl);
 
     expect(originalRenderTo).toHaveBeenCalledTimes(1);
     expect(containerEl.textContent).toBe('no links here');
@@ -82,11 +83,11 @@ describe('StringValueRenderToPatchComponent', () => {
   });
 
   it('should re-render embedded wikilinks as internal links for mixed text', () => {
-    const proto = createProto();
-    loadPatch(proto);
+    const prototype = createPrototype();
+    loadPatch(prototype);
 
     const containerEl = createDiv();
-    castTo<RenderToFn>(proto.renderTo).call(createStringValue(proto, 'text [[target]]'), containerEl);
+    castTo<RenderToFunction>(prototype.renderTo).call(createStringValue(prototype, 'text [[target]]'), containerEl);
 
     const linkEl = containerEl.querySelector('[data-frontmatter-markdown-links-link-data]');
     expect(linkEl?.classList.contains('internal-link')).toBe(true);

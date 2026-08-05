@@ -33,7 +33,7 @@ const FILE_MTIME_STORE_NAME = 'file-mtime';
 const PROCESS_STORE_ACTIONS_DEBOUNCE_INTERVAL_IN_MILLISECONDS = 5000;
 
 export class FrontmatterMarkdownLinksCache {
-  private _db?: IDBDatabase;
+  private _database?: IDBDatabase;
 
   private readonly fileFrontmatterLinkCacheMap = new Map<string, FrontmatterLinkCache[]>();
 
@@ -43,11 +43,11 @@ export class FrontmatterMarkdownLinksCache {
     this.processStoreActions();
   }, PROCESS_STORE_ACTIONS_DEBOUNCE_INTERVAL_IN_MILLISECONDS);
 
-  private get db(): IDBDatabase {
-    if (!this._db) {
-      throw new Error('db is not initialized');
+  private get database(): IDBDatabase {
+    if (!this._database) {
+      throw new Error('database is not initialized');
     }
-    return this._db;
+    return this._database;
   }
 
   public add(filePath: string, link: FrontmatterLinkCache): void {
@@ -94,7 +94,7 @@ export class FrontmatterMarkdownLinksCache {
   }
 
   public getFilePaths(): string[] {
-    return Array.from(this.fileFrontmatterLinkCacheMap.keys());
+    return [...this.fileFrontmatterLinkCacheMap.keys()];
   }
 
   public getKeys(filePath: string): string[] {
@@ -112,20 +112,20 @@ export class FrontmatterMarkdownLinksCache {
       if (event.newVersion !== 1) {
         return;
       }
-      const db = request.result;
-      db.createObjectStore(FILE_MTIME_STORE_NAME, {
+      const database = request.result;
+      database.createObjectStore(FILE_MTIME_STORE_NAME, {
         keyPath: 'filePath'
       });
 
-      db.createObjectStore(FRONTMATTER_LINKS_STORE_NAME, {
+      database.createObjectStore(FRONTMATTER_LINKS_STORE_NAME, {
         keyPath: 'filePath'
       });
     });
 
-    const db = await getResult(request);
+    const database = await getResult(request);
 
-    this._db = db;
-    const transaction = db.transaction([FILE_MTIME_STORE_NAME, FRONTMATTER_LINKS_STORE_NAME], 'readonly');
+    this._database = database;
+    const transaction = database.transaction([FILE_MTIME_STORE_NAME, FRONTMATTER_LINKS_STORE_NAME], 'readonly');
     const fileMtimeStore = transaction.objectStore(FILE_MTIME_STORE_NAME);
     const fileMtimeEntries = await getResult(fileMtimeStore.getAll()) as FileMtimeEntry[];
     for (const entry of fileMtimeEntries) {
@@ -173,7 +173,7 @@ export class FrontmatterMarkdownLinksCache {
 
     const storeNames = pendingStoreActions.map((action) => action.storeName).unique();
 
-    const transaction = this.db.transaction(storeNames, 'readwrite');
+    const transaction = this.database.transaction(storeNames, 'readwrite');
     for (const storeAction of pendingStoreActions) {
       const store = transaction.objectStore(storeAction.storeName);
       storeAction.action(store);

@@ -33,7 +33,7 @@ interface MenuItemSectionAccess {
   section: string;
 }
 
-type ShowAtMouseEventFn = (this: unknown, evt: MouseEvent) => unknown;
+type ShowAtMouseEventFunction = (this: unknown, $event: MouseEvent) => unknown;
 
 let loadedComponent: MenuShowAtMouseEventPatchComponent | null = null;
 
@@ -43,14 +43,14 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function callShowAtMouseEvent(menu: MenuType, evt: MouseEvent): unknown {
-  return castTo<ShowAtMouseEventFn>(Menu.prototype.showAtMouseEvent).call(menu, evt);
+function callShowAtMouseEvent(menu: MenuType, $event: MouseEvent): unknown {
+  return castTo<ShowAtMouseEventFunction>(Menu.prototype.showAtMouseEvent).call(menu, $event);
 }
 
 function createLinkTarget(linkData: LinkDataShape): HTMLElement {
   const target = createDiv();
-  target.setAttribute('data-frontmatter-markdown-links-link-data', JSON.stringify(linkData));
-  activeDocument.body.appendChild(target);
+  target.dataset['frontmatterMarkdownLinksLinkData'] = JSON.stringify(linkData);
+  activeDocument.body.append(target);
   return target;
 }
 
@@ -71,9 +71,9 @@ describe('MenuShowAtMouseEventPatchComponent', () => {
     const app = strictProxy<App>({});
     loadPatch(app);
     const menu = createMenu();
-    const evt = castTo<MouseEvent>({ target: null });
+    const $event = castTo<MouseEvent>({ target: null });
 
-    const result = callShowAtMouseEvent(menu, evt);
+    const result = callShowAtMouseEvent(menu, $event);
 
     expect(result).toBe(menu);
   });
@@ -83,9 +83,9 @@ describe('MenuShowAtMouseEventPatchComponent', () => {
     loadPatch(app);
     const menu = createMenu();
     const target = createDiv();
-    const evt = castTo<MouseEvent>({ target });
+    const $event = castTo<MouseEvent>({ target });
 
-    const result = callShowAtMouseEvent(menu, evt);
+    const result = callShowAtMouseEvent(menu, $event);
 
     expect(result).toBe(menu);
   });
@@ -106,9 +106,9 @@ describe('MenuShowAtMouseEventPatchComponent', () => {
     castTo<MenuItemsAccess>(menu).items = [openItem];
 
     const target = createLinkTarget({ isExternalUrl: false, isWikilink: false, url: 'note.md' });
-    const evt = castTo<MouseEvent>({ target });
+    const $event = castTo<MouseEvent>({ target });
 
-    callShowAtMouseEvent(menu, evt);
+    callShowAtMouseEvent(menu, $event);
 
     expect(handleLinkContextMenu).not.toHaveBeenCalled();
     target.remove();
@@ -125,9 +125,9 @@ describe('MenuShowAtMouseEventPatchComponent', () => {
 
     const menu = createMenu();
     const target = createLinkTarget({ isExternalUrl: true, isWikilink: false, url: 'https://example.com' });
-    const evt = castTo<MouseEvent>({ target });
+    const $event = castTo<MouseEvent>({ target });
 
-    callShowAtMouseEvent(menu, evt);
+    callShowAtMouseEvent(menu, $event);
 
     expect(handleExternalLinkContextMenu).toHaveBeenCalledWith(menu, 'https://example.com');
     target.remove();
@@ -145,9 +145,9 @@ describe('MenuShowAtMouseEventPatchComponent', () => {
 
     const menu = createMenu();
     const target = createLinkTarget({ isExternalUrl: false, isWikilink: false, url: 'note.md' });
-    const evt = castTo<MouseEvent>({ target });
+    const $event = castTo<MouseEvent>({ target });
 
-    callShowAtMouseEvent(menu, evt);
+    callShowAtMouseEvent(menu, $event);
 
     expect(handleLinkContextMenu).toHaveBeenCalledWith(menu, 'note.md', 'current.md');
     target.remove();
@@ -165,9 +165,9 @@ describe('MenuShowAtMouseEventPatchComponent', () => {
 
     const menu = createMenu();
     const target = createLinkTarget({ isExternalUrl: false, isWikilink: false, url: 'note.md' });
-    const evt = castTo<MouseEvent>({ target });
+    const $event = castTo<MouseEvent>({ target });
 
-    callShowAtMouseEvent(menu, evt);
+    callShowAtMouseEvent(menu, $event);
 
     expect(handleLinkContextMenu).toHaveBeenCalledWith(menu, 'note.md', '');
     target.remove();

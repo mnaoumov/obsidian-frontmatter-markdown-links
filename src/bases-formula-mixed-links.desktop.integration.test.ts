@@ -50,6 +50,7 @@ key:
 
   await evalInObsidian({
     contextId,
+    // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
     async fn({ app, context, lib: { waitUntil } }) {
       const READY_TIMEOUT_IN_MILLISECONDS = 30_000;
       const baseFile = app.vault.getFileByPath('test.base');
@@ -81,6 +82,7 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
   it('renders the embedded wikilink in a mapped-list formula cell as an internal link', async () => {
     const result = await evalInObsidian({
       contextId,
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
       async fn({ app, context, lib: { waitUntil } }) {
         const LINK_DATA_TIMEOUT_IN_MILLISECONDS = 25_000;
         const leaf = context.leaf;
@@ -89,7 +91,7 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
         const containerEl = leaf.view.containerEl;
 
         function findMappedListCell(): HTMLElement | null {
-          const cells = Array.from(containerEl.querySelectorAll<HTMLElement>('.bases-td[data-property="formula.mappedList"]'));
+          const cells = [...containerEl.querySelectorAll<HTMLElement>('.bases-td[data-property="formula.mappedList"]')];
           return cells.find((cell) => cell.textContent.includes('text [[target]]') || Boolean(cell.querySelector('[data-frontmatter-markdown-links-link-data]'))) ?? null;
         }
 
@@ -113,6 +115,7 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
   it('renders the embedded wikilink in a scalar-string formula cell as an internal link', async () => {
     const result = await evalInObsidian({
       contextId,
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
       async fn({ app, context, lib: { waitUntil } }) {
         const LINK_DATA_TIMEOUT_IN_MILLISECONDS = 25_000;
         const leaf = context.leaf;

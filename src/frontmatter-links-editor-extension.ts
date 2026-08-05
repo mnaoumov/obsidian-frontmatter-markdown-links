@@ -89,12 +89,12 @@ export class FrontMatterLinksViewPlugin implements PluginValue {
   }
 
   public update(update: ViewUpdate): void {
-    const currentIsSourceMode = isSourceMode(this.app);
-    if (!update.docChanged && !update.viewportChanged && !update.selectionSet && currentIsSourceMode === this.isSourceMode) {
+    const isCurrentIsSourceMode = isSourceMode(this.app);
+    if (!update.docChanged && !update.viewportChanged && !update.selectionSet && isCurrentIsSourceMode === this.isSourceMode) {
       return;
     }
 
-    this.isSourceMode = currentIsSourceMode;
+    this.isSourceMode = isCurrentIsSourceMode;
     this._decorations = this.buildDecorations(update.view);
   }
 
@@ -379,8 +379,8 @@ function getLinkStylingInfos(value: string): LinkStylingInfo[] {
 }
 
 function tryGetLinkStylingInfos(value: string, groupDescriptions: GroupDescription[]): LinkStylingInfo[] | null {
-  const entireRegExpStr = `^${groupDescriptions.map((g) => `(${g.regExp.source})`).join('')}$`;
-  const regExp = new RegExp(entireRegExpStr);
+  const entireRegExpString = `^${groupDescriptions.map((g) => `(${g.regExp.source})`).join('')}$`;
+  const regExp = new RegExp(entireRegExpString);
 
   const match = regExp.exec(value);
 

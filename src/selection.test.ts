@@ -21,7 +21,7 @@ describe('getCaretCharacterOffset', () => {
 
   it('should return 0 when the selection has no ranges', () => {
     const el = createDiv();
-    activeDocument.body.appendChild(el);
+    activeDocument.body.append(el);
     const sel = window.getSelection();
     sel?.removeAllRanges();
 
@@ -33,7 +33,7 @@ describe('getCaretCharacterOffset', () => {
   it('should return the start offset of the first range', () => {
     const el = createDiv();
     el.textContent = 'Hello world';
-    activeDocument.body.appendChild(el);
+    activeDocument.body.append(el);
 
     const range = activeDocument.createRange();
     const textNode = el.firstChild;

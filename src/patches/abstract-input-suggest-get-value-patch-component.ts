@@ -21,8 +21,8 @@ export class AbstractInputSuggestGetValuePatchComponent extends MonkeyAroundComp
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: AbstractInputSuggest.prototype,
       methodName: 'getValue',
-      obj: AbstractInputSuggest.prototype,
       patchHandler: ({
         fallback,
         originalThis
@@ -47,7 +47,7 @@ export class AbstractInputSuggestGetValuePatchComponent extends MonkeyAroundComp
         const openBracketBeforeCaretIndex = valueBeforeCaret.lastIndexOf('[[');
         const closeBracketBeforeCaretIndex = valueBeforeCaret.lastIndexOf(']]');
 
-        if (openBracketBeforeCaretIndex < 0 || openBracketBeforeCaretIndex < closeBracketBeforeCaretIndex) {
+        if (openBracketBeforeCaretIndex === -1 || openBracketBeforeCaretIndex < closeBracketBeforeCaretIndex) {
           return value;
         }
 

@@ -65,7 +65,7 @@ describe('getDataAttributes', () => {
 describe('getLinkData', () => {
   it('should return null when element has no link data ancestor', () => {
     const el = createSpan();
-    activeDocument.body.appendChild(el);
+    activeDocument.body.append(el);
 
     const result = getLinkData(el);
 
@@ -75,10 +75,10 @@ describe('getLinkData', () => {
 
   it('should return null when closest ancestor has no dataset value', () => {
     const parent = createDiv();
-    parent.setAttribute('data-frontmatter-markdown-links-link-data', '');
+    parent.dataset['frontmatterMarkdownLinksLinkData'] = '';
     const child = createSpan();
-    parent.appendChild(child);
-    activeDocument.body.appendChild(parent);
+    parent.append(child);
+    activeDocument.body.append(parent);
 
     const result = getLinkData(child);
 
@@ -89,10 +89,10 @@ describe('getLinkData', () => {
   it('should return parsed link data from ancestor', () => {
     const parent = createDiv();
     const linkData: LinkData = { isExternalUrl: false, isWikilink: true, url: 'target/note' };
-    parent.setAttribute('data-frontmatter-markdown-links-link-data', JSON.stringify(linkData));
+    parent.dataset['frontmatterMarkdownLinksLinkData'] = JSON.stringify(linkData);
     const child = createSpan();
-    parent.appendChild(child);
-    activeDocument.body.appendChild(parent);
+    parent.append(child);
+    activeDocument.body.append(parent);
 
     const result = getLinkData(child);
 
@@ -103,8 +103,8 @@ describe('getLinkData', () => {
   it('should return link data from the element itself when it has the attribute', () => {
     const el = createDiv();
     const linkData: LinkData = { isExternalUrl: true, isWikilink: false, url: 'https://test.com' };
-    el.setAttribute('data-frontmatter-markdown-links-link-data', JSON.stringify(linkData));
-    activeDocument.body.appendChild(el);
+    el.dataset['frontmatterMarkdownLinksLinkData'] = JSON.stringify(linkData);
+    activeDocument.body.append(el);
 
     const result = getLinkData(el);
 
