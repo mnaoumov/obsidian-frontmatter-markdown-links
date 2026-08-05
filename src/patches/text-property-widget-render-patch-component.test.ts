@@ -133,7 +133,7 @@ function stubInputElEnvironment(inputEl: HTMLElement, selection: null | Selectio
 describe('TextPropertyWidgetRenderPatchComponent', () => {
   it('should delegate to the original method for non-string data', () => {
     const widgetObject = createWidgetObject();
-    const originalRender = widgetObject.render;
+    const originalRender = vi.mocked(widgetObject.render);
     loadPatch(widgetObject, new PatchedInputElementMap());
 
     const el = createDiv();
@@ -141,7 +141,36 @@ describe('TextPropertyWidgetRenderPatchComponent', () => {
     const result = widgetObject.render(el, 42, context);
 
     expect(result).toBeDefined();
-    expect(originalRender).toHaveBeenCalledWith(el, 42, context);
+    // The value is handed over untouched...
+    expect(originalRender).toHaveBeenCalledWith(el, 42, expect.anything());
+    // ...but NOT the context: see the re-render test below for why it must be wrapped here too.
+    expect(originalRender.mock.calls.at(-1)?.[2]).not.toBe(context);
+  });
+
+  /*
+   * Issue #38. A property created through the Property Editor has no value yet, so `data` arrives as
+   * null and this patch used to return early with Obsidian's ORIGINAL context. Typing a link into that
+   * property then went straight to Obsidian's own `onChange` and nothing re-rendered, so the link
+   * stayed plain text until the property's type was flipped away and back — which forces a fresh
+   * render, and is exactly the workaround the reporter found.
+   */
+  it('should re-render on change for a property that has no value yet', () => {
+    const widgetObject = createWidgetObject();
+    const originalRender = vi.mocked(widgetObject.render);
+    const onChange = vi.fn();
+    const context = castTo<PropertyRenderContext>({ onChange, sourcePath: 'test.md' });
+    loadPatch(widgetObject, new PatchedInputElementMap());
+
+    const el = createDiv();
+    // `null` is what a just-created property renders with.
+    widgetObject.render(el, null, context);
+
+    const capturedContext = originalRender.mock.calls.at(-1)?.[2];
+    capturedContext?.onChange('This is a [[Link]]');
+
+    expect(onChange).toHaveBeenCalledWith('This is a [[Link]]');
+    // The wrapper is what schedules the re-render; without it the plugin never sees the typed value.
+    expect(capturedContext).not.toBe(context);
   });
 
   it('should render a plain string with the frontmatter-markdown-links classes', () => {

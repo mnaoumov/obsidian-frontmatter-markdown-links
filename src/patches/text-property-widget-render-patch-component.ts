@@ -58,8 +58,24 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
 
   private renderWidget(params: TextPropertyWidgetRenderPatchComponentRenderWidgetParams): TextPropertyWidgetComponent {
     const { containerEl, context, data, originalMethod } = params;
+
+    const contextWithRerenderOnChange = {
+      ...context,
+      onChange: (newValue: unknown): void => {
+        context.onChange(newValue);
+        window.requestAnimationFrame(() => {
+          containerEl.empty();
+          this.renderWidget({ containerEl, context, data: newValue, originalMethod });
+        });
+      }
+    };
+
+    // A property that was JUST created has no value yet, so `data` is null rather than a string. It
+    // Still needs the re-render hook: without it, typing a link into that property called Obsidian's
+    // Own `onChange` and nothing ever re-rendered, so the link stayed plain text until the property's
+    // Type was flipped away and back (which forces a fresh render). That was issue #38.
     if (typeof data !== 'string') {
-      return originalMethod(containerEl, data, context);
+      return originalMethod(containerEl, data, contextWithRerenderOnChange);
     }
 
     const $string = data;
@@ -77,17 +93,6 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
       this.isTextPropertyWidgetComponentPatched = true;
       temporary.remove();
     }
-
-    const contextWithRerenderOnChange = {
-      ...context,
-      onChange: (newValue: unknown): void => {
-        context.onChange(newValue);
-        window.requestAnimationFrame(() => {
-          containerEl.empty();
-          this.renderWidget({ containerEl, context, data: newValue, originalMethod });
-        });
-      }
-    };
 
     const parseLinkResults = parseLinks($string);
     containerEl.addClass('frontmatter-markdown-links', 'text-property-widget-component');
