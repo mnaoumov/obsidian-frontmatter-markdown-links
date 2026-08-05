@@ -18,7 +18,7 @@ interface CreateChildWidgetParams {
   readonly widgetStartOffset: number;
 }
 
-type RenderTextPropertyWidgetComponentFn = MetadataTypeManagerRegisteredTypeWidgetsRecord['text']['render'];
+type RenderTextPropertyWidgetComponentFunction = MetadataTypeManagerRegisteredTypeWidgetsRecord['text']['render'];
 
 interface TextPropertyWidgetRenderPatchComponentConstructorParams {
   readonly patchedInputElementMap: PatchedInputElementMap;
@@ -29,7 +29,7 @@ interface TextPropertyWidgetRenderPatchComponentRenderWidgetParams {
   readonly containerEl: HTMLElement;
   readonly context: PropertyRenderContext;
   readonly data: unknown;
-  readonly originalMethod: RenderTextPropertyWidgetComponentFn;
+  readonly originalMethod: RenderTextPropertyWidgetComponentFunction;
 }
 
 export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponent {
@@ -45,10 +45,10 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: this.textPropertyWidget,
       methodName: 'render',
-      obj: this.textPropertyWidget,
       patchHandler: ({
-        originalArgs: [containerEl, data, context],
+        originalArguments: [containerEl, data, context],
         originalMethod
       }) => {
         return this.renderWidget({ containerEl, context, data, originalMethod });
@@ -62,11 +62,11 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
       return originalMethod(containerEl, data, context);
     }
 
-    const str = data;
+    const $string = data;
 
     if (!this.isTextPropertyWidgetComponentPatched) {
-      const temp = containerEl.createDiv();
-      const textPropertyWidgetComponent = originalMethod(temp, '', context);
+      const temporary = containerEl.createDiv();
+      const textPropertyWidgetComponent = originalMethod(temporary, '', context);
 
       this.addChild(
         new TextPropertyWidgetComponentRenderPatchComponent({
@@ -75,10 +75,10 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
       );
 
       this.isTextPropertyWidgetComponentPatched = true;
-      temp.remove();
+      temporary.remove();
     }
 
-    const ctxWithRerenderOnChange = {
+    const contextWithRerenderOnChange = {
       ...context,
       onChange: (newValue: unknown): void => {
         context.onChange(newValue);
@@ -89,11 +89,11 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
       }
     };
 
-    const parseLinkResults = parseLinks(str);
+    const parseLinkResults = parseLinks($string);
     containerEl.addClass('frontmatter-markdown-links', 'text-property-widget-component');
     const childWidgetsContainerEl = containerEl.createDiv('metadata-property-value');
 
-    const hasMultipleLinks = parseLinkResults.length > 0 && parseLinkResults[0]?.raw !== str;
+    const hasMultipleLinks = parseLinkResults.length > 0 && parseLinkResults[0]?.raw !== $string;
 
     if (hasMultipleLinks) {
       let startOffset = 0;
@@ -104,14 +104,14 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
         startOffset = parseLinkResult.endOffset;
       }
 
-      createChildWidget({ widgetEndOffset: str.length, widgetStartOffset: startOffset });
+      createChildWidget({ widgetEndOffset: $string.length, widgetStartOffset: startOffset });
     }
 
-    const widget = originalMethod(containerEl, str, ctxWithRerenderOnChange);
+    const widget = originalMethod(containerEl, $string, contextWithRerenderOnChange);
     if (hasMultipleLinks) {
       widget.inputEl.hide();
       hideMetadataLink(widget);
-      containerEl.appendChild(childWidgetsContainerEl);
+      containerEl.append(childWidgetsContainerEl);
 
       widget.inputEl.addEventListener('blur', () => {
         widget.inputEl.hide();
@@ -134,7 +134,7 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
         return;
       }
 
-      const childWidgetValue = str.slice(widgetStartOffset, widgetEndOffset);
+      const childWidgetValue = $string.slice(widgetStartOffset, widgetEndOffset);
       const childEl = childWidgetsContainerEl.createDiv('metadata-property-value');
 
       const childWidget = originalMethod(childEl, childWidgetValue, context);

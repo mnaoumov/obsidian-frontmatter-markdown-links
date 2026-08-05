@@ -15,15 +15,15 @@ export class MenuShowAtMouseEventPatchComponent extends MonkeyAroundComponent {
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: Menu.prototype,
       methodName: 'showAtMouseEvent',
-      obj: Menu.prototype,
       patchHandler: ({
         fallback,
-        originalArgs: [evt],
+        originalArguments: [$event],
         originalThis
       }) => {
         const menu = originalThis;
-        const target = evt.target as HTMLElement | undefined;
+        const target = $event.target as HTMLElement | undefined;
 
         if (!target) {
           return fallback();

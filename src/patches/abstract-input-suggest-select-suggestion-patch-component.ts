@@ -31,11 +31,11 @@ export class AbstractInputSuggestSelectSuggestionPatchComponent extends MonkeyAr
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: getPrototypeOf(this.abstractInputSuggest),
       methodName: 'selectSuggestion',
-      obj: getPrototypeOf(this.abstractInputSuggest),
       patchHandler: ({
         fallback,
-        originalArgs: [value, evt],
+        originalArguments: [value, $event],
         originalMethodBound,
         originalThis
       }) => {
@@ -55,7 +55,7 @@ export class AbstractInputSuggestSelectSuggestionPatchComponent extends MonkeyAr
           ...value,
           text: fixedValue,
           type: 'text'
-        }, evt);
+        }, $event);
       }
     });
   }

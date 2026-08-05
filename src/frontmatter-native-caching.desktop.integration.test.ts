@@ -68,6 +68,7 @@ externalSingle: "https://example.com"
 
   await evalInObsidian({
     contextId,
+    // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
     fn: async ({ app, context }) => {
       const sourceFile = app.vault.getFileByPath('source.md');
       if (!sourceFile) {
@@ -92,6 +93,7 @@ describe('frontmatter link data (what the plugin needs from frontmatter)', () =>
   it('populates cache.frontmatterLinks for every internal-link shape, with offsets for multi-link strings', async () => {
     const links = await evalInObsidian({
       contextId,
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
       fn: ({ app, context }): FrontmatterLinkDump[] => {
         const cache = app.metadataCache.getFileCache(context.sourceFile);
         return (cache?.frontmatterLinks ?? []).map((l) => ({
@@ -129,11 +131,12 @@ describe('frontmatter markdown links render as clickable links (regression vs Ob
   it('renders every markdown-link shape as a resolved clickable link in the property editor', async () => {
     const result = await evalInObsidian({
       contextId,
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
       fn: async () => {
         function collect(): CollectedLinkTexts {
-          const linkDataTexts = Array.from(activeDocument.querySelectorAll('[data-frontmatter-markdown-links-link-data]'))
+          const linkDataTexts = [...activeDocument.querySelectorAll(':scope [data-frontmatter-markdown-links-link-data]')]
             .map((el) => el.textContent);
-          const metadataLinkTexts = Array.from(activeDocument.querySelectorAll('.metadata-property-value .internal-link, .metadata-link'))
+          const metadataLinkTexts = [...activeDocument.querySelectorAll(':scope .metadata-property-value .internal-link, .metadata-link')]
             .map((el) => el.textContent);
           return { linkDataTexts, metadataLinkTexts };
         }

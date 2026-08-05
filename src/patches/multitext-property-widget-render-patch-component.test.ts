@@ -22,11 +22,12 @@ interface ComponentModuleActual {
 }
 
 // Stub the plugin's own sibling child component so this component's coverage is isolated.
-vi.mock('./multi-text-property-component-render-values-patch-component.ts', async () => ({
-  MultiTextPropertyComponentRenderValuesPatchComponent: class extends (await vi.importActual<ComponentModuleActual>('obsidian')).Component {}
-}));
+vi.mock('./multi-text-property-component-render-values-patch-component.ts', async () => {
+  const obsidianModule = await vi.importActual<ComponentModuleActual>('obsidian');
+  return { MultiTextPropertyComponentRenderValuesPatchComponent: class extends obsidianModule.Component {} };
+});
 
-type RenderFn = (this: PropertyWidget<MultitextPropertyWidgetComponent>, containerEl: HTMLElement, data: unknown, context: PropertyRenderContext) => MultitextPropertyWidgetComponent;
+type RenderFunction = (this: PropertyWidget<MultitextPropertyWidgetComponent>, containerEl: HTMLElement, data: unknown, context: PropertyRenderContext) => MultitextPropertyWidgetComponent;
 
 let loadedComponent: MultitextPropertyWidgetRenderPatchComponent | null = null;
 
@@ -63,7 +64,7 @@ describe('MultitextPropertyWidgetRenderPatchComponent', () => {
     loadPatch(widget);
 
     const containerEl = createDiv();
-    const result = castTo<RenderFn>(widget.render).call(widget, containerEl, ['item1'], createContext());
+    const result = castTo<RenderFunction>(widget.render).call(widget, containerEl, ['item1'], createContext());
 
     expect(result).toBeDefined();
     // The patch invokes the original render twice on the first call: once for the temp probe div
@@ -79,10 +80,10 @@ describe('MultitextPropertyWidgetRenderPatchComponent', () => {
     loadPatch(widget);
 
     const containerEl = createDiv();
-    castTo<RenderFn>(widget.render).call(widget, containerEl, ['item1'], createContext());
+    castTo<RenderFunction>(widget.render).call(widget, containerEl, ['item1'], createContext());
     renderImpl.mockClear();
 
-    const result = castTo<RenderFn>(widget.render).call(widget, containerEl, ['item2'], createContext());
+    const result = castTo<RenderFunction>(widget.render).call(widget, containerEl, ['item2'], createContext());
 
     expect(result).toBeDefined();
     // Once patched, only the single fallback render runs (no temp probe div).

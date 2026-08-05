@@ -19,26 +19,29 @@ interface ComponentModuleActual {
 }
 
 // Stub the plugin's own sibling child components so note-get's coverage is isolated.
-vi.mock('./bases-external-link-render-to-patch-component.ts', async () => ({
-  BasesExternalLinkRenderToPatchComponent: class extends (await vi.importActual<ComponentModuleActual>('obsidian')).Component {}
-}));
+vi.mock('./bases-external-link-render-to-patch-component.ts', async () => {
+  const obsidianModule = await vi.importActual<ComponentModuleActual>('obsidian');
+  return { BasesExternalLinkRenderToPatchComponent: class extends obsidianModule.Component {} };
+});
 
-vi.mock('./bases-list-render-to-patch-component.ts', async () => ({
-  BasesListRenderToPatchComponent: class extends (await vi.importActual<ComponentModuleActual>('obsidian')).Component {}
-}));
+vi.mock('./bases-list-render-to-patch-component.ts', async () => {
+  const obsidianModule = await vi.importActual<ComponentModuleActual>('obsidian');
+  return { BasesListRenderToPatchComponent: class extends obsidianModule.Component {} };
+});
 
-vi.mock('./string-value-render-to-patch-component.ts', async () => ({
-  StringValueRenderToPatchComponent: class extends (await vi.importActual<ComponentModuleActual>('obsidian')).Component {}
-}));
+vi.mock('./string-value-render-to-patch-component.ts', async () => {
+  const obsidianModule = await vi.importActual<ComponentModuleActual>('obsidian');
+  return { StringValueRenderToPatchComponent: class extends obsidianModule.Component {} };
+});
 
 interface BasesNoteData {
   data: Record<string, unknown>;
 }
 
-type GetFn = (this: BasesNoteData, key: string) => unknown;
+type GetFunction = (this: BasesNoteData, key: string) => unknown;
 
-interface GetProto {
-  get: GetFn;
+interface GetPrototype {
+  get: GetFunction;
 }
 
 let loadedComponent: BasesNoteGetPatchComponent | null = null;
@@ -49,8 +52,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function loadPatch(proto: GetProto, linkFixer: LinkFixer): void {
-  const basesNote = castTo<BasesNote>(Object.create(proto));
+function loadPatch(prototype: GetPrototype, linkFixer: LinkFixer): void {
+  const basesNote = castTo<BasesNote>(Object.create(prototype));
   const component = new BasesNoteGetPatchComponent({
     app: strictProxy<App>({}),
     basesNote,
@@ -67,13 +70,13 @@ describe('BasesNoteGetPatchComponent', () => {
       seenValues.push(this.data[key]);
       return this.data[key];
     });
-    const proto = { get: originalGet };
+    const prototype = { get: originalGet };
     const linkFixer = new LinkFixer();
     const patchLinkSpy = vi.spyOn(linkFixer, 'patchLink');
-    loadPatch(proto, linkFixer);
+    loadPatch(prototype, linkFixer);
 
     const originalThis: BasesNoteData = { data: { key: '[Example](https://example.com)' } };
-    const result = castTo<GetFn>(proto.get).call(originalThis, 'key');
+    const result = castTo<GetFunction>(prototype.get).call(originalThis, 'key');
 
     // The final fallback returns the patched value.
     expect(result).toBe(patchLinkSpy.mock.results[0]?.value);
@@ -91,17 +94,17 @@ describe('BasesNoteGetPatchComponent', () => {
     const originalGet = vi.fn(function getImpl(this: BasesNoteData, key: string): unknown {
       return this.data[key];
     });
-    const proto = { get: originalGet };
+    const prototype = { get: originalGet };
     const linkFixer = new LinkFixer();
-    loadPatch(proto, linkFixer);
+    loadPatch(prototype, linkFixer);
 
     const originalThis: BasesNoteData = { data: { key: 'plain' } };
 
-    castTo<GetFn>(proto.get).call(originalThis, 'key');
+    castTo<GetFunction>(prototype.get).call(originalThis, 'key');
     expect(originalGet).toHaveBeenCalledTimes(4);
 
     originalGet.mockClear();
-    const result = castTo<GetFn>(proto.get).call(originalThis, 'key');
+    const result = castTo<GetFunction>(prototype.get).call(originalThis, 'key');
 
     // Subsequent access skips the patching branch: only the final fallback runs.
     expect(originalGet).toHaveBeenCalledTimes(1);
@@ -120,13 +123,13 @@ describe('BasesNoteGetPatchComponent', () => {
       }
       return this.data[key];
     });
-    const proto = { get: originalGet };
+    const prototype = { get: originalGet };
     const linkFixer = new LinkFixer();
-    loadPatch(proto, linkFixer);
+    loadPatch(prototype, linkFixer);
 
     const originalThis: BasesNoteData = { data: { key: 'plain' } };
 
-    expect(() => castTo<GetFn>(proto.get).call(originalThis, 'key')).toThrow(error);
+    expect(() => castTo<GetFunction>(prototype.get).call(originalThis, 'key')).toThrow(error);
     // The finally block restores the original value despite the throw.
     expect(originalThis.data['key']).toBe('plain');
   });

@@ -12,7 +12,7 @@ import {
 
 import { FrontmatterMarkdownLinksCache } from './frontmatter-markdown-links-cache.ts';
 
-interface CacheWithMockDb {
+interface CacheWithMockDatabase {
   cache: FrontmatterMarkdownLinksCache;
   flushStoreActions(): void;
   objectStoreMock: ReturnType<typeof vi.fn>;
@@ -28,14 +28,14 @@ interface MockTFileStat {
   mtime: number;
 }
 
-function makeIdbOpenRequest(db: IDBDatabase, upgradeNewVersion?: number): IDBOpenDBRequest {
-  const handlers: Partial<Record<string, (evt?: unknown) => void>> = {};
-  const req: Record<string, unknown> = {
-    addEventListener: vi.fn().mockImplementation((event: string, handler: (evt?: unknown) => void) => {
+function makeIdbOpenRequest(database: IDBDatabase, upgradeNewVersion?: number): IDBOpenDBRequest {
+  const handlers: Partial<Record<string, ($event?: unknown) => void>> = {};
+  const request: Record<string, unknown> = {
+    addEventListener: vi.fn().mockImplementation((event: string, handler: ($event?: unknown) => void) => {
       handlers[event] = handler;
       if (event === 'success') {
         // Set result before firing upgrade so request.result is available in the upgrade handler.
-        req['result'] = db;
+        request['result'] = database;
         if (upgradeNewVersion !== undefined && handlers['upgradeneeded']) {
           handlers['upgradeneeded']({ newVersion: upgradeNewVersion });
         }
@@ -44,16 +44,17 @@ function makeIdbOpenRequest(db: IDBDatabase, upgradeNewVersion?: number): IDBOpe
     }),
     readyState: 'pending'
   };
-  return castTo<IDBOpenDBRequest>(req);
+  return castTo<IDBOpenDBRequest>(request);
 }
-
 function makeIdbRequest(result: unknown): IDBRequest {
   return castTo<IDBRequest>({
     addEventListener: vi.fn().mockImplementation(function mockAddEventListener(this: IDBRequest, event: string, handler: () => void) {
-      if (event === 'success') {
-        Object.defineProperty(this, 'result', { configurable: true, value: result });
-        handler();
+      if (event !== 'success') {
+        return;
       }
+
+      Object.defineProperty(this, 'result', { configurable: true, value: result });
+      handler();
     }),
     readyState: 'pending'
   });
@@ -61,6 +62,13 @@ function makeIdbRequest(result: unknown): IDBRequest {
 
 function makeLink(key: string, link: string, original: string): FrontmatterLinkCache {
   return { displayText: link, key, link, original };
+}
+
+// The two `getAll` calls the cache makes, in order: the file mtimes store, then the links store.
+function makeObjectStoreStub(fileMtimeData: unknown, frontmatterLinksData: unknown): ReturnType<typeof vi.fn> {
+  return vi.fn()
+    .mockReturnValueOnce({ getAll: vi.fn().mockReturnValue(makeIdbRequest(fileMtimeData)) })
+    .mockReturnValueOnce({ getAll: vi.fn().mockReturnValue(makeIdbRequest(frontmatterLinksData)) });
 }
 
 function makeTFile(path: string, mtime = 0): MockTFileLike {
@@ -284,7 +292,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
 
       expect(() => {
         cache['processStoreActions']();
-      }).toThrow('db is not initialized');
+      }).toThrow('database is not initialized');
     });
   });
 
@@ -299,20 +307,18 @@ describe('FrontmatterMarkdownLinksCache', () => {
       Object.defineProperty(activeWindow, 'indexedDB', { configurable: true, value: originalIndexedDB });
     });
 
-    function buildMockDb(fileMtimeData: unknown[] = [], frontmatterLinksData: unknown[] = [], extraDbProps: Partial<IDBDatabase> = {}): IDBDatabase {
+    function buildMockDatabase(fileMtimeData: unknown[] = [], frontmatterLinksData: unknown[] = [], extraDatabaseProps: Partial<IDBDatabase> = {}): IDBDatabase {
       return castTo<IDBDatabase>({
-        ...extraDbProps,
+        ...extraDatabaseProps,
         transaction: vi.fn().mockReturnValue({
-          objectStore: vi.fn()
-            .mockReturnValueOnce({ getAll: vi.fn().mockReturnValue(makeIdbRequest(fileMtimeData)) })
-            .mockReturnValueOnce({ getAll: vi.fn().mockReturnValue(makeIdbRequest(frontmatterLinksData)) })
+          objectStore: makeObjectStoreStub(fileMtimeData, frontmatterLinksData)
         })
       });
     }
 
     it('should open indexedDB with correct name on init', async () => {
-      const mockDb = buildMockDb();
-      const openMock = vi.fn().mockReturnValue(makeIdbOpenRequest(mockDb));
+      const mockDatabase = buildMockDatabase();
+      const openMock = vi.fn().mockReturnValue(makeIdbOpenRequest(mockDatabase));
       Object.defineProperty(activeWindow, 'indexedDB', { configurable: true, value: { open: openMock } });
 
       const cache = new FrontmatterMarkdownLinksCache();
@@ -323,8 +329,8 @@ describe('FrontmatterMarkdownLinksCache', () => {
 
     it('should create two object stores on first version upgrade', async () => {
       const createObjectStoreMock = vi.fn();
-      const mockDb = buildMockDb([], [], { createObjectStore: createObjectStoreMock });
-      const openMock = vi.fn().mockReturnValue(makeIdbOpenRequest(mockDb, 1));
+      const mockDatabase = buildMockDatabase([], [], { createObjectStore: createObjectStoreMock });
+      const openMock = vi.fn().mockReturnValue(makeIdbOpenRequest(mockDatabase, 1));
       Object.defineProperty(activeWindow, 'indexedDB', { configurable: true, value: { open: openMock } });
 
       const cache = new FrontmatterMarkdownLinksCache();
@@ -336,8 +342,8 @@ describe('FrontmatterMarkdownLinksCache', () => {
 
     it('should not create object stores when upgrade version is not 1', async () => {
       const createObjectStoreMock = vi.fn();
-      const mockDb = buildMockDb([], [], { createObjectStore: createObjectStoreMock });
-      const openMock = vi.fn().mockReturnValue(makeIdbOpenRequest(mockDb, 2));
+      const mockDatabase = buildMockDatabase([], [], { createObjectStore: createObjectStoreMock });
+      const openMock = vi.fn().mockReturnValue(makeIdbOpenRequest(mockDatabase, 2));
       Object.defineProperty(activeWindow, 'indexedDB', { configurable: true, value: { open: openMock } });
 
       const cache = new FrontmatterMarkdownLinksCache();
@@ -350,8 +356,8 @@ describe('FrontmatterMarkdownLinksCache', () => {
       const existingFileMtimeEntry = { filePath: 'existing.md', mtime: 500 };
       const existingLinkEntry = { filePath: 'existing.md', links: [makeLink('key1', 'link1', 'orig1')] };
 
-      const mockDb = buildMockDb([existingFileMtimeEntry], [existingLinkEntry]);
-      const openMock = vi.fn().mockReturnValue(makeIdbOpenRequest(mockDb));
+      const mockDatabase = buildMockDatabase([existingFileMtimeEntry], [existingLinkEntry]);
+      const openMock = vi.fn().mockReturnValue(makeIdbOpenRequest(mockDatabase));
       Object.defineProperty(activeWindow, 'indexedDB', { configurable: true, value: { open: openMock } });
 
       const cache = new FrontmatterMarkdownLinksCache();
@@ -364,10 +370,12 @@ describe('FrontmatterMarkdownLinksCache', () => {
     it('should reject when IDBRequest fires an error event with an error object', async () => {
       const openMock = vi.fn().mockReturnValue({
         addEventListener: vi.fn().mockImplementation(function mockAddEventListener(this: IDBOpenDBRequest, event: string, handler: () => void) {
-          if (event === 'error') {
-            Object.defineProperty(this, 'error', { configurable: true, value: new DOMException('IDB error') });
-            handler();
+          if (event !== 'error') {
+            return;
           }
+
+          Object.defineProperty(this, 'error', { configurable: true, value: new DOMException('IDB error') });
+          handler();
         }),
         readyState: 'pending'
       });
@@ -381,10 +389,12 @@ describe('FrontmatterMarkdownLinksCache', () => {
     it('should reject with fallback message when error event has null error', async () => {
       const openMock = vi.fn().mockReturnValue({
         addEventListener: vi.fn().mockImplementation(function mockAddEventListener(this: IDBOpenDBRequest, event: string, handler: () => void) {
-          if (event === 'error') {
-            Object.defineProperty(this, 'error', { configurable: true, value: null });
-            handler();
+          if (event !== 'error') {
+            return;
           }
+
+          Object.defineProperty(this, 'error', { configurable: true, value: null });
+          handler();
         }),
         readyState: 'pending'
       });
@@ -396,11 +406,11 @@ describe('FrontmatterMarkdownLinksCache', () => {
     });
 
     it('should return result immediately when IDBRequest readyState is already done', async () => {
-      const mockDb = buildMockDb();
+      const mockDatabase = buildMockDatabase();
       const openMock = vi.fn().mockReturnValue({
         addEventListener: vi.fn(),
         readyState: 'done',
-        result: mockDb
+        result: mockDatabase
       });
       Object.defineProperty(activeWindow, 'indexedDB', { configurable: true, value: { open: openMock } });
 
@@ -412,15 +422,15 @@ describe('FrontmatterMarkdownLinksCache', () => {
   });
 
   describe('processStoreActions and addStoreAction callbacks', () => {
-    function buildCacheWithMockDb(): CacheWithMockDb {
+    function buildCacheWithMockDatabase(): CacheWithMockDatabase {
       const mockStore = { commit: vi.fn(), delete: vi.fn(), put: vi.fn() };
       const objectStoreMock = vi.fn().mockReturnValue(mockStore);
       const transactionMock = vi.fn().mockReturnValue({ commit: vi.fn(), objectStore: objectStoreMock });
-      const mockDb = castTo<IDBDatabase>({ transaction: transactionMock });
+      const mockDatabase = castTo<IDBDatabase>({ transaction: transactionMock });
 
       const cache = new FrontmatterMarkdownLinksCache();
-      // Set the private _db directly to skip init() overhead.
-      cache['_db'] = mockDb;
+      // Set the private _database directly to skip init() overhead.
+      cache['_database'] = mockDatabase;
 
       return { cache, flushStoreActions, objectStoreMock, transactionMock };
 
@@ -431,7 +441,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
     }
 
     it('should execute add store action callback when processStoreActions is called', () => {
-      const { cache, flushStoreActions, objectStoreMock } = buildCacheWithMockDb();
+      const { cache, flushStoreActions, objectStoreMock } = buildCacheWithMockDatabase();
 
       cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
 
@@ -442,7 +452,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
     });
 
     it('should execute delete store action callback when processStoreActions is called', () => {
-      const { cache, flushStoreActions, objectStoreMock } = buildCacheWithMockDb();
+      const { cache, flushStoreActions, objectStoreMock } = buildCacheWithMockDatabase();
 
       cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
       cache.delete('file.md');
@@ -453,7 +463,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
     });
 
     it('should execute deleteKey remaining links store action when processStoreActions is called', () => {
-      const { cache, flushStoreActions, objectStoreMock } = buildCacheWithMockDb();
+      const { cache, flushStoreActions, objectStoreMock } = buildCacheWithMockDatabase();
 
       // Add two links then delete one key (leaves one remaining - triggers put not delete).
       cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
@@ -466,7 +476,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
     });
 
     it('should execute updateFile store action when processStoreActions is called', () => {
-      const { cache, flushStoreActions, objectStoreMock } = buildCacheWithMockDb();
+      const { cache, flushStoreActions, objectStoreMock } = buildCacheWithMockDatabase();
 
       cache.updateFile(makeTFile('file.md', 1234) as Parameters<typeof cache.updateFile>[0]);
 
@@ -476,7 +486,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
     });
 
     it('should access db getter when processStoreActions executes with initialized db', () => {
-      const { cache, flushStoreActions } = buildCacheWithMockDb();
+      const { cache, flushStoreActions } = buildCacheWithMockDatabase();
 
       cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
 
@@ -487,7 +497,7 @@ describe('FrontmatterMarkdownLinksCache', () => {
     });
 
     it('should clear pending store actions after processStoreActions runs', () => {
-      const { cache, flushStoreActions, objectStoreMock } = buildCacheWithMockDb();
+      const { cache, flushStoreActions, objectStoreMock } = buildCacheWithMockDatabase();
 
       cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
       flushStoreActions();

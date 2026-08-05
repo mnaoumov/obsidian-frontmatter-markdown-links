@@ -12,7 +12,7 @@ import {
 import { LinkFixer } from '../link-fixer.ts';
 import { BasesListRenderToPatchComponent } from './bases-list-render-to-patch-component.ts';
 
-type RenderToFn = (this: unknown, containerEl: HTMLElement) => unknown;
+type RenderToFunction = (this: unknown, containerEl: HTMLElement) => unknown;
 
 let loadedComponent: BasesListRenderToPatchComponent | null = null;
 
@@ -25,8 +25,8 @@ afterEach(() => {
 describe('BasesListRenderToPatchComponent', () => {
   it('should call the original renderTo and then fix external links in the container', () => {
     const originalRenderTo = vi.fn();
-    const proto = { renderTo: originalRenderTo };
-    const basesList = castTo<BasesList>(Object.create(proto));
+    const prototype = { renderTo: originalRenderTo };
+    const basesList = castTo<BasesList>(Object.create(prototype));
     const linkFixer = new LinkFixer();
     const fixExternalLinksSpy = vi.spyOn(linkFixer, 'fixExternalLinks');
 
@@ -38,7 +38,7 @@ describe('BasesListRenderToPatchComponent', () => {
     loadedComponent = component;
 
     const containerEl = createDiv();
-    castTo<RenderToFn>(proto.renderTo).call(basesList, containerEl);
+    castTo<RenderToFunction>(prototype.renderTo).call(basesList, containerEl);
 
     expect(originalRenderTo).toHaveBeenCalledTimes(1);
     expect(fixExternalLinksSpy).toHaveBeenCalledWith(containerEl);

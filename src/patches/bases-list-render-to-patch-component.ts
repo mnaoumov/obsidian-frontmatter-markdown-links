@@ -22,11 +22,11 @@ export class BasesListRenderToPatchComponent extends MonkeyAroundComponent {
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: getPrototypeOf(this.basesList),
       methodName: 'renderTo',
-      obj: getPrototypeOf(this.basesList),
       patchHandler: ({
         fallback,
-        originalArgs: [containerEl]
+        originalArguments: [containerEl]
       }) => {
         fallback();
         this.linkFixer.fixExternalLinks(containerEl);

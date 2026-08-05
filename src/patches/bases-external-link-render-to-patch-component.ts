@@ -22,11 +22,11 @@ export class BasesExternalLinkRenderToPatchComponent extends MonkeyAroundCompone
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: getPrototypeOf(this.basesExternalLink),
       methodName: 'renderTo',
-      obj: getPrototypeOf(this.basesExternalLink),
       patchHandler: ({
         fallback,
-        originalArgs: [containerEl]
+        originalArguments: [containerEl]
       }) => {
         fallback();
         this.linkFixer.fixExternalLinks(containerEl);

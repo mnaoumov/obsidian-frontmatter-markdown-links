@@ -20,7 +20,7 @@ interface EditorCmHolder {
   cm: Editor['cm'];
 }
 
-interface EditorProto {
+interface EditorPrototype {
   getClickableTokenAt(this: unknown, pos: EditorPosition): unknown;
   offsetToPos(offset: number): EditorPosition;
   posToOffset(pos: EditorPosition): number;
@@ -28,12 +28,12 @@ interface EditorProto {
 
 type EditorWithCm = Editor & EditorCmHolder;
 
-interface EditorWithProto {
+interface EditorWithPrototype {
+  $prototype: EditorPrototype;
   editor: Editor;
-  proto: EditorProto;
 }
 
-type GetClickableTokenAtFn = (this: unknown, pos: EditorPosition) => unknown;
+type GetClickableTokenAtFunction = (this: unknown, pos: EditorPosition) => unknown;
 
 type LinkData = Parameters<typeof attachLinkData>[1];
 
@@ -45,24 +45,24 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function createEditor(node: Node, fallbackToken: ClickableToken | null): EditorWithProto {
-  const proto: EditorProto = {
+function createEditor(node: Node, fallbackToken: ClickableToken | null): EditorWithPrototype {
+  const prototype: EditorPrototype = {
     getClickableTokenAt: vi.fn().mockReturnValue(fallbackToken),
     offsetToPos: vi.fn().mockReturnValue(createPos()),
     posToOffset: vi.fn().mockReturnValue(0)
   };
-  const editor = Object.create(proto) as EditorWithCm;
+  const editor = Object.create(prototype) as EditorWithCm;
   editor.cm = castTo<Editor['cm']>({
     domAtPos: vi.fn().mockReturnValue({ node }),
     posAtDOM: vi.fn().mockReturnValue(0)
   });
-  return { editor, proto };
+  return { $prototype: prototype, editor };
 }
 
 function createFrontmatterEl(): HTMLElement {
   const frontmatterEl = createDiv();
   frontmatterEl.addClass('cm-hmd-frontmatter');
-  activeDocument.body.appendChild(frontmatterEl);
+  activeDocument.body.append(frontmatterEl);
   return frontmatterEl;
 }
 
@@ -76,8 +76,8 @@ function createPos(): EditorPosition {
   return { ch: 0, line: 0 };
 }
 
-function invoke(proto: EditorProto, editor: Editor): unknown {
-  return castTo<GetClickableTokenAtFn>(proto.getClickableTokenAt).call(editor, createPos());
+function invoke(prototype: EditorPrototype, editor: Editor): unknown {
+  return castTo<GetClickableTokenAtFunction>(prototype.getClickableTokenAt).call(editor, createPos());
 }
 
 function loadPatch(editor: Editor): void {
@@ -101,20 +101,20 @@ describe('EditorGetClickableTokenAtPatchComponent', () => {
   it('should return the token from fallback when it exists', () => {
     const token: ClickableToken = { end: createPos(), start: createPos(), text: 'x', type: 'internal-link' };
     const node = createDiv();
-    const { editor, proto } = createEditor(node, token);
+    const { $prototype, editor } = createEditor(node, token);
     loadPatch(editor);
 
-    const result = invoke(proto, editor);
+    const result = invoke($prototype, editor);
 
     expect(result).toBe(token);
   });
 
   it('should return null when there is no frontmatter element', () => {
     const node = createDiv();
-    const { editor, proto } = createEditor(node, null);
+    const { $prototype, editor } = createEditor(node, null);
     loadPatch(editor);
 
-    const result = invoke(proto, editor);
+    const result = invoke($prototype, editor);
 
     expect(result).toBeNull();
   });
@@ -122,11 +122,11 @@ describe('EditorGetClickableTokenAtPatchComponent', () => {
   it('should use parentElement when the node is not an HTMLElement', () => {
     const parent = createDiv();
     const textNode = activeDocument.createTextNode('text');
-    parent.appendChild(textNode);
-    const { editor, proto } = createEditor(textNode, null);
+    parent.append(textNode);
+    const { $prototype, editor } = createEditor(textNode, null);
     loadPatch(editor);
 
-    const result = invoke(proto, editor);
+    const result = invoke($prototype, editor);
 
     expect(result).toBeNull();
   });
@@ -135,10 +135,10 @@ describe('EditorGetClickableTokenAtPatchComponent', () => {
     const frontmatterEl = createFrontmatterEl();
     // The real Obsidian `find` returns `null` when nothing matches; the test-mocks `find` throws, so stub the return value.
     vi.spyOn(frontmatterEl, 'find').mockReturnValue(castTo<HTMLElement>(null));
-    const { editor, proto } = createEditor(frontmatterEl, null);
+    const { $prototype, editor } = createEditor(frontmatterEl, null);
     loadPatch(editor);
 
-    const result = invoke(proto, editor);
+    const result = invoke($prototype, editor);
 
     expect(result).toBeNull();
     frontmatterEl.remove();
@@ -147,11 +147,11 @@ describe('EditorGetClickableTokenAtPatchComponent', () => {
   it('should return null when the link element has no link data', () => {
     const frontmatterEl = createFrontmatterEl();
     const linkEl = frontmatterEl.createDiv('cm-hmd-internal-link');
-    linkEl.setAttribute('data-frontmatter-markdown-links-link-data', '');
-    const { editor, proto } = createEditor(frontmatterEl, null);
+    linkEl.dataset['frontmatterMarkdownLinksLinkData'] = '';
+    const { $prototype, editor } = createEditor(frontmatterEl, null);
     loadPatch(editor);
 
-    const result = invoke(proto, editor);
+    const result = invoke($prototype, editor);
 
     expect(result).toBeNull();
     frontmatterEl.remove();
@@ -161,10 +161,10 @@ describe('EditorGetClickableTokenAtPatchComponent', () => {
     const frontmatterEl = createFrontmatterEl();
     createLinkEl(frontmatterEl, 'cm-hmd-internal-link', { isExternalUrl: false, isWikilink: false, url: 'note.md' });
     frontmatterEl.createDiv('cm-formatting-link-end');
-    const { editor, proto } = createEditor(frontmatterEl, null);
+    const { $prototype, editor } = createEditor(frontmatterEl, null);
     loadPatch(editor);
 
-    const result = castTo<ClickableToken | null>(invoke(proto, editor));
+    const result = castTo<ClickableToken | null>(invoke($prototype, editor));
 
     expect(result?.type).toBe('internal-link');
     expect(result?.text).toBe('note.md');
@@ -176,10 +176,10 @@ describe('EditorGetClickableTokenAtPatchComponent', () => {
     const linkEl = createLinkEl(frontmatterEl, 'cm-url', { isExternalUrl: true, isWikilink: false, url: 'https://example.com' });
     const siblingEl = frontmatterEl.createDiv('sibling');
     stubFindWithoutLinkEnd(frontmatterEl, linkEl);
-    const { editor, proto } = createEditor(frontmatterEl, null);
+    const { $prototype, editor } = createEditor(frontmatterEl, null);
     loadPatch(editor);
 
-    const result = castTo<ClickableToken | null>(invoke(proto, editor));
+    const result = castTo<ClickableToken | null>(invoke($prototype, editor));
 
     expect(result?.type).toBe('external-link');
     expect(siblingEl).toBe(linkEl.nextElementSibling);
@@ -190,10 +190,10 @@ describe('EditorGetClickableTokenAtPatchComponent', () => {
     const frontmatterEl = createFrontmatterEl();
     const linkEl = createLinkEl(frontmatterEl, 'cm-url', { isExternalUrl: true, isWikilink: false, url: 'https://example.com' });
     stubFindWithoutLinkEnd(frontmatterEl, linkEl);
-    const { editor, proto } = createEditor(frontmatterEl, null);
+    const { $prototype, editor } = createEditor(frontmatterEl, null);
     loadPatch(editor);
 
-    const result = castTo<ClickableToken | null>(invoke(proto, editor));
+    const result = castTo<ClickableToken | null>(invoke($prototype, editor));
 
     expect(result?.start).toEqual(result?.end);
     frontmatterEl.remove();

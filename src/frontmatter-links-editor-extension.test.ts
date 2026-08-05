@@ -20,7 +20,7 @@ interface DecorationWidget {
   toDOM(): HTMLElement;
 }
 
-interface DecorationWidgetArg {
+interface DecorationWidgetArgument {
   widget: DecorationWidget;
 }
 
@@ -550,8 +550,8 @@ describe('LinkWidget.toDOM', () => {
     expect(mockDecoration.replace).toHaveBeenCalled();
 
     // Get the widget from the Decoration.replace call and invoke toDOM().
-    const widgetArg = mockDecoration.replace.mock.calls[0]?.[0] as DecorationWidgetArg | undefined;
-    const domEl = widgetArg?.widget.toDOM();
+    const widgetArgument = mockDecoration.replace.mock.calls[0]?.[0] as DecorationWidgetArgument | undefined;
+    const domEl = widgetArgument?.widget.toDOM();
 
     expect(domEl).toBeInstanceOf(HTMLElement);
   });
@@ -564,8 +564,8 @@ describe('LinkWidget.toDOM', () => {
     const factory = getViewPluginFactory(createMockApp());
     factory?.(createMockView('[note](target.md)', []));
 
-    const widgetArg = mockDecoration.replace.mock.calls[0]?.[0] as DecorationWidgetArg | undefined;
-    const domEl = widgetArg?.widget.toDOM();
+    const widgetArgument = mockDecoration.replace.mock.calls[0]?.[0] as DecorationWidgetArgument | undefined;
+    const domEl = widgetArgument?.widget.toDOM();
 
     const anchor = domEl?.querySelector('a.cm-underline');
     expect(anchor).toBeTruthy();
@@ -580,8 +580,8 @@ describe('LinkWidget.toDOM', () => {
     const factory = getViewPluginFactory(createMockApp());
     factory?.(createMockView('https://example.com', []));
 
-    const widgetArg = mockDecoration.replace.mock.calls[0]?.[0] as DecorationWidgetArg | undefined;
-    const domEl = widgetArg?.widget.toDOM();
+    const widgetArgument = mockDecoration.replace.mock.calls[0]?.[0] as DecorationWidgetArgument | undefined;
+    const domEl = widgetArgument?.widget.toDOM();
 
     const anchor = domEl?.querySelector('a.cm-underline');
     expect(anchor?.textContent).toBe('https://example.com');
@@ -596,8 +596,8 @@ describe('LinkWidget.toDOM', () => {
     const factory = getViewPluginFactory(createMockApp());
     factory?.(createMockView('[note](target.md)', []));
 
-    const widgetArg = mockDecoration.replace.mock.calls[0]?.[0] as DecorationWidgetArg | undefined;
-    const domEl = widgetArg?.widget.toDOM();
+    const widgetArgument = mockDecoration.replace.mock.calls[0]?.[0] as DecorationWidgetArgument | undefined;
+    const domEl = widgetArgument?.widget.toDOM();
 
     // In isInQuotes mode, the outer span gets cls='', not 'cm-hmd-frontmatter cm-string'.
     expect(domEl).toBeInstanceOf(HTMLElement);

@@ -25,17 +25,17 @@ export class MultiTextPropertyComponentRenderValuesPatchComponent extends Monkey
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: getPrototypeOf(this.multiselect),
       methodName: 'renderValues',
-      obj: getPrototypeOf(this.multiselect),
       patchHandler: ({
         fallback,
         originalThis
       }) => {
         const app = this.app;
         fallback();
-        const renderedItemEls: HTMLElement[] = Array.from(originalThis.rootEl.querySelectorAll('.multi-select-pill-content'));
-        for (let i = 0; i < renderedItemEls.length; i++) {
-          const value = originalThis.values[i];
+        const renderedItemEls: HTMLElement[] = [...originalThis.rootEl.querySelectorAll<HTMLElement>('.multi-select-pill-content')];
+        for (const [index, renderedItemEl] of renderedItemEls.entries()) {
+          const value = originalThis.values[index];
           if (!value) {
             continue;
           }
@@ -44,7 +44,7 @@ export class MultiTextPropertyComponentRenderValuesPatchComponent extends Monkey
             continue;
           }
 
-          const el = ensureNonNullable(renderedItemEls[i]);
+          const el = renderedItemEl;
 
           const firstParseLinkResult = ensureNonNullable(parseLinkResults[0]);
           const isSingleValue = firstParseLinkResult.raw === value;
@@ -70,18 +70,18 @@ export class MultiTextPropertyComponentRenderValuesPatchComponent extends Monkey
             el2.removeClass('internal-link', 'external-link', 'is-unresolved');
           }
 
-          parentEl.addEventListener('mouseover', (evt) => {
-            evt.stopPropagation();
+          parentEl.addEventListener('mouseover', ($event) => {
+            $event.stopPropagation();
           }, { capture: true });
 
-          parentEl.addEventListener('click', (evt) => {
-            if (!(evt.target instanceof Element)) {
+          parentEl.addEventListener('click', ($event) => {
+            if (!($event.target instanceof Element)) {
               return;
             }
-            if (evt.target.closest('.multi-select-pill-remove-button')) {
+            if ($event.target.closest('.multi-select-pill-remove-button')) {
               return;
             }
-            evt.stopPropagation();
+            $event.stopPropagation();
           }, { capture: true });
 
           el.addClass('frontmatter-markdown-links', 'multi-text-property-component');

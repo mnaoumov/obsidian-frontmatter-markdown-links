@@ -25,7 +25,7 @@ function createAnchorIn(href: string): AnchorInContainer {
   const containerEl = createDiv();
   const aEl = createEl('a');
   aEl.href = href;
-  containerEl.appendChild(aEl);
+  containerEl.append(aEl);
   return { aEl, containerEl };
 }
 

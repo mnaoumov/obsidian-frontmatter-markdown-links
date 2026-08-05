@@ -212,17 +212,17 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     await this.processFrontmatterLinksInFile({ cache, data, file });
   }
 
-  private handleMouseDown(evt: MouseEvent): void {
+  private handleMouseDown($event: MouseEvent): void {
     const RIGHT_BUTTON = 2;
-    if (evt.button === RIGHT_BUTTON) {
+    if ($event.button === RIGHT_BUTTON) {
       return;
     }
 
-    if (!Keymap.isModEvent(evt) && isSourceMode(this.app)) {
+    if (!Keymap.isModEvent($event) && isSourceMode(this.app)) {
       return;
     }
 
-    const target = evt.target as HTMLElement | undefined;
+    const target = $event.target as HTMLElement | undefined;
     if (!target) {
       return;
     }
@@ -232,8 +232,8 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
       return;
     }
 
-    evt.preventDefault();
-    evt.stopImmediatePropagation();
+    $event.preventDefault();
+    $event.stopImmediatePropagation();
 
     // The plugin opens the link itself on `mousedown`, so the browser's follow-up activation event must
     // Be swallowed to stop Obsidian's native handler from opening the link a second time. A left-click
@@ -243,28 +243,28 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     target.addEventListener('auxclick', swallowFollowUpEvent, { capture: true });
 
     if (linkData.isExternalUrl) {
-      window.open(linkData.url, evt.button === 1 ? 'tab' : '');
+      window.open(linkData.url, $event.button === 1 ? 'tab' : '');
     } else {
       const activeFile = this.app.workspace.getActiveFile();
       if (!activeFile) {
         return;
       }
 
-      invokeAsyncSafely(() => this.app.workspace.openLinkText(linkData.url, activeFile.path, Keymap.isModEvent(evt)));
+      invokeAsyncSafely(() => this.app.workspace.openLinkText(linkData.url, activeFile.path, Keymap.isModEvent($event)));
     }
 
-    function swallowFollowUpEvent(evt2: Event): void {
-      evt2.preventDefault();
-      evt2.stopImmediatePropagation();
+    function swallowFollowUpEvent(event2: Event): void {
+      event2.preventDefault();
+      event2.stopImmediatePropagation();
       target?.removeEventListener('click', swallowFollowUpEvent, { capture: true });
       target?.removeEventListener('auxclick', swallowFollowUpEvent, { capture: true });
     }
   }
 
-  private handleMouseOver(evt: MouseEvent): void {
+  private handleMouseOver($event: MouseEvent): void {
     const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
 
-    const target = evt.target as HTMLElement;
+    const target = $event.target as HTMLElement;
     const linkData = getLinkData(target);
     if (!linkData) {
       return;
@@ -274,10 +274,10 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
       return;
     }
 
-    evt.preventDefault();
+    $event.preventDefault();
 
     this.app.workspace.trigger('hover-link', {
-      event: evt,
+      event: $event,
       hoverParent: this,
       linktext: linkData.url,
       source: markdownView?.getHoverSource() ?? 'source',
@@ -304,12 +304,12 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
       shouldDeleteMdFile = true;
     }
 
-    const ctx = new basesContextCtor(this.app, {}, {}, mdFile);
+    const context = new basesContextCtor(this.app, {}, {}, mdFile);
 
     this.addChild(
       new BasesNoteGetPatchComponent({
         app: this.app,
-        basesNote: ctx._local.note,
+        basesNote: context._local.note,
         linkFixer: this.linkFixer
       })
     );
@@ -327,7 +327,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
     await loop({
       abortSignal: this.abortSignalComponent.abortSignal,
-      buildNoticeMessage: ({ item, iterationStr }) => `Processing frontmatter links ${iterationStr} - ${item.path}`,
+      buildNoticeMessage: ({ item, iterationString }) => `Processing frontmatter links ${iterationString} - ${item.path}`,
       items: getMarkdownFilesSorted(this.app),
       pluginNoticeComponent: this.pluginNoticeComponent,
       processItem: async (note) => {

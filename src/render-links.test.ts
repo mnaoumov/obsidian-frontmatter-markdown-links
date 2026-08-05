@@ -14,20 +14,21 @@ import {
 } from 'vitest';
 
 import {
-  renderLinkChild,
-  renderStringValueLinks
+  didRenderStringValueLinks,
+  renderLinkChild
 } from './render-links.ts';
 
-type GetFirstLinkpathDest = App['metadataCache']['getFirstLinkpathDest'];
+type GetFirstLinkpathDestination = App['metadataCache']['getFirstLinkpathDest'];
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function createApp(getFirstLinkpathDest: GetFirstLinkpathDest = vi.fn().mockReturnValue(null)): App {
+function createApp(getFirstLinkpathDestination: GetFirstLinkpathDestination = vi.fn().mockReturnValue(null)): App {
   return strictProxy<App>({
     metadataCache: {
-      getFirstLinkpathDest
+      // eslint-disable-next-line unicorn/name-replacements -- `getFirstLinkpathDest` is an Obsidian `MetadataCache` method name.
+      getFirstLinkpathDest: getFirstLinkpathDestination
     },
     workspace: {
       getActiveFile: vi.fn().mockReturnValue(null)
@@ -58,7 +59,7 @@ describe('renderLinkChild', () => {
   it('should render a resolved internal link without the is-unresolved class', () => {
     const childEl = createDiv();
     renderLinkChild({
-      app: createApp(vi.fn().mockReturnValue(castTo<ReturnType<GetFirstLinkpathDest>>({ path: 'target.md' }))),
+      app: createApp(vi.fn().mockReturnValue(castTo<ReturnType<GetFirstLinkpathDestination>>({ path: 'target.md' }))),
       childEl,
       parseLinkResult: firstLink('[note](target.md)'),
       shouldClassParent: false
@@ -108,10 +109,10 @@ describe('renderLinkChild', () => {
   });
 });
 
-describe('renderStringValueLinks', () => {
+describe('didRenderStringValueLinks', () => {
   it('should return false and leave the container untouched when there are no links', () => {
     const containerEl = createDiv();
-    const wasRendered = renderStringValueLinks({
+    const wasRendered = didRenderStringValueLinks({
       app: createApp(),
       containerEl,
       value: 'plain text'
@@ -124,7 +125,7 @@ describe('renderStringValueLinks', () => {
 
   it('should render leading text and the embedded wikilink', () => {
     const containerEl = createDiv();
-    const wasRendered = renderStringValueLinks({
+    const wasRendered = didRenderStringValueLinks({
       app: createApp(),
       containerEl,
       value: 'text [[target]]'
@@ -139,7 +140,7 @@ describe('renderStringValueLinks', () => {
 
   it('should render trailing text after a leading link', () => {
     const containerEl = createDiv();
-    const wasRendered = renderStringValueLinks({
+    const wasRendered = didRenderStringValueLinks({
       app: createApp(),
       containerEl,
       value: '[[target]] trailing'
@@ -152,7 +153,7 @@ describe('renderStringValueLinks', () => {
 
   it('should render multiple embedded links with surrounding text', () => {
     const containerEl = createDiv();
-    const wasRendered = renderStringValueLinks({
+    const wasRendered = didRenderStringValueLinks({
       app: createApp(),
       containerEl,
       value: 'a [x](x.md) b [y](y.md) c'
@@ -167,7 +168,7 @@ describe('renderStringValueLinks', () => {
 
   it('should render a value that is a single whole link', () => {
     const containerEl = createDiv();
-    const wasRendered = renderStringValueLinks({
+    const wasRendered = didRenderStringValueLinks({
       app: createApp(),
       containerEl,
       value: '[note](target.md)'

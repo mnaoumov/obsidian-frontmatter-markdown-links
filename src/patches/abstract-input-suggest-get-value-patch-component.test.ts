@@ -28,7 +28,7 @@ vi.mock('./abstract-input-suggest-select-suggestion-patch-component.ts', async (
 // eslint-disable-next-line import-x/first, import-x/imports-first -- The mock above must precede this import.
 import { AbstractInputSuggestGetValuePatchComponent } from './abstract-input-suggest-get-value-patch-component.ts';
 
-type GetValueFn = (this: unknown) => string;
+type GetValueFunction = (this: unknown) => string;
 
 class TestSuggest extends AbstractInputSuggest<unknown> {
   public override getSuggestions(): unknown[] {
@@ -53,7 +53,7 @@ afterEach(() => {
 });
 
 function callGetValue(suggest: TestSuggest): string {
-  return castTo<GetValueFn>(AbstractInputSuggest.prototype.getValue).call(suggest);
+  return castTo<GetValueFunction>(AbstractInputSuggest.prototype.getValue).call(suggest);
 }
 
 function createSuggest(textInputEl: HTMLDivElement): TestSuggest {

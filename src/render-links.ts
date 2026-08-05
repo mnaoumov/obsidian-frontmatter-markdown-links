@@ -13,6 +13,12 @@ interface AddClassToElementAndParentParams {
   readonly shouldClassParent: boolean;
 }
 
+interface DidRenderStringValueLinksParams {
+  readonly app: App;
+  readonly containerEl: HTMLElement;
+  readonly value: string;
+}
+
 interface RenderLinkChildParams {
   readonly app: App;
   readonly childEl: HTMLElement;
@@ -20,10 +26,47 @@ interface RenderLinkChildParams {
   readonly shouldClassParent: boolean;
 }
 
-interface RenderStringValueLinksParams {
-  readonly app: App;
-  readonly containerEl: HTMLElement;
-  readonly value: string;
+/**
+ * Renders a string that may contain embedded links (e.g. `text [[link]]`) into `containerEl` as a
+ * mix of plain-text spans and rendered link spans. Returns `true` when the string contained at
+ * least one link and was rendered, or `false` when it contained none (so the caller can fall back
+ * to the native plain-text rendering).
+ */
+export function didRenderStringValueLinks(params: DidRenderStringValueLinksParams): boolean {
+  const {
+    app,
+    containerEl,
+    value
+  } = params;
+
+  const parseLinkResults = parseLinks(value);
+  if (parseLinkResults.length === 0) {
+    return false;
+  }
+
+  containerEl.empty();
+
+  let startOffset = 0;
+  for (const parseLinkResult of parseLinkResults) {
+    if (startOffset < parseLinkResult.startOffset) {
+      containerEl.createSpan({ text: value.slice(startOffset, parseLinkResult.startOffset) });
+    }
+
+    const childEl = containerEl.createSpan();
+    renderLinkChild({
+      app,
+      childEl,
+      parseLinkResult,
+      shouldClassParent: false
+    });
+    startOffset = parseLinkResult.endOffset;
+  }
+
+  if (startOffset < value.length) {
+    containerEl.createSpan({ text: value.slice(startOffset) });
+  }
+
+  return true;
 }
 
 /**
@@ -64,49 +107,6 @@ export function renderLinkChild(params: RenderLinkChildParams): void {
     isWikilink: parseLinkResult.isWikilink,
     url: parseLinkResult.url
   });
-}
-
-/**
- * Renders a string that may contain embedded links (e.g. `text [[link]]`) into `containerEl` as a
- * mix of plain-text spans and rendered link spans. Returns `true` when the string contained at
- * least one link and was rendered, or `false` when it contained none (so the caller can fall back
- * to the native plain-text rendering).
- */
-export function renderStringValueLinks(params: RenderStringValueLinksParams): boolean {
-  const {
-    app,
-    containerEl,
-    value
-  } = params;
-
-  const parseLinkResults = parseLinks(value);
-  if (parseLinkResults.length === 0) {
-    return false;
-  }
-
-  containerEl.empty();
-
-  let startOffset = 0;
-  for (const parseLinkResult of parseLinkResults) {
-    if (startOffset < parseLinkResult.startOffset) {
-      containerEl.createSpan({ text: value.slice(startOffset, parseLinkResult.startOffset) });
-    }
-
-    const childEl = containerEl.createSpan();
-    renderLinkChild({
-      app,
-      childEl,
-      parseLinkResult,
-      shouldClassParent: false
-    });
-    startOffset = parseLinkResult.endOffset;
-  }
-
-  if (startOffset < value.length) {
-    containerEl.createSpan({ text: value.slice(startOffset) });
-  }
-
-  return true;
 }
 
 function addClassToElementAndParent(params: AddClassToElementAndParentParams): void {

@@ -26,16 +26,16 @@ export class MultitextPropertyWidgetRenderPatchComponent extends MonkeyAroundCom
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: this.multitextPropertyWidget,
       methodName: 'render',
-      obj: this.multitextPropertyWidget,
       patchHandler: ({
         fallback,
-        originalArgs: [containerEl, , context],
+        originalArguments: [containerEl, , context],
         originalMethodBound
       }) => {
         if (!this.isPatched) {
-          const temp = containerEl.createDiv();
-          const multiTextPropertyComponent = originalMethodBound(temp, [], context);
+          const temporary = containerEl.createDiv();
+          const multiTextPropertyComponent = originalMethodBound(temporary, [], context);
 
           this.addChild(
             new MultiTextPropertyComponentRenderValuesPatchComponent({
@@ -45,7 +45,7 @@ export class MultitextPropertyWidgetRenderPatchComponent extends MonkeyAroundCom
           );
 
           this.isPatched = true;
-          temp.remove();
+          temporary.remove();
         }
 
         return fallback();

@@ -37,10 +37,10 @@ import type { PluginSettingsComponent } from './plugin-settings-component.ts';
 
 import { PluginSettings } from './plugin-settings.ts';
 
-type AnyFn = (...args: never[]) => unknown;
+type AnyFunction = (...$arguments: never[]) => unknown;
 
 interface BasesLocal {
-  note: BasesNoteProto;
+  note: BasesNotePrototype;
 }
 
 interface CacheGetKeysAccess {
@@ -56,7 +56,7 @@ interface CacheRenameAccess {
 }
 
 interface ClearMetadataCacheAccess {
-  clearMetadataCache: AnyFn;
+  clearMetadataCache: AnyFunction;
 }
 
 interface ComponentModuleActual {
@@ -64,11 +64,11 @@ interface ComponentModuleActual {
 }
 
 interface HandleMetadataCacheChangedAccess {
-  handleMetadataCacheChanged: AnyFn;
+  handleMetadataCacheChanged: AnyFunction;
 }
 
 interface InternalPluginsLike {
-  getEnabledPluginById: AnyFn;
+  getEnabledPluginById: AnyFunction;
 }
 
 interface LifecycleAugmentApp {
@@ -89,11 +89,11 @@ interface MockCacheInstanceAccess {
 }
 
 interface ProcessFrontmatterLinksInFileAccess {
-  processFrontmatterLinksInFile: AnyFn;
+  processFrontmatterLinksInFile: AnyFunction;
 }
 
 interface UpdateResolvedOrUnresolvedLinksCacheAccess {
-  updateResolvedOrUnresolvedLinksCache: AnyFn;
+  updateResolvedOrUnresolvedLinksCache: AnyFunction;
 }
 
 interface ValidCacheInstance {
@@ -103,15 +103,15 @@ interface ValidCacheInstance {
 }
 
 interface VaultGetMarkdownFilesLike {
-  getMarkdownFiles: AnyFn;
+  getMarkdownFiles: AnyFunction;
 }
 
 interface WorkspaceLeavesAndOnLike {
-  getLeavesOfType: AnyFn;
-  on: AnyFn;
+  getLeavesOfType: AnyFunction;
+  on: AnyFunction;
 }
 
-class BasesNoteProto {
+class BasesNotePrototype {
   public data: Record<string, unknown> = {};
   public get(key: string): unknown {
     return this.data[key];
@@ -123,7 +123,7 @@ class MockBasesContext {
   public constructor() {
     // The note's `get` lives on a real prototype so the BasesNoteGetPatchComponent (stubbed) can be
     // Constructed with a real `getPrototypeOf(note)`.
-    this._local = { note: new BasesNoteProto() };
+    this._local = { note: new BasesNotePrototype() };
   }
 }
 
@@ -283,6 +283,7 @@ function createMockApp(): App {
     metadataCache: {
       getCache: vi.fn().mockReturnValue(null),
       getFileByPath: vi.fn().mockReturnValue(null),
+      // eslint-disable-next-line unicorn/name-replacements -- `getFirstLinkpathDest` is an Obsidian `MetadataCache` method name.
       getFirstLinkpathDest: vi.fn().mockReturnValue(null),
       on: vi.fn().mockReturnValue({}),
       resolvedLinks,
@@ -396,8 +397,8 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           }),
           iterateAllLeaves: vi.fn(),
           on: vi.fn().mockReturnValue({}),
-          onLayoutReady: vi.fn((cb: () => void) => {
-            cb();
+          onLayoutReady: vi.fn((callback: () => void) => {
+            callback();
           })
         }
       });
@@ -641,36 +642,36 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
-      expect(result).toBe(false);
+      expect(isResult).toBe(false);
     });
 
     it('should return false for frontmatter with no links', () => {
       const component = createComponent();
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'plain text' }) };
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
-      expect(result).toBe(false);
+      expect(isResult).toBe(false);
     });
 
     it('should return false for an external-only link value', () => {
       const component = createComponent();
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'https://example.com' }) };
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
-      expect(result).toBe(false);
+      expect(isResult).toBe(false);
     });
 
     it('should not contribute single-value internal links (Obsidian caches those natively)', () => {
       const component = createComponent();
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ markdown: '[note](target.md)', wiki: '[[some/note]]' }) };
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
-      expect(result).toBe(false);
+      expect(isResult).toBe(false);
       expect(cache.frontmatterLinks ?? []).toHaveLength(0);
     });
 
@@ -678,9 +679,9 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'text [a](x.md) and [b](y.md)' }) };
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
-      expect(result).toBe(true);
+      expect(isResult).toBe(true);
       const links = cache.frontmatterLinks ?? [];
       expect(links).toHaveLength(2);
       expect(links.every((link) => 'startOffset' in link && 'endOffset' in link)).toBe(true);
@@ -691,9 +692,9 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ outer: { inner: 'text [a](x.md) and [b](y.md)' } }) };
 
-      const result = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
 
-      expect(result).toBe(true);
+      expect(isResult).toBe(true);
       expect((cache.frontmatterLinks ?? []).every((link) => link.key === 'outer.inner')).toBe(true);
     });
 
@@ -827,38 +828,38 @@ describe('FrontmatterMarkdownLinksComponent', () => {
   describe('handleMouseDown', () => {
     function createLinkTarget(linkData: LinkDataShape): HTMLElement {
       const target = createDiv();
-      target.setAttribute('data-frontmatter-markdown-links-link-data', JSON.stringify(linkData));
-      activeDocument.body.appendChild(target);
+      target.dataset['frontmatterMarkdownLinksLinkData'] = JSON.stringify(linkData);
+      activeDocument.body.append(target);
       return target;
     }
 
     it('should do nothing for a right-button click', () => {
       const component = createComponent();
       const RIGHT_BUTTON = 2;
-      const evt = castTo<MouseEvent>({
+      const $event = castTo<MouseEvent>({
         button: RIGHT_BUTTON,
         preventDefault: vi.fn(),
         stopImmediatePropagation: vi.fn()
       });
 
-      component['handleMouseDown'](evt);
+      component['handleMouseDown']($event);
 
-      expect(evt.preventDefault).not.toHaveBeenCalled();
+      expect($event.preventDefault).not.toHaveBeenCalled();
     });
 
     it('should do nothing when the target has no link data', () => {
       const component = createComponent();
       const target = createDiv();
-      const evt = castTo<MouseEvent>({
+      const $event = castTo<MouseEvent>({
         button: 0,
         preventDefault: vi.fn(),
         stopImmediatePropagation: vi.fn(),
         target
       });
 
-      component['handleMouseDown'](evt);
+      component['handleMouseDown']($event);
 
-      expect(evt.preventDefault).not.toHaveBeenCalled();
+      expect($event.preventDefault).not.toHaveBeenCalled();
     });
 
     it('should do nothing when the event has no target', () => {
@@ -871,11 +872,11 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           }
         })
       );
-      const evt = castTo<MouseEvent>({ button: 0, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target: null });
+      const $event = castTo<MouseEvent>({ button: 0, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target: null });
 
-      component['handleMouseDown'](evt);
+      component['handleMouseDown']($event);
 
-      expect(evt.preventDefault).not.toHaveBeenCalled();
+      expect($event.preventDefault).not.toHaveBeenCalled();
     });
 
     it('should do nothing in source mode without a mod key', () => {
@@ -884,19 +885,16 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         component,
         strictProxy<App>({
           workspace: {
-            getActiveViewOfType: vi.fn().mockReturnValue(strictProxy<MarkdownView>({
-              getMode: vi.fn().mockReturnValue('source'),
-              getState: vi.fn().mockReturnValue({ source: true })
-            }))
+            getActiveViewOfType: vi.fn().mockReturnValue(createSourceModeView())
           }
         })
       );
       const target = createLinkTarget({ isExternalUrl: false, isWikilink: false, url: 'note.md' });
-      const evt = castTo<MouseEvent>({ button: 0, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
+      const $event = castTo<MouseEvent>({ button: 0, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
 
-      component['handleMouseDown'](evt);
+      component['handleMouseDown']($event);
 
-      expect(evt.preventDefault).not.toHaveBeenCalled();
+      expect($event.preventDefault).not.toHaveBeenCalled();
       target.remove();
     });
 
@@ -912,15 +910,15 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       );
       const openSpy = vi.spyOn(activeWindow, 'open').mockReturnValue(null);
       const target = createLinkTarget({ isExternalUrl: true, isWikilink: false, url: 'https://example.com' });
-      const evt = castTo<MouseEvent>({ button: 1, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
+      const $event = castTo<MouseEvent>({ button: 1, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
 
-      component['handleMouseDown'](evt);
+      component['handleMouseDown']($event);
 
       expect(openSpy).toHaveBeenCalledWith('https://example.com', 'tab');
       // The capturing click handler blocks the follow-up click.
-      const clickEvt = new MouseEvent('click', { bubbles: true, cancelable: true });
-      const clickPreventSpy = vi.spyOn(clickEvt, 'preventDefault');
-      target.dispatchEvent(clickEvt);
+      const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+      const clickPreventSpy = vi.spyOn(clickEvent, 'preventDefault');
+      target.dispatchEvent(clickEvent);
       expect(clickPreventSpy).toHaveBeenCalled();
       openSpy.mockRestore();
       target.remove();
@@ -941,16 +939,16 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       );
       const MIDDLE_BUTTON = 1;
       const target = createLinkTarget({ isExternalUrl: false, isWikilink: false, url: 'note.md' });
-      const evt = castTo<MouseEvent>({ button: MIDDLE_BUTTON, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
+      const $event = castTo<MouseEvent>({ button: MIDDLE_BUTTON, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
 
-      component['handleMouseDown'](evt);
+      component['handleMouseDown']($event);
 
       // Browsers fire `auxclick` (not `click`) for the middle button. Obsidian's native handler opens
       // The link on this event, so the plugin must swallow it to avoid opening the note a second time.
-      const auxclickEvt = new MouseEvent('auxclick', { bubbles: true, button: MIDDLE_BUTTON, cancelable: true });
-      const auxclickPreventSpy = vi.spyOn(auxclickEvt, 'preventDefault');
-      const auxclickStopSpy = vi.spyOn(auxclickEvt, 'stopImmediatePropagation');
-      target.dispatchEvent(auxclickEvt);
+      const auxclickEvent = new MouseEvent('auxclick', { bubbles: true, button: MIDDLE_BUTTON, cancelable: true });
+      const auxclickPreventSpy = vi.spyOn(auxclickEvent, 'preventDefault');
+      const auxclickStopSpy = vi.spyOn(auxclickEvent, 'stopImmediatePropagation');
+      target.dispatchEvent(auxclickEvent);
 
       expect(auxclickPreventSpy).toHaveBeenCalled();
       expect(auxclickStopSpy).toHaveBeenCalled();
@@ -969,9 +967,9 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       );
       const openSpy = vi.spyOn(activeWindow, 'open').mockReturnValue(null);
       const target = createLinkTarget({ isExternalUrl: true, isWikilink: false, url: 'https://example.com' });
-      const evt = castTo<MouseEvent>({ button: 0, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
+      const $event = castTo<MouseEvent>({ button: 0, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
 
-      component['handleMouseDown'](evt);
+      component['handleMouseDown']($event);
 
       expect(openSpy).toHaveBeenCalledWith('https://example.com', '');
       openSpy.mockRestore();
@@ -991,11 +989,11 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         })
       );
       const target = createLinkTarget({ isExternalUrl: false, isWikilink: false, url: 'note.md' });
-      const evt = castTo<MouseEvent>({ button: 0, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
+      const $event = castTo<MouseEvent>({ button: 0, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
 
-      component['handleMouseDown'](evt);
+      component['handleMouseDown']($event);
 
-      expect(evt.preventDefault).toHaveBeenCalled();
+      expect($event.preventDefault).toHaveBeenCalled();
       expect(getActiveFile).toHaveBeenCalled();
       target.remove();
     });
@@ -1014,9 +1012,9 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         })
       );
       const target = createLinkTarget({ isExternalUrl: false, isWikilink: false, url: 'note.md' });
-      const evt = castTo<MouseEvent>({ button: 0, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
+      const $event = castTo<MouseEvent>({ button: 0, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), target });
 
-      component['handleMouseDown'](evt);
+      component['handleMouseDown']($event);
       // The handler opens the link fire-and-forget via the real `invokeAsyncSafely`.
       await waitForAllAsyncOperations();
 
@@ -1029,14 +1027,14 @@ describe('FrontmatterMarkdownLinksComponent', () => {
     it('should do nothing when the target has no link data', () => {
       const component = createComponent();
       const target = createDiv();
-      const evt = castTo<MouseEvent>({
+      const $event = castTo<MouseEvent>({
         preventDefault: vi.fn(),
         target
       });
 
-      component['handleMouseOver'](evt);
+      component['handleMouseOver']($event);
 
-      expect(evt.preventDefault).not.toHaveBeenCalled();
+      expect($event.preventDefault).not.toHaveBeenCalled();
     });
 
     it('should not trigger hover for external URL links', () => {
@@ -1052,16 +1050,13 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         })
       );
       const target = createDiv();
-      target.setAttribute(
-        'data-frontmatter-markdown-links-link-data',
-        JSON.stringify({ isExternalUrl: true, isWikilink: false, url: 'https://example.com' })
-      );
-      activeDocument.body.appendChild(target);
-      const evt = castTo<MouseEvent>({ preventDefault: vi.fn(), target });
+      target.dataset['frontmatterMarkdownLinksLinkData'] = JSON.stringify({ isExternalUrl: true, isWikilink: false, url: 'https://example.com' });
+      activeDocument.body.append(target);
+      const $event = castTo<MouseEvent>({ preventDefault: vi.fn(), target });
 
-      component['handleMouseOver'](evt);
+      component['handleMouseOver']($event);
 
-      expect(evt.preventDefault).not.toHaveBeenCalled();
+      expect($event.preventDefault).not.toHaveBeenCalled();
       expect(trigger).not.toHaveBeenCalled();
       target.remove();
     });
@@ -1079,16 +1074,13 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         })
       );
       const target = createDiv();
-      target.setAttribute(
-        'data-frontmatter-markdown-links-link-data',
-        JSON.stringify({ isExternalUrl: false, isWikilink: false, url: 'target/note.md' })
-      );
-      activeDocument.body.appendChild(target);
-      const evt = castTo<MouseEvent>({ preventDefault: vi.fn(), target });
+      target.dataset['frontmatterMarkdownLinksLinkData'] = JSON.stringify({ isExternalUrl: false, isWikilink: false, url: 'target/note.md' });
+      activeDocument.body.append(target);
+      const $event = castTo<MouseEvent>({ preventDefault: vi.fn(), target });
 
-      component['handleMouseOver'](evt);
+      component['handleMouseOver']($event);
 
-      expect(evt.preventDefault).toHaveBeenCalled();
+      expect($event.preventDefault).toHaveBeenCalled();
       expect(trigger).toHaveBeenCalledWith('hover-link', expect.objectContaining({ linktext: 'target/note.md', source: 'source' }));
       target.remove();
     });
@@ -1109,14 +1101,11 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         })
       );
       const target = createDiv();
-      target.setAttribute(
-        'data-frontmatter-markdown-links-link-data',
-        JSON.stringify({ isExternalUrl: false, isWikilink: false, url: 'note.md' })
-      );
-      activeDocument.body.appendChild(target);
-      const evt = castTo<MouseEvent>({ preventDefault: vi.fn(), target });
+      target.dataset['frontmatterMarkdownLinksLinkData'] = JSON.stringify({ isExternalUrl: false, isWikilink: false, url: 'note.md' });
+      activeDocument.body.append(target);
+      const $event = castTo<MouseEvent>({ preventDefault: vi.fn(), target });
 
-      component['handleMouseOver'](evt);
+      component['handleMouseOver']($event);
 
       expect(trigger).toHaveBeenCalledWith('hover-link', expect.objectContaining({ source: 'preview' }));
       target.remove();
@@ -1263,7 +1252,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
       const loopParams = vi.mocked(loop).mock.calls[0]?.[0];
       const note = makeTFile('some/note.md');
-      const message = loopParams?.buildNoticeMessage({ item: note, iterationStr: '1/10' });
+      const message = loopParams?.buildNoticeMessage({ item: note, iterationString: '1/10' });
       expect(message).toContain('some/note.md');
     });
 
@@ -1279,11 +1268,11 @@ describe('FrontmatterMarkdownLinksComponent', () => {
   });
 
   describe('processAllNotes processItem', () => {
-    type ProcessItemFn = (note: TFile) => Promise<void>;
+    type ProcessItemFunction = (note: TFile) => Promise<void>;
 
     interface CaptureProcessItemResult {
       readonly cacheInstance: MockCacheInstanceAccess & ValidCacheInstance;
-      readonly processItem: ProcessItemFn;
+      readonly processItem: ProcessItemFunction;
     }
 
     async function captureProcessItem(component: FrontmatterMarkdownLinksComponent): Promise<CaptureProcessItemResult> {
@@ -1296,7 +1285,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const loopParams = vi.mocked(loop).mock.calls.at(-1)?.[0];
       return {
         cacheInstance: nextInstance,
-        processItem: castTo<ProcessItemFn>(loopParams?.processItem)
+        processItem: castTo<ProcessItemFunction>(loopParams?.processItem)
       };
     }
 
@@ -1467,8 +1456,8 @@ describe('FrontmatterMarkdownLinksComponent', () => {
 
     it('should create and trash a temporary markdown file when none exist', async () => {
       const component = createComponent();
-      const tempFile = makeTFile('__TEMP__.md');
-      const create = vi.fn().mockResolvedValue(tempFile);
+      const temporaryFile = makeTFile('__TEMP__.md');
+      const create = vi.fn().mockResolvedValue(temporaryFile);
       setApp(
         component,
         castTo<App>({
@@ -1482,7 +1471,14 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       await component['patchBasesNote']();
 
       expect(create).toHaveBeenCalled();
-      expect(vi.mocked(trashSafe)).toHaveBeenCalledWith(getApp(component), tempFile);
+      expect(vi.mocked(trashSafe)).toHaveBeenCalledWith(getApp(component), temporaryFile);
     });
   });
 });
+
+function createSourceModeView(): MarkdownView {
+  return strictProxy<MarkdownView>({
+    getMode: vi.fn().mockReturnValue('source'),
+    getState: vi.fn().mockReturnValue({ source: true })
+  });
+}

@@ -12,7 +12,7 @@ vi.mock('./plugin.ts', () => ({
   Plugin: class MockPlugin {}
 }));
 
-// eslint-disable-next-line import-x/first, import-x/imports-first, import-x/no-rename-default -- vi.mock must precede imports; the default is imported under an alias to assert it equals the named Plugin export.
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import PluginDefault from './main.ts';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { Plugin } from './plugin.ts';

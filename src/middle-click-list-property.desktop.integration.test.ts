@@ -37,6 +37,7 @@ Linking:
 
   await evalInObsidian({
     contextId,
+    // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
     fn: async ({ app, context }) => {
       // "Always focus new tabs" off is part of the reported reproduction. With it off the duplicate
       // Background tab is created and stays, so the leaf count reflects every open.
@@ -65,8 +66,10 @@ afterAll(async () => {
 describe('middle-clicking a markdown link in a List property', () => {
   it('should open the target note exactly once', { retry: 2 }, async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `args` is an `obsidian-integration-testing` parameter name.
       args: { targetPath: 'target.md' },
       contextId,
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
       fn: async ({ app, targetPath }) => {
         const MIDDLE_BUTTON = 1;
 
