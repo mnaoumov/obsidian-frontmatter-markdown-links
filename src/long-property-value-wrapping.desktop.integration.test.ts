@@ -34,12 +34,12 @@ const MIN_WRAPPED_HEIGHT_IN_PX = 40;
 beforeAll(() => {
   const longText = Array.from({ length: LONG_TEXT_WORD_COUNT }, (_unused, index) => `word${String(index)}`).join(' ');
   vault.populate({
-    'source.md': `---
-Description: "${longText} [Target](target.md) ${longText}"
+    'wrap-source.md': `---
+Description: "${longText} [Wrap target](wrap-target.md) ${longText}"
 ---
 # Source
 `,
-    'target.md': '# Target\n'
+    'wrap-target.md': '# Wrap target\n'
   });
 });
 
@@ -50,22 +50,26 @@ describe('a long property value containing a link wraps (issue #37)', () => {
       args: { RENDER_SETTLE_IN_MS },
       // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
       async fn({ app, lib: { waitUntil }, RENDER_SETTLE_IN_MS: settleMs }) {
-        const sourceFile = app.vault.getFileByPath('source.md');
+        const sourceFile = app.vault.getFileByPath('wrap-source.md');
         if (!sourceFile) {
-          throw new Error('source.md not found');
+          throw new Error('wrap-source.md not found');
         }
 
-        await app.workspace.getLeaf(true).openFile(sourceFile);
-        const markdownView = app.workspace.getActiveFileView() as MarkdownView;
+        const leaf = app.workspace.getLeaf(true);
+        await leaf.openFile(sourceFile);
+        // Reveal before waiting: the desktop project runs several suites in ONE Obsidian, so another
+        // Suite may have left the workspace focused elsewhere and this view would never render.
+        await app.workspace.revealLeaf(leaf);
+        const markdownView = leaf.view as MarkdownView;
         await markdownView.setState({ mode: 'source', source: false }, { history: false });
 
         await waitUntil({
           message: 'the plugin did not render the property value',
-          predicate: () => document.querySelector('.frontmatter-markdown-links.text-property-widget-component') !== null
+          predicate: () => markdownView.containerEl.querySelector('.frontmatter-markdown-links.text-property-widget-component') !== null
         });
         await sleep(settleMs);
 
-        const widgetEl = document.querySelector('.frontmatter-markdown-links.text-property-widget-component');
+        const widgetEl = markdownView.containerEl.querySelector('.frontmatter-markdown-links.text-property-widget-component');
         if (!(widgetEl instanceof HTMLElement)) {
           throw new TypeError('The plugin widget container was not found.');
         }
@@ -76,12 +80,17 @@ describe('a long property value containing a link wraps (issue #37)', () => {
           throw new TypeError('The plugin segment container was not found.');
         }
 
-        return {
+        const measurements = {
           clientWidth: segmentsEl.clientWidth,
           error: null,
           offsetHeight: segmentsEl.offsetHeight,
           scrollWidth: segmentsEl.scrollWidth
         };
+
+        // Leave the workspace as it was found. Suites that count open leaves run in the same live
+        // Obsidian, so a leaked tab fails THEM rather than this one.
+        leaf.detach();
+        return measurements;
       },
       vaultPath: vault.path
     });
