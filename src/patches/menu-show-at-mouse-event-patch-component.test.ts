@@ -26,7 +26,7 @@ interface LinkDataShape {
 }
 
 interface MenuItemsAccess {
-  items: unknown[];
+  items__: unknown[];
 }
 
 interface MenuItemSectionAccess {
@@ -56,7 +56,7 @@ function createLinkTarget(linkData: LinkDataShape): HTMLElement {
 
 function createMenu(items: unknown[] = []): MenuType {
   const menu = Menu.create2__();
-  castTo<MenuItemsAccess>(menu).items = items;
+  castTo<MenuItemsAccess>(menu).items__ = items;
   return castTo<MenuType>(menu);
 }
 
@@ -103,7 +103,7 @@ describe('MenuShowAtMouseEventPatchComponent', () => {
     const menu = createMenu();
     const openItem = MenuItem.create__(menu);
     castTo<MenuItemSectionAccess>(openItem).section = 'open';
-    castTo<MenuItemsAccess>(menu).items = [openItem];
+    castTo<MenuItemsAccess>(menu).items__ = [openItem];
 
     const target = createLinkTarget({ isExternalUrl: false, isWikilink: false, url: 'note.md' });
     const $event = castTo<MouseEvent>({ target });
