@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2.8.1
+
+- chore: teach cspell the word asar
+- chore: update libs
+- fix: re #38
+- fix: re #37
+- chore: update libs
+- chore(vitest): adopt the shared Obsidian plugin vitest configuration
+
 ## 2.8.0
 
 - chore(cspell): add lezer to the dictionary
