@@ -7,7 +7,7 @@ import {
   ContextId,
   evalInObsidian
 } from 'obsidian-integration-testing';
-import { getTempVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
+import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
   afterAll,
   beforeAll,
@@ -16,7 +16,7 @@ import {
   it
 } from 'vitest';
 
-const vault = getTempVault();
+const vault = getTemporaryVault();
 
 interface Context {
   sourceFile: TFile;
@@ -36,9 +36,7 @@ Linking:
   });
 
   await evalInObsidian({
-    contextId,
-    // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-    fn: async ({ app, context }) => {
+    callback: async ({ app, context }) => {
       // "Always focus new tabs" off is part of the reported reproduction. With it off the duplicate
       // Background tab is created and stays, so the leaf count reflects every open.
       app.vault.setConfig('focusNewTab', false);
@@ -55,6 +53,7 @@ Linking:
       await markdownView.setState({ mode: 'source', source: false }, { history: false });
       await sleep(1000);
     },
+    contextId,
     vaultPath: vault.path
   });
 });
@@ -66,11 +65,7 @@ afterAll(async () => {
 describe('middle-clicking a markdown link in a List property', () => {
   it('should open the target note exactly once', { retry: 2 }, async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `args` is an `obsidian-integration-testing` parameter name.
-      args: { targetPath: 'target.md' },
-      contextId,
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      fn: async ({ app, targetPath }) => {
+      callback: async ({ app, targetPath }) => {
         const MIDDLE_BUTTON = 1;
 
         function countTargetLeaves(): number {
@@ -106,6 +101,8 @@ describe('middle-clicking a markdown link in a List property', () => {
           opened: after - before
         };
       },
+      contextId,
+      input: { targetPath: 'target.md' },
       vaultPath: vault.path
     });
 

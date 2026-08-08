@@ -4,7 +4,7 @@ import {
   ContextId,
   evalInObsidian
 } from 'obsidian-integration-testing';
-import { getTempVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
+import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
   afterAll,
   beforeAll,
@@ -13,7 +13,7 @@ import {
   it
 } from 'vitest';
 
-const vault = getTempVault();
+const vault = getTemporaryVault();
 
 interface Context {
   leaf: WorkspaceLeaf;
@@ -49,9 +49,7 @@ key:
   });
 
   await evalInObsidian({
-    contextId,
-    // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-    async fn({ app, context, lib: { waitUntil } }) {
+    async callback({ app, context, lib: { waitUntil } }) {
       const READY_TIMEOUT_IN_MILLISECONDS = 30_000;
       const baseFile = app.vault.getFileByPath('test.base');
       if (!baseFile) {
@@ -70,6 +68,7 @@ key:
         timeoutInMilliseconds: READY_TIMEOUT_IN_MILLISECONDS
       });
     },
+    contextId,
     vaultPath: vault.path
   });
 });
@@ -81,9 +80,7 @@ afterAll(async () => {
 describe('mixed-text wikilinks in Bases formula cells', () => {
   it('renders the embedded wikilink in a mapped-list formula cell as an internal link', async () => {
     const result = await evalInObsidian({
-      contextId,
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      async fn({ app, context, lib: { waitUntil } }) {
+      async callback({ app, context, lib: { waitUntil } }) {
         const LINK_DATA_TIMEOUT_IN_MILLISECONDS = 25_000;
         const leaf = context.leaf;
         // Re-activate the leaf so its Bases view keeps rendering even if another suite changed focus under load.
@@ -105,6 +102,7 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
           internalLinkCount: findMappedListCell()?.querySelectorAll('.internal-link').length ?? 0
         };
       },
+      contextId,
       vaultPath: vault.path
     });
 
@@ -114,9 +112,7 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
 
   it('renders the embedded wikilink in a scalar-string formula cell as an internal link', async () => {
     const result = await evalInObsidian({
-      contextId,
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      async fn({ app, context, lib: { waitUntil } }) {
+      async callback({ app, context, lib: { waitUntil } }) {
         const LINK_DATA_TIMEOUT_IN_MILLISECONDS = 25_000;
         const leaf = context.leaf;
         // Re-activate the leaf so its Bases view keeps rendering even if another suite changed focus under load.
@@ -137,6 +133,7 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
           text: findScalarCell()?.textContent ?? ''
         };
       },
+      contextId,
       vaultPath: vault.path
     });
 

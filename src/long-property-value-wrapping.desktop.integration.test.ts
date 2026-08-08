@@ -1,7 +1,7 @@
 import type { MarkdownView } from 'obsidian';
 
 import { evalInObsidian } from 'obsidian-integration-testing';
-import { getTempVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
+import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
   beforeAll,
   describe,
@@ -23,7 +23,7 @@ import {
  * is achieved a different way.
  */
 
-const vault = getTempVault();
+const vault = getTemporaryVault();
 
 const LONG_TEXT_WORD_COUNT = 60;
 const RENDER_SETTLE_IN_MS = 1500;
@@ -46,10 +46,7 @@ Description: "${longText} [Wrap target](wrap-target.md) ${longText}"
 describe('a long property value containing a link wraps (issue #37)', () => {
   it('should not overflow its container on a single line', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `args` is an `obsidian-integration-testing` parameter name.
-      args: { RENDER_SETTLE_IN_MS },
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      async fn({ app, lib: { waitUntil }, RENDER_SETTLE_IN_MS: settleMs }) {
+      async callback({ app, lib: { waitUntil }, RENDER_SETTLE_IN_MS: settleMs }) {
         const sourceFile = app.vault.getFileByPath('wrap-source.md');
         if (!sourceFile) {
           throw new Error('wrap-source.md not found');
@@ -92,6 +89,7 @@ describe('a long property value containing a link wraps (issue #37)', () => {
         leaf.detach();
         return measurements;
       },
+      input: { RENDER_SETTLE_IN_MS },
       vaultPath: vault.path
     });
 

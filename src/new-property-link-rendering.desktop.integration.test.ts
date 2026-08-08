@@ -1,7 +1,7 @@
 import type { MarkdownView } from 'obsidian';
 
 import { evalInObsidian } from 'obsidian-integration-testing';
-import { getTempVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
+import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
   beforeAll,
   describe,
@@ -22,7 +22,7 @@ import {
  * flipping.
  */
 
-const vault = getTempVault();
+const vault = getTemporaryVault();
 
 const PROPERTY_KEY = 'Description';
 const TYPED_VALUE = 'This is a [[new-property-target]]';
@@ -42,10 +42,7 @@ ${PROPERTY_KEY}:
 describe('a link typed into a newly created property renders (issue #38)', () => {
   it('should render the link without flipping the property type', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `args` is an `obsidian-integration-testing` parameter name.
-      args: { PROPERTY_KEY: PROPERTY_KEY.toLowerCase(), TYPED_VALUE },
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      async fn({ app, lib: { waitUntil }, PROPERTY_KEY: propertyKey, TYPED_VALUE: typedValue }) {
+      async callback({ app, lib: { waitUntil }, PROPERTY_KEY: propertyKey, TYPED_VALUE: typedValue }) {
         const sourceFile = app.vault.getFileByPath('new-property-source.md');
         if (!sourceFile) {
           throw new Error('new-property-source.md not found');
@@ -97,6 +94,7 @@ describe('a link typed into a newly created property renders (issue #38)', () =>
         leaf.detach();
         return renderResult;
       },
+      input: { PROPERTY_KEY: PROPERTY_KEY.toLowerCase(), TYPED_VALUE },
       vaultPath: vault.path
     });
 

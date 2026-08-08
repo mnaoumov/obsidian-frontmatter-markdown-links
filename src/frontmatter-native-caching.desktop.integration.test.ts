@@ -7,7 +7,7 @@ import {
   ContextId,
   evalInObsidian
 } from 'obsidian-integration-testing';
-import { getTempVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
+import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
   afterAll,
   beforeAll,
@@ -24,7 +24,7 @@ import {
 // Asserted here so a future refactor (e.g. delegating to `parseFrontmatterLinks`) cannot silently
 // Drop it. In 1.8.10 none of the markdown-link shapes below resolved/rendered without the plugin.
 
-const vault = getTempVault();
+const vault = getTemporaryVault();
 
 interface CollectedLinkTexts {
   linkDataTexts: string[];
@@ -67,9 +67,7 @@ externalSingle: "https://example.com"
   });
 
   await evalInObsidian({
-    contextId,
-    // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-    fn: async ({ app, context }) => {
+    callback: async ({ app, context }) => {
       const sourceFile = app.vault.getFileByPath('source.md');
       if (!sourceFile) {
         throw new Error('source.md not found');
@@ -81,6 +79,7 @@ externalSingle: "https://example.com"
       await markdownView.setState({ mode: 'source', source: false }, { history: false });
       await sleep(2000);
     },
+    contextId,
     vaultPath: vault.path
   });
 });
@@ -92,9 +91,7 @@ afterAll(async () => {
 describe('frontmatter link data (what the plugin needs from frontmatter)', () => {
   it('populates cache.frontmatterLinks for every internal-link shape, with offsets for multi-link strings', async () => {
     const links = await evalInObsidian({
-      contextId,
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      fn: ({ app, context }): FrontmatterLinkDump[] => {
+      callback: ({ app, context }): FrontmatterLinkDump[] => {
         const cache = app.metadataCache.getFileCache(context.sourceFile);
         return (cache?.frontmatterLinks ?? []).map((l) => ({
           displayText: l.displayText,
@@ -104,6 +101,7 @@ describe('frontmatter link data (what the plugin needs from frontmatter)', () =>
           startOffset: (l as FrontmatterLinkCacheOffsets).startOffset
         }));
       },
+      contextId,
       vaultPath: vault.path
     });
 
@@ -130,9 +128,7 @@ describe('frontmatter link data (what the plugin needs from frontmatter)', () =>
 describe('frontmatter markdown links render as clickable links (regression vs Obsidian 1.8.10)', () => {
   it('renders every markdown-link shape as a resolved clickable link in the property editor', async () => {
     const result = await evalInObsidian({
-      contextId,
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is an `obsidian-integration-testing` parameter name.
-      fn: async () => {
+      callback: async () => {
         function collect(): CollectedLinkTexts {
           const linkDataTexts = [...activeDocument.querySelectorAll(':scope [data-frontmatter-markdown-links-link-data]')]
             .map((el) => el.textContent);
@@ -152,6 +148,7 @@ describe('frontmatter markdown links render as clickable links (regression vs Ob
           metadataLinkTexts: [...new Set(collected.metadataLinkTexts)]
         };
       },
+      contextId,
       vaultPath: vault.path
     });
 
