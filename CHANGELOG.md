@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.8.2
+
+- chore: update libs and adopt obsidian-integration-testing 10
+
 ## 2.8.1
 
 - chore: teach cspell the word asar
