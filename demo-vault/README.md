@@ -1,3 +1,5 @@
+# Frontmatter Markdown Links demo vault
+
 This is an [Obsidian](https://obsidian.md/) vault demonstrating features of the [Frontmatter Markdown Links](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links) plugin.
 
 ## Opening this vault

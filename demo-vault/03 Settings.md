@@ -1,5 +1,3 @@
-[Docs](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/)
-
 # Settings
 
 Open **Settings -> Community plugins -> Frontmatter Markdown Links** to configure the plugin. Each option below lists the setting key stored in the plugin's `data.json`.
