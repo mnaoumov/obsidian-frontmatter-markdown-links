@@ -5,91 +5,42 @@
 [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-frontmatter-markdown-links/total)](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/releases)
 [![Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links)
 
-This is a plugin for [Obsidian](https://obsidian.md/) that adds support for markdown links in frontmatter.
+[Obsidian](https://obsidian.md/) makes `[[wikilinks]]` in frontmatter clickable, but a markdown link
+written in a property is just text: it does not resolve, it does not open, and it does not register as
+a backlink. So a vault that uses markdown links everywhere else has to switch styles the moment a link
+moves into a property.
+
+This plugin makes markdown links in frontmatter real links — clickable in Source mode, Live Preview and
+Reading, resolvable, and counted as backlinks on their targets.
+
+Long-requested on the Obsidian forum, for both
+[internal](https://forum.obsidian.md/t/properties-support-external-markdown-links/76918) and
+[external](https://forum.obsidian.md/t/properties-support-internal-markdown-links/63825/) links.
 
 ## Demo vault
 
-A demo vault with usage examples ships with every release. You can access it via any of the following:
+**The documentation is a demo vault.** Every feature has a note that explains what it does and why you
+would want it — and whose own properties are the demonstration.
+
+**[Start reading here](<./demo-vault/00 Start.md>)** — it is plain markdown, so it works on GitHub with
+nothing installed.
+
+A copy of the vault ships with every release. You can access it via any of the following:
 
 1. Running the **Frontmatter Markdown Links: Open demo vault** command.
 2. Downloading `frontmatter-markdown-links-demo-vault-<version>.zip` (`<version>` is the release version) from the [Releases](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/releases).
 3. Browsing its source in [`demo-vault/`](./demo-vault/README.md) in this repository.
 
-## Features
+## What it does
 
-### Markdown links in frontmatter
-
-```yaml
----
-# Obsidian supports natively
-wikilink: "[[Wikilink]]"
-wikilinkWithAlias: "[[Wikilink|Alias]]"
-externalUrl: "https://example.com"
-
-# Provided by this plugin
-markdownLink: "[Alias](MarkdownLink.md)"
-markdownLinkWithSpace: "[Alias with space](MarkdownLink%20with%20space.md)"
-markdownLinkWithAngleBrackets: "[Alias with space](<MarkdownLink with space.md>)"
-externalUrlWithAlias: "[Alias](https://example.com)"
-externalUrlWithAngleBrackets: "<https://example.com>"
-embeddedWikilink: "![[EmbeddedWikilink]]"
-embeddedMarkdownLink: "![Alias](EmbeddedMarkdownLink.md)"
-embeddedExternalUrl: "![Alias](https://picsum.photos/600)"
----
-```
-
-The feature of this plugin is on high demand on Obsidian forum:
-
-- [Properties: Support INTERNAL Markdown links](https://forum.obsidian.md/t/properties-support-external-markdown-links/76918)
-- [Properties: Support EXTERNAL Markdown links](https://forum.obsidian.md/t/properties-support-internal-markdown-links/63825/)
-
-### Backlinks
-
-The backlinks are now working for the markdown links in frontmatter.
-
-### Clickable frontmatter links
-
-The links in frontmatter are now clickable in all modes: `Source mode`, `Live Preview`, and `Reading`.
-
-```yaml
----
-# Wikilinks and markdown links only inside quotes
-wikilink: "[[Wikilink]]"
-markdownLink: "[Alias](MarkdownLink.md)"
-externalUrlWithAlias: "[Alias](https://example.com)"
-
-# External urls work with and without quotes
-externalUrlWithQuotes: "https://example.com"
-externalUrlWithQuotesAndAngleBrackets: "<https://example.com>"
-externalUrlWithoutQuotes: https://example.com
-externalUrlWithoutQuotesAndWithAngleBrackets: <https://example.com>
-
-# Multiline lists
-multilineList:
-  - Non-clickable
-  - "[[Wikilink]]"
-  - "[Alias](MarkdownLink.md)"
-  - https://example.com
-
-# Inline lists
-inlineList: ["Non-clickable", "[[Wikilink]]", "[Alias](MarkdownLink.md)", "https://example.com"]
-
-# Embeds
-embeddedWikilink: "![[EmbeddedWikilink]]"
-embeddedMarkdownLink: "![Alias](EmbeddedMarkdownLink.md)"
-embeddedExternalUrl: "![Alias](https://picsum.photos/600)"
----
-```
-
-### Multiple links per property
-
-The plugin allows to use multiple links (wikilinks, markdown links, external links) in one property.
-
-```yaml
----
-foo: "[[bar]] baz [[qux]]"
----
-```
+- **Markdown links in properties become real links** — clickable in every mode, with paths that contain
+  spaces working either percent-encoded or in angle brackets, and embeds supported too. Several links
+  can live in one property.
+  [01 Frontmatter markdown links](<./demo-vault/01 Frontmatter markdown links.md>)
+- **They count as backlinks**, so a note linked only from a property still shows up on its target.
+  [02 Backlinks](<./demo-vault/02 Backlinks.md>)
+- **Settings**, including how much of this you want.
+  [03 Settings](<./demo-vault/03 Settings.md>)
 
 ## Installation
 
@@ -114,6 +65,14 @@ window.DEBUG.enable('frontmatter-markdown-links');
 ```
 
 For more details, refer to the [documentation](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/).
+
+## Changelog
+
+All notable changes to this project will be documented in the [CHANGELOG](./CHANGELOG.md).
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING](./CONTRIBUTING.md) to get set up.
 
 ## Support
 
