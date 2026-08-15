@@ -17,6 +17,21 @@ Long-requested on the Obsidian forum, for both
 [internal](https://forum.obsidian.md/t/properties-support-external-markdown-links/76918) and
 [external](https://forum.obsidian.md/t/properties-support-internal-markdown-links/63825/) links.
 
+<!-- markdownlint-disable MD033 -->
+
+<a href="images/screenshots/screenshot-desktop-1.png"><img src="images/screenshots/screenshot-desktop-1.png" alt="Markdown links in properties become real links" width="600"></a>
+
+<details>
+<summary>More screenshots</summary>
+
+<a href="images/screenshots/screenshot-desktop-2.png"><img src="images/screenshots/screenshot-desktop-2.png" alt="And the target counts them as backlinks" width="600"></a>
+<a href="images/screenshots/screenshot-mobile-1.png"><img src="images/screenshots/screenshot-mobile-1.png" alt="Markdown links in properties become real links" width="270"></a>
+<a href="images/screenshots/screenshot-mobile-2.png"><img src="images/screenshots/screenshot-mobile-2.png" alt="And the target counts them as backlinks" width="270"></a>
+
+</details>
+
+<!-- markdownlint-enable MD033 -->
+
 ## Demo vault
 
 **The documentation is a demo vault.** Every feature has a note that explains what it does and why you
