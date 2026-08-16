@@ -30,6 +30,8 @@
     "offref",
     "tfile",
     "tsbuildinfo",
+    "unvalidated",
+    "wdio",
     "Wikilink",
     "wikilink",
     "Wikilinks",
