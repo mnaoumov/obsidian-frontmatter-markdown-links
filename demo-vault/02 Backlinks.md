@@ -25,24 +25,25 @@ await require('/demoSetup.ts').showSecondTargetBacklinks(app);
 
 Manual equivalent: open [Second target](<./Targets/Second target.md>) and open its **Backlinks** pane (the caret at the bottom of the note, or **Backlinks** in the right sidebar).
 
-1. You will see this note listed - even though the link lives in **frontmatter** as a **markdown link** (`reference`), not in the body.
-2. Turn the plugin off. The backlink disappears, because Obsidian no longer resolves the frontmatter markdown link:
+**Step 1.** You will see this note listed - even though the link lives in **frontmatter** as a **markdown link** (`reference`), not in the body.
 
-   ```code-button
-   ---
-   caption: Turn the plugin off
-   ---
-   await require('/demoSetup.ts').disablePlugin(app);
-   ```
+**Step 2.** Turn the plugin off. The backlink disappears, because Obsidian no longer resolves the frontmatter markdown link:
 
-3. Turn it back on and the backlink returns:
+```code-button
+---
+caption: Turn the plugin off
+---
+await require('/demoSetup.ts').disablePlugin(app);
+```
 
-   ```code-button
-   ---
-   caption: Turn the plugin back on
-   ---
-   await require('/demoSetup.ts').enablePlugin(app);
-   ```
+**Step 3.** Turn it back on and the backlink returns:
+
+```code-button
+---
+caption: Turn the plugin back on
+---
+await require('/demoSetup.ts').enablePlugin(app);
+```
 
 Manual equivalent for both: toggle **Frontmatter Markdown Links** in **Settings -> Community plugins**.
 
