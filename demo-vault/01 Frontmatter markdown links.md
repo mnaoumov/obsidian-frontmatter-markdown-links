@@ -52,13 +52,11 @@ embeddedExternalUrl: "![Alias](https://picsum.photos/600)"
 ---
 ```
 
-A path containing spaces works either way — percent-encoded, or wrapped in angle brackets, which is
-the more readable of the two.
+A path containing spaces works either way — percent-encoded, or wrapped in angle brackets, which is the more readable of the two.
 
 ## Quoting, and lists
 
-The one rule worth remembering: **a wikilink or markdown link must be inside quotes**, because `[` starts
-a list in YAML and the value would not parse. An external URL is fine either way.
+The one rule worth remembering: **a wikilink or markdown link must be inside quotes**, because `[` starts a list in YAML and the value would not parse. An external URL is fine either way.
 
 ```yaml
 ---
