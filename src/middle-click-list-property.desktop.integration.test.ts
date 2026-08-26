@@ -65,9 +65,7 @@ afterAll(async () => {
 describe('middle-clicking a markdown link in a List property', () => {
   it('should open the target note exactly once', { retry: 2 }, async () => {
     const result = await evalInObsidian({
-      callback: async ({ app, targetPath }) => {
-        const MIDDLE_BUTTON = 1;
-
+      callback: async ({ app, lib: { clickElement }, targetPath }) => {
         function countTargetLeaves(): number {
           return app.workspace.getLeavesOfType('markdown')
             .filter((leaf) => (leaf.view as MarkdownView).file?.path === targetPath)
@@ -89,10 +87,10 @@ describe('middle-clicking a markdown link in a List property', () => {
 
         const before = countTargetLeaves();
 
-        // Browsers fire `mousedown` then `auxclick` (not `click`) for the middle mouse button.
-        linkEl.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: MIDDLE_BUTTON, cancelable: true }));
-        linkEl.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, button: MIDDLE_BUTTON, cancelable: true }));
-        linkEl.dispatchEvent(new MouseEvent('auxclick', { bubbles: true, button: MIDDLE_BUTTON, cancelable: true }));
+        // Browsers fire `mousedown` then `auxclick` (not `click`) for the middle mouse button — which is
+        // Why this used to hand-build the sequence. One trusted middle click produces all of it, and
+        // Produces it with `isTrusted === true`, so Obsidian's own link handling actually acts on it.
+        clickElement({ button: 'middle', element: linkEl });
 
         await sleep(1500);
 
