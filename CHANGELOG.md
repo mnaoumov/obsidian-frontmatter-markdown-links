@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.8.5
+
+- test(frontmatter-markdown-links): middle-click with trusted input instead of a hand-built sequence
+
 ## 2.8.4
 
 - docs(demo-vault): unwrap the notes so Obsidian stops rendering a break per line
