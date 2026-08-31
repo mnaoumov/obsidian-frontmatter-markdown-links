@@ -44,9 +44,10 @@ vi.mock('./plugin-settings-component.ts', async () => {
   class PluginSettingsComponent extends Component {
     public settings = new PluginSettings();
 
-    public setProperty(propertyName: string, value: unknown): Promise<string> {
-      castTo<Record<string, unknown>>(this.settings)[propertyName] = value;
-      return Promise.resolve('');
+    public editAndSave(settingsEditor: (settings: object) => void): Promise<void> {
+      settingsEditor(this.settings);
+      // eslint-disable-next-line obsidian-dev-utils/prefer-noop-async -- a hoisted vi.mock factory cannot reach a top-level import.
+      return Promise.resolve();
     }
   }
   return { PluginSettingsComponent };

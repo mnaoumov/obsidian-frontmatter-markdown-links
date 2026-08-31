@@ -52,8 +52,9 @@ interface WatchedApi {
 
 let app: AppOriginal;
 let changeListeners: (() => void)[];
+let editAndSave: ReturnType<typeof vi.fn<(settingsEditor: (settings: PluginSettings) => void) => Promise<void>>>;
+let loadSettingsListeners: (() => void)[];
 let migrateSettings: ReturnType<typeof vi.fn<(params: MigrateSettingsParams) => Promise<MigrateSettingsResult>>>;
-let setProperty: ReturnType<typeof vi.fn<(propertyName: string, value: unknown) => Promise<string>>>;
 let settings: PluginSettings;
 let watchedApi: null | WatchedApi;
 
@@ -61,11 +62,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   app = App.createConfigured__().asOriginalType__();
   changeListeners = [];
+  loadSettingsListeners = [];
   settings = new PluginSettings();
   migrateSettings = vi.fn(() => Promise.resolve({ isApplied: true }));
-  setProperty = vi.fn((propertyName: string, value: unknown) => {
-    castTo<Record<string, unknown>>(settings)[propertyName] = value;
-    return Promise.resolve('');
+  editAndSave = vi.fn((settingsEditor: (currentSettings: PluginSettings) => void) => {
+    settingsEditor(settings);
+    return noopAsync();
   });
   watchedApi = { migrateSettings };
   mockWatchPluginApi.mockImplementation(() =>
@@ -84,23 +86,43 @@ beforeEach(() => {
 });
 
 describe('RenameDeleteHandlerMigrationComponent', () => {
-  it('should not watch the provider at all when there is nothing pending', () => {
-    settings.proposedShouldHandleRenames = null;
-
-    createComponent().load();
-
-    expect(mockWatchPluginApi).not.toHaveBeenCalled();
-  });
-
-  it('should watch the provider under the ^1 contract when a value is pending', () => {
-    settings.proposedShouldHandleRenames = false;
-
+  it('should watch the provider under the ^1 contract', () => {
     createComponent().load();
 
     expect(mockWatchPluginApi).toHaveBeenCalledWith(expect.objectContaining({
       apiVersionRange: '^1',
       pluginId: 'advanced-rename-and-delete-handler'
     }));
+  });
+
+  // The regression the live run caught. The settings component is a sibling whose own load is still in flight
+  // While this one loads, so its `settings` still hold the defaults. Gating the watch on the pending value at
+  // That moment saw `null` on a vault that had one, registered nothing, and lost the migration for good.
+  it('should still watch the provider when the settings have not been read yet', () => {
+    settings.proposedShouldHandleRenames = null;
+
+    createComponent().load();
+
+    expect(mockWatchPluginApi).toHaveBeenCalled();
+    expect(changeListeners).toHaveLength(1);
+  });
+
+  it('should offer the migration once the settings arrive carrying a pending value', async () => {
+    settings.proposedShouldHandleRenames = null;
+    createComponent().load();
+    expect(migrateSettings).not.toHaveBeenCalled();
+
+    settings.proposedShouldHandleRenames = false;
+    for (const listener of loadSettingsListeners) {
+      listener();
+    }
+
+    await vi.waitFor(() => {
+      expect(migrateSettings).toHaveBeenCalledWith({
+        proposedSettings: { shouldHandleRenames: false },
+        sourcePluginId: SOURCE_PLUGIN_ID
+      });
+    });
   });
 
   it('should offer the pending value to the provider', async () => {
@@ -115,12 +137,14 @@ describe('RenameDeleteHandlerMigrationComponent', () => {
     });
   });
 
-  it('should retire the pending value once the user applies the migration', async () => {
+  // Also a regression the live run caught: `setProperty` edits only the in-memory state, so the retirement was
+  // Forgotten on the next reload and the migration was offered again forever.
+  it('should retire the pending value to disk once the user applies the migration', async () => {
     settings.proposedShouldHandleRenames = false;
 
     createComponent().load();
     await vi.waitFor(() => {
-      expect(setProperty).toHaveBeenCalledWith('proposedShouldHandleRenames', null);
+      expect(editAndSave).toHaveBeenCalled();
     });
     expect(settings.proposedShouldHandleRenames).toBeNull();
   });
@@ -133,7 +157,7 @@ describe('RenameDeleteHandlerMigrationComponent', () => {
     await vi.waitFor(() => {
       expect(migrateSettings).toHaveBeenCalled();
     });
-    expect(setProperty).not.toHaveBeenCalled();
+    expect(editAndSave).not.toHaveBeenCalled();
     expect(settings.proposedShouldHandleRenames).toBe(false);
   });
 
@@ -202,7 +226,11 @@ function createComponent(): RenameDeleteHandlerMigrationComponent {
   return new RenameDeleteHandlerMigrationComponent({
     app,
     pluginSettingsComponent: strictProxy<PluginSettingsComponent>({
-      setProperty,
+      editAndSave,
+      on: castTo<PluginSettingsComponent['on']>(vi.fn((_name: string, callback: () => void) => {
+        loadSettingsListeners.push(callback);
+        return { asyncEventSource: { offref: vi.fn() } };
+      })),
       get settings(): PluginSettings {
         return settings;
       }

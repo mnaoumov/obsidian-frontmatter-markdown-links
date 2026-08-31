@@ -2,6 +2,7 @@ import type { App } from 'obsidian';
 import type { PluginApiRef } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
 
 import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
+import { registerAsyncEvent } from 'obsidian-dev-utils/obsidian/components/async-events-component';
 import { ComponentEx } from 'obsidian-dev-utils/obsidian/components/component-ex';
 import { watchPluginApi } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
 
@@ -52,10 +53,10 @@ export class RenameDeleteHandlerMigrationComponent extends ComponentEx {
   }
 
   public override onload(): void {
-    if (this.pluginSettingsComponent.settings.proposedShouldHandleRenames === null) {
-      return;
-    }
-
+    // Nothing is gated on the pending value HERE. The settings component is a sibling whose own load is still
+    // In flight at this point, so its `settings` still holds the defaults — reading the pending value now
+    // Would see `null` on a vault that has one, register no watch, and lose the migration for good. Both
+    // Edges are wired up instead, and `propose` re-reads the value each time it runs.
     const ref = watchPluginApi<AdvancedRenameAndDeleteHandlerApi>({
       apiVersionRange: '^1',
       app: this.app,
@@ -73,6 +74,10 @@ export class RenameDeleteHandlerMigrationComponent extends ComponentEx {
     this.register(() => {
       ref.off('change', this.handleApiChange);
     });
+
+    // The two edges that can make an offer possible, in either order: the provider appearing, and this
+    // Plugin's own settings arriving from disk.
+    registerAsyncEvent(this, this.pluginSettingsComponent.on('loadSettings', this.handleApiChange));
     this.handleApiChange();
   }
 
@@ -96,8 +101,13 @@ export class RenameDeleteHandlerMigrationComponent extends ComponentEx {
 
       // A cancel is not an answer, so the value stays pending and the offer comes back — on the next load, or
       // As soon as the provider reloads. Only an applied migration retires it.
+      //
+      // `editAndSave`, not `setProperty`: the latter only edits the in-memory state, so the retirement would
+      // Be forgotten on the next reload and the migration would be offered again forever.
       if (result.isApplied) {
-        await this.pluginSettingsComponent.setProperty('proposedShouldHandleRenames', null);
+        await this.pluginSettingsComponent.editAndSave((settings) => {
+          settings.proposedShouldHandleRenames = null;
+        });
       }
     } finally {
       this.isProposing = false;

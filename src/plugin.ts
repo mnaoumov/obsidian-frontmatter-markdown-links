@@ -36,8 +36,12 @@ export class Plugin extends PluginBase {
         isSuggestionDeclined: (): boolean => pluginSettingsComponent.settings.isAdvancedRenameAndDeleteHandlerSuggestionDeclined,
         pluginNoticeComponent: this.pluginNoticeComponent,
         reason: SUGGESTION_REASON,
+        // `editAndSave`, not `setProperty`: a decline has to outlive a reload, and `setProperty` only edits
+        // The in-memory state.
         setSuggestionDeclined: async (isDeclined): Promise<void> => {
-          await pluginSettingsComponent.setProperty('isAdvancedRenameAndDeleteHandlerSuggestionDeclined', isDeclined);
+          await pluginSettingsComponent.editAndSave((settings) => {
+            settings.isAdvancedRenameAndDeleteHandlerSuggestionDeclined = isDeclined;
+          });
         },
         suggestedPluginId: ADVANCED_RENAME_AND_DELETE_HANDLER_PLUGIN_ID,
         suggestedPluginName: ADVANCED_RENAME_AND_DELETE_HANDLER_PLUGIN_NAME
