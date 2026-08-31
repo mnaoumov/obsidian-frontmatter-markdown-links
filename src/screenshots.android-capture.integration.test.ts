@@ -147,9 +147,12 @@ describe('mobile store screenshots', () => {
   it('3 - the settings it exposes', async () => {
     const names = await openObsidianSettingsTab({ tabId: PLUGIN_ID, vaultPath: vaultPath() });
     // The rows the tab drew ARE the proof it rendered, so asserting on one is
-    // What separates this from a frame of an empty modal.
-    expect(names).toContain('Should handle renames');
-    await shoot(3, 'Rename handling is a toggle away');
+    // What separates this from a frame of an empty modal. The frame also carries the
+    // Banner suggesting Advanced Rename and Delete Handler, which owns rename handling
+    // Since 3.0.0 — that row is deliberately unnamed, so the named toggle is what
+    // There is to assert on here.
+    expect(names).toContain('Should show initialization notice');
+    await shoot(3, 'Rename handling now lives in a companion plugin');
   });
 });
 
@@ -165,6 +168,25 @@ function buildSourceNote(): string {
     + '---\n'
     + '# Chapter one\n\n'
     + 'The links that matter here are the ones in the properties above.\n';
+}
+
+/**
+ * Clears the floating notices before a frame is taken.
+ *
+ * Every shot wants the subject, not the plugin talking over it. The suggestion notice in particular is
+ * persistent — it carries buttons, so it waits for an answer rather than timing out — and in the settings
+ * frame it lands on top of the banner it duplicates, which reads as a rendering fault rather than as the two
+ * deliberate placements it is.
+ */
+async function dismissNotices(): Promise<void> {
+  await evalInObsidian({
+    callback() {
+      for (const noticeEl of document.querySelectorAll('.notice')) {
+        noticeEl.detach();
+      }
+    },
+    vaultPath: vaultPath()
+  });
 }
 
 /**
@@ -269,6 +291,8 @@ async function openNoteAndReadProperty(path: string): Promise<unknown> {
  * @param caption - The caption drawn across the bottom of the frame.
  */
 async function shoot(index: number, caption: string): Promise<void> {
+  await dismissNotices();
+
   const captured = await captureObsidianScreenshot({ vaultPath: vaultPath() });
 
   // The AVD is 900x1600, so the device frame IS the store size. Asserting it

@@ -13,7 +13,7 @@ registerDemoVaultCoverageSuite({
   interfaces: [],
   nonTrivialGuard: {
     expectDemoNote: '03 Settings.md',
-    expectMember: 'shouldHandleRenames',
+    expectMember: 'shouldShowInitializationNotice',
     interfaceName: 'PluginSettings',
     sourcePath: 'src/plugin-settings.ts'
   },

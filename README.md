@@ -17,10 +17,10 @@ Long-requested on the Obsidian forum, for both [internal](https://forum.obsidian
 
 <div>
 <a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-desktop-2.png"><img src="images/screenshots/screenshot-desktop-2.png" alt="And the target counts them as backlinks" width="600"></a>
-<a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-desktop-3.png"><img src="images/screenshots/screenshot-desktop-3.png" alt="Rename handling is a toggle away" width="600"></a>
+<a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-desktop-3.png"><img src="images/screenshots/screenshot-desktop-3.png" alt="Rename handling now lives in a companion plugin" width="600"></a>
 <a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-mobile-1.png"><img src="images/screenshots/screenshot-mobile-1.png" alt="Markdown links in properties become real links" width="270"></a>
 <a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-mobile-2.png"><img src="images/screenshots/screenshot-mobile-2.png" alt="And the target counts them as backlinks" width="270"></a>
-<a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-mobile-3.png"><img src="images/screenshots/screenshot-mobile-3.png" alt="Rename handling is a toggle away" width="270"></a>
+<a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-mobile-3.png"><img src="images/screenshots/screenshot-mobile-3.png" alt="Rename handling now lives in a companion plugin" width="270"></a>
 </div>
 
 </details>
@@ -44,6 +44,12 @@ A copy of the vault ships with every release. You can access it via any of the f
 - **Markdown links in properties become real links** — clickable in every mode, with paths that contain spaces working either percent-encoded or in angle brackets, and embeds supported too. Several links can live in one property. [01 Frontmatter markdown links](<./demo-vault/01 Frontmatter markdown links.md>)
 - **They count as backlinks**, so a note linked only from a property still shows up on its target. [02 Backlinks](<./demo-vault/02 Backlinks.md>)
 - **Settings**, including how much of this you want. [03 Settings](<./demo-vault/03 Settings.md>)
+
+## Renames
+
+Obsidian's own link update can ruin some of your frontmatter links, so up to version 2 this plugin handled renames itself. Since **3.0.0** it does not, and rename and delete handling belongs to [Advanced Rename and Delete Handler](https://github.com/mnaoumov/obsidian-advanced-rename-and-delete-handler) instead — one plugin owning it for the whole vault, rather than a copy inside each plugin that happened to need it.
+
+This plugin offers to install it, once, and carries your old `Should handle renames` value over for you to approve. Declining costs you nothing else: every feature above keeps working.
 
 ## Installation
 
