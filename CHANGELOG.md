@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.0.1
+
+- chore(deps): sweep caret-ranged dependencies to latest
+- fix(deps): move to obsidian-integration-testing 11 and drop the brace-expansion override
+
 ## 3.0.0
 
 - feat!: hand rename and delete handling to Advanced Rename and Delete Handler
