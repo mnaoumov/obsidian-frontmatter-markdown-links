@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.0.0
+
+- feat!: hand rename and delete handling to Advanced Rename and Delete Handler
+- docs(screenshots): capture the settings tab on both platforms
+- docs: point plugin-directory links at community.obsidian.md
+
 ## 2.8.5
 
 - test(frontmatter-markdown-links): middle-click with trusted input instead of a hand-built sequence
