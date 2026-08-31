@@ -147,9 +147,12 @@ describe('mobile store screenshots', () => {
   it('3 - the settings it exposes', async () => {
     const names = await openObsidianSettingsTab({ tabId: PLUGIN_ID, vaultPath: vaultPath() });
     // The rows the tab drew ARE the proof it rendered, so asserting on one is
-    // What separates this from a frame of an empty modal.
-    expect(names).toContain('Should handle renames');
-    await shoot(3, 'Rename handling is a toggle away');
+    // What separates this from a frame of an empty modal. The frame also carries the
+    // Banner suggesting Advanced Rename and Delete Handler, which owns rename handling
+    // Since 3.0.0 — that row is deliberately unnamed, so the named toggle is what
+    // There is to assert on here.
+    expect(names).toContain('Should show initialization notice');
+    await shoot(3, 'Rename handling now lives in a companion plugin');
   });
 });
 

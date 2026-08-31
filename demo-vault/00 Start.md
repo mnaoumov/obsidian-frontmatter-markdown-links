@@ -4,7 +4,7 @@ Welcome to the [Frontmatter Markdown Links](https://github.com/mnaoumov/obsidian
 
 **How to try it:** open [01 Frontmatter markdown links](<./01 Frontmatter markdown links.md>) and click the links in its properties. Then go to [02 Backlinks](<./02 Backlinks.md>) and press its buttons - they open the target's **Backlinks** pane and turn the plugin off and on, so you can watch the frontmatter markdown link stop and start counting as a backlink.
 
-[03 Settings](<./03 Settings.md>) has buttons that rename a target note and put it back, which is the quickest way to see what the rename handling actually protects.
+[03 Settings](<./03 Settings.md>) lists what the plugin stores, and explains where rename handling went in version 3.
 
 ## Feature
 

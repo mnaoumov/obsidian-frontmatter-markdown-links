@@ -1,18 +1,24 @@
-import type { RenameDeleteHandlerSettings } from 'obsidian-dev-utils/obsidian/components/rename-delete-handler-component';
-
 import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
 import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
-import { RenameDeleteHandlerComponent } from 'obsidian-dev-utils/obsidian/components/rename-delete-handler-component';
+import { PluginSuggestionComponent } from 'obsidian-dev-utils/obsidian/components/plugin-suggestion-component';
 import { PluginDataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import { PluginEditorExtensionRegistrar } from 'obsidian-dev-utils/obsidian/editor-extension-registrar';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
 import { PluginEventSourceImpl } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
 
+import {
+  ADVANCED_RENAME_AND_DELETE_HANDLER_PLUGIN_ID,
+  ADVANCED_RENAME_AND_DELETE_HANDLER_PLUGIN_NAME
+} from './advanced-rename-and-delete-handler.ts';
 import { FrontmatterMarkdownLinksComponent } from './frontmatter-markdown-links-component.ts';
 import { LinkFixer } from './link-fixer.ts';
 import { PatchedInputElementMap } from './patched-input-element-map.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
+import { RenameDeleteHandlerMigrationComponent } from './rename-delete-handler-migration-component.ts';
+
+const SUGGESTION_REASON = 'Frontmatter Markdown Links no longer handles renames itself.'
+  + ' Without Advanced Rename and Delete Handler, Obsidian\'s own link update runs instead, and it can ruin some of your frontmatter links.';
 
 export class Plugin extends PluginBase {
   protected override async onloadImpl(): Promise<void> {
@@ -23,12 +29,28 @@ export class Plugin extends PluginBase {
       })
     );
     this.pluginSettingsComponent = pluginSettingsComponent;
+
+    const pluginSuggestionComponent = this.addChild(
+      new PluginSuggestionComponent({
+        app: this.app,
+        isSuggestionDeclined: (): boolean => pluginSettingsComponent.settings.isAdvancedRenameAndDeleteHandlerSuggestionDeclined,
+        pluginNoticeComponent: this.pluginNoticeComponent,
+        reason: SUGGESTION_REASON,
+        setSuggestionDeclined: async (isDeclined): Promise<void> => {
+          await pluginSettingsComponent.setProperty('isAdvancedRenameAndDeleteHandlerSuggestionDeclined', isDeclined);
+        },
+        suggestedPluginId: ADVANCED_RENAME_AND_DELETE_HANDLER_PLUGIN_ID,
+        suggestedPluginName: ADVANCED_RENAME_AND_DELETE_HANDLER_PLUGIN_NAME
+      })
+    );
+
     this.addChild(
       new PluginSettingsTabComponent({
         plugin: this,
         pluginSettingsTab: new PluginSettingsTab({
           plugin: this,
-          pluginSettingsComponent
+          pluginSettingsComponent,
+          pluginSuggestionComponent
         })
       })
     );
@@ -50,15 +72,10 @@ export class Plugin extends PluginBase {
     );
 
     this.addChild(
-      new RenameDeleteHandlerComponent({
-        abortSignalComponent: this.abortSignalComponent,
+      new RenameDeleteHandlerMigrationComponent({
         app: this.app,
-        pluginId: this.manifest.id,
-        pluginNoticeComponent: this.pluginNoticeComponent,
-        resourceLockComponent: this.resourceLockComponent,
-        settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
-          shouldHandleRenames: pluginSettingsComponent.settings.shouldHandleRenames
-        })
+        pluginSettingsComponent,
+        sourcePluginId: this.manifest.id
       })
     );
 
