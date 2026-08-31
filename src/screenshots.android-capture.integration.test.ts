@@ -152,7 +152,6 @@ describe('mobile store screenshots', () => {
     // Since 3.0.0 — that row is deliberately unnamed, so the named toggle is what
     // There is to assert on here.
     expect(names).toContain('Should show initialization notice');
-    await dismissNotices();
     await shoot(3, 'Rename handling now lives in a companion plugin');
   });
 });
@@ -172,11 +171,12 @@ function buildSourceNote(): string {
 }
 
 /**
- * Clears the notices floating over the settings modal before the frame is taken.
+ * Clears the floating notices before a frame is taken.
  *
- * The suggestion is surfaced twice on purpose — a notice on load and a banner in this tab — and on a fresh
- * profile both are on screen at once, with the notice sitting on top of the banner it duplicates. That reads
- * as a rendering fault rather than as two deliberate placements, so the frame shows the banner alone.
+ * Every shot wants the subject, not the plugin talking over it. The suggestion notice in particular is
+ * persistent — it carries buttons, so it waits for an answer rather than timing out — and in the settings
+ * frame it lands on top of the banner it duplicates, which reads as a rendering fault rather than as the two
+ * deliberate placements it is.
  */
 async function dismissNotices(): Promise<void> {
   await evalInObsidian({
@@ -291,6 +291,8 @@ async function openNoteAndReadProperty(path: string): Promise<unknown> {
  * @param caption - The caption drawn across the bottom of the frame.
  */
 async function shoot(index: number, caption: string): Promise<void> {
+  await dismissNotices();
+
   const captured = await captureObsidianScreenshot({ vaultPath: vaultPath() });
 
   // The AVD is 900x1600, so the device frame IS the store size. Asserting it
