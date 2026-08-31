@@ -152,6 +152,7 @@ describe('desktop store screenshots', () => {
     // Since 3.0.0 — that row is deliberately unnamed, so the named toggle is what
     // There is to assert on here.
     expect(names).toContain('Should show initialization notice');
+    await dismissNotices();
     await shoot(3, 'Rename handling now lives in a companion plugin');
   });
 });
@@ -168,6 +169,24 @@ function buildSourceNote(): string {
     + '---\n'
     + '# Chapter one\n\n'
     + 'The links that matter here are the ones in the properties above.\n';
+}
+
+/**
+ * Clears the notices floating over the settings modal before the frame is taken.
+ *
+ * The suggestion is surfaced twice on purpose — a notice on load and a banner in this tab — and on a fresh
+ * profile both are on screen at once, with the notice sitting on top of the banner it duplicates. That reads
+ * as a rendering fault rather than as two deliberate placements, so the frame shows the banner alone.
+ */
+async function dismissNotices(): Promise<void> {
+  await evalInObsidian({
+    callback() {
+      for (const noticeEl of document.querySelectorAll('.notice')) {
+        noticeEl.detach();
+      }
+    },
+    vaultPath: vaultPath()
+  });
 }
 
 /**
