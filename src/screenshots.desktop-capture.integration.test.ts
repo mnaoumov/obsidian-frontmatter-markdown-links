@@ -5,10 +5,19 @@
  * (T461-P21), driving staged notes in a real Obsidian and writing
  * `images/screenshots/screenshot-desktop-N.png`.
  *
- * TWO shots: the property rendered as a real link, and the backlink that only
- * exists because the link resolved. The second earns its slot because
+ * THREE shots: the property rendered as a real link, the backlink that only
+ * exists because the link resolved, and the plugin's settings tab. The second
+ * earns its slot because
  * whether a link can be clicked is a claim a still image struggles to make, while a backlink
  * appearing on the TARGET note is visible proof.
+ *
+ * The settings shot goes through `openObsidianSettingsTab`. Calling
+ * `app.setting.open()` directly does nothing observable: `containerEl` is built
+ * at startup, is never in the document, and `open()` does not attach it — so
+ * the modal builds into a detached tree and the captured frame is untouched.
+ * The helper attaches it BEFORE opening (the order is load-bearing; attaching
+ * afterwards leaves the modal on screen showing what it drew while detached)
+ * and resolves to the rows the tab rendered.
  *
  * There is deliberately NO plugin-off frame. Disabling the plugin does not undo
  * what it did: the parsed links live in the metadata cache and the property
@@ -18,7 +27,8 @@
  * cache without the plugin is not something a capture run can force.
  *
  * Each shot asserts what it claims: that the property holds a rendered link,
- * and that the target note names the source in its backlinks.
+ * that the target note names the source in its backlinks, and that the settings
+ * tab actually drew its rows.
  */
 
 import {
@@ -31,6 +41,7 @@ import {
   captureObsidianScreenshot,
   evalInObsidian,
   labelScreenshot,
+  openObsidianSettingsTab,
   readPngDimensions
 } from 'obsidian-integration-testing';
 import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
@@ -68,6 +79,14 @@ const HEIGHT_IN_PIXELS = 800;
 
 const SOURCE_NOTE_PATH = 'Screenshots/Chapter one.md';
 const TARGET_NOTE_PATH = 'Screenshots/Chapter two.md';
+
+/**
+ * The plugin's settings tab id, which is its `manifest.json` `id`. Required by
+ * `openObsidianSettingsTab`: opening the modal without one leaves
+ * `activeTab === null` and draws zero rows, because the modal restores the
+ * profile's last tab and a harness-owned profile has never opened one.
+ */
+const PLUGIN_ID = 'frontmatter-markdown-links';
 
 const IMAGES_DIRECTORY = join(process.cwd(), 'images', 'screenshots');
 
@@ -123,6 +142,14 @@ describe('desktop store screenshots', () => {
     // Visible proof the link actually resolved.
     expect(backlinks).toContain('Chapter one');
     await shoot(2, 'And the target counts them as backlinks');
+  });
+
+  it('3 - the settings it exposes', async () => {
+    const names = await openObsidianSettingsTab({ tabId: PLUGIN_ID, vaultPath: vaultPath() });
+    // The rows the tab drew ARE the proof it rendered, so asserting on one is
+    // What separates this from a frame of an empty modal.
+    expect(names).toContain('Should handle renames');
+    await shoot(3, 'Rename handling is a toggle away');
   });
 });
 

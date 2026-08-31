@@ -5,8 +5,10 @@
  * (T461-P21), driving staged notes in Obsidian Mobile on a real Android
  * emulator and writing images/screenshots/screenshot-mobile-N.png.
  *
- * The mobile counterpart of the desktop capture suite, showing the same two
- * frames. See the desktop suite for why there is no plugin-off frame.
+ * The mobile counterpart of the desktop capture suite, showing the same three
+ * frames. See the desktop suite for why there is no plugin-off frame, and for
+ * why the settings frame goes through `openObsidianSettingsTab` rather than
+ * `app.setting.open()`.
  *
  * There is no mobile equivalent of the desktop viewport override, so the AVD is
  * built at exactly 900x1600 — see [[T461-P21]] for its one-time provisioning.
@@ -22,6 +24,7 @@ import {
   captureObsidianScreenshot,
   evalInObsidian,
   labelScreenshot,
+  openObsidianSettingsTab,
   readPngDimensions
 } from 'obsidian-integration-testing';
 import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
@@ -73,6 +76,13 @@ const MOBILE_FONT_SIZE_IN_PIXELS = 13;
 
 const SOURCE_NOTE_PATH = 'Screenshots/Chapter one.md';
 const TARGET_NOTE_PATH = 'Screenshots/Chapter two.md';
+
+/**
+ * The plugin's settings tab id, which is its `manifest.json` `id`. Required by
+ * `openObsidianSettingsTab` — see the desktop suite for why an omitted one
+ * yields an empty modal.
+ */
+const PLUGIN_ID = 'frontmatter-markdown-links';
 
 const IMAGES_DIRECTORY = join(process.cwd(), 'images', 'screenshots');
 
@@ -132,6 +142,14 @@ describe('mobile store screenshots', () => {
     // Visible proof the link actually resolved.
     expect(backlinks).toContain('Chapter one');
     await shoot(2, 'And the target counts them as backlinks');
+  });
+
+  it('3 - the settings it exposes', async () => {
+    const names = await openObsidianSettingsTab({ tabId: PLUGIN_ID, vaultPath: vaultPath() });
+    // The rows the tab drew ARE the proof it rendered, so asserting on one is
+    // What separates this from a frame of an empty modal.
+    expect(names).toContain('Should handle renames');
+    await shoot(3, 'Rename handling is a toggle away');
   });
 });
 
