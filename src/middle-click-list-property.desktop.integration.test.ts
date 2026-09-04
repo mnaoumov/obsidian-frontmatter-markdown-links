@@ -90,7 +90,7 @@ describe('middle-clicking a markdown link in a List property', () => {
         // Browsers fire `mousedown` then `auxclick` (not `click`) for the middle mouse button — which is
         // Why this used to hand-build the sequence. One trusted middle click produces all of it, and
         // Produces it with `isTrusted === true`, so Obsidian's own link handling actually acts on it.
-        clickElement({ button: 'middle', element: linkEl });
+        await clickElement({ button: 'middle', element: linkEl });
 
         await sleep(1500);
 
