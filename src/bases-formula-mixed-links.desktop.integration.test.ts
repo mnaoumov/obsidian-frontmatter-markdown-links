@@ -50,7 +50,13 @@ key:
 
   await evalInObsidian({
     async callback({ app, context, lib: { waitUntil } }) {
-      const READY_TIMEOUT_IN_MILLISECONDS = 30_000;
+      /*
+       * Under the transport's ~30s per-closure cap, not at it. At 30_000 this ceiling was unreachable: the
+       * whole eval is killed at the cap first, and reported as a bare transport timeout naming the harness
+       * rather than the wait that overran. Several waits share this one budget, so the ceiling is sized for
+       * their sum; what is waited on here lands in well under a second.
+       */
+      const READY_TIMEOUT_IN_MILLISECONDS = 20_000;
       const baseFile = app.vault.getFileByPath('test.base');
       if (!baseFile) {
         throw new Error('test.base not found');

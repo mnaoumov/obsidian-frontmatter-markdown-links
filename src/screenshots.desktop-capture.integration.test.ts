@@ -101,7 +101,13 @@ beforeAll(async () => {
 
   await evalInObsidian({
     async callback({ app, lib: { waitUntil }, sourceNotePath }) {
-      const SETTLE_TIMEOUT_IN_MILLISECONDS = 30_000;
+      /*
+       * Under the transport's ~30s per-closure cap, not at it. At 30_000 this ceiling was unreachable: the
+       * whole eval is killed at the cap first, and reported as a bare transport timeout naming the harness
+       * rather than the wait that overran — and the settle below shares the same budget, so the closure was
+       * already over it before the wait began. What is waited on here lands in well under a second.
+       */
+      const SETTLE_TIMEOUT_IN_MILLISECONDS = 20_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1000;
 
       app.changeTheme('obsidian');
