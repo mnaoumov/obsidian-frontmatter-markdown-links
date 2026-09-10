@@ -15,6 +15,8 @@ import {
   vi
 } from 'vitest';
 
+import type { MigratableSettings } from './advanced-rename-and-delete-handler.ts';
+
 interface ComponentModuleActual {
   Component: new () => object;
 }
@@ -27,6 +29,14 @@ interface PluginSuggestionComponentParams {
   isSuggestionDeclined(this: void): boolean;
   setSuggestionDeclined(this: void, isDeclined: boolean): Promise<void>;
   readonly suggestedPluginId: string;
+}
+
+interface SettingsMigrationComponentParams {
+  readonly apiVersionRange: string;
+  getProposedSettings(this: void): MigratableSettings | null;
+  readonly providerPluginId: string;
+  retireProposedSettings(this: void): Promise<void>;
+  readonly sourcePluginId: string;
 }
 
 // Stub the plugin's OWN sibling modules (allowed test doubles). The component stub extends the real
@@ -54,6 +64,27 @@ const { pluginSuggestionStub } = vi.hoisted(() => ({
   pluginSuggestionStub: vi.fn<(params: PluginSuggestionComponentParams) => object>()
 }));
 
+// The same treatment for the dev-utils settings-migration component. What is this plugin's own is the pair
+// Of closures it hands over — which pending value is offered, and how the retirement is persisted — so they
+// Are captured and invoked directly. The offer-and-retire dance around them belongs to dev-utils and is
+// Tested there.
+const { settingsMigrationStub } = vi.hoisted(() => ({
+  settingsMigrationStub: vi.fn<(params: SettingsMigrationComponentParams) => object>()
+}));
+
+vi.mock('obsidian-dev-utils/obsidian/components/settings-migration-component', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('obsidian-dev-utils/obsidian/components/settings-migration-component')>();
+  const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
+  // eslint-disable-next-line prefer-arrow-callback -- a vi.fn used with `new` must be a non-arrow function returning a fresh real Component.
+  settingsMigrationStub.mockImplementation(function NamedStub() {
+    return new Component();
+  });
+  return {
+    ...actual,
+    SettingsMigrationComponent: settingsMigrationStub
+  };
+});
+
 vi.mock('obsidian-dev-utils/obsidian/components/plugin-suggestion-component', async (importOriginal) => {
   const actual = await importOriginal<typeof import('obsidian-dev-utils/obsidian/components/plugin-suggestion-component')>();
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
@@ -77,18 +108,10 @@ vi.mock('./frontmatter-markdown-links-component.ts', async () => {
   return { FrontmatterMarkdownLinksComponent };
 });
 
-vi.mock('./rename-delete-handler-migration-component.ts', async () => {
-  const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
-  class RenameDeleteHandlerMigrationComponent extends Component {}
-  return { RenameDeleteHandlerMigrationComponent };
-});
-
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { Plugin } from './plugin.ts';
-// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { RenameDeleteHandlerMigrationComponent } from './rename-delete-handler-migration-component.ts';
 
 const PLUGIN_MANIFEST: PluginManifest = {
   author: 'test',
@@ -173,12 +196,58 @@ describe('Plugin', () => {
 
   it('should offer the legacy rename setting to the new owner', async () => {
     const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
-    const addChildSpy = vi.spyOn(plugin, 'addChild');
 
     await plugin.onload();
 
-    const addedChildren = addChildSpy.mock.calls.map((call) => call[0]);
-    expect(addedChildren.some((child) => child instanceof RenameDeleteHandlerMigrationComponent)).toBe(true);
+    expect(settingsMigrationStub).toHaveBeenCalledOnce();
+    expect(migrationParams().providerPluginId).toBe('advanced-rename-and-delete-handler');
+    expect(migrationParams().sourcePluginId).toBe(PLUGIN_MANIFEST.id);
+    expect(migrationParams().apiVersionRange).toBe('^1');
+    plugin.unload();
+  });
+
+  it('should offer nothing while no legacy value is pending', async () => {
+    const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
+
+    await plugin.onload();
+
+    expect(migrationParams().getProposedSettings()).toBeNull();
+    plugin.unload();
+  });
+
+  it('should offer the pending value once the settings carry one', async () => {
+    const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
+    const settingsComponent = await loadAndTakeSettingsComponent(plugin);
+
+    await setPending(settingsComponent, true);
+
+    expect(migrationParams().getProposedSettings()).toEqual({ shouldHandleRenames: true });
+    plugin.unload();
+  });
+
+  // `false` is a value the user chose, not an absent one, so it has to travel.
+  it('should offer a pending value of false rather than treating it as absent', async () => {
+    const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
+    const settingsComponent = await loadAndTakeSettingsComponent(plugin);
+
+    await setPending(settingsComponent, false);
+
+    expect(migrationParams().getProposedSettings()).toEqual({ shouldHandleRenames: false });
+    plugin.unload();
+  });
+
+  // Retiring through `editAndSave` rather than `setProperty` is what makes the retirement outlive a
+  // Reload; the in-memory-only variant would offer the migration again forever.
+  it('should retire the pending value to disk once the migration is applied', async () => {
+    const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
+    const settingsComponent = await loadAndTakeSettingsComponent(plugin);
+    await setPending(settingsComponent, true);
+    const editAndSaveSpy = vi.spyOn(settingsComponent, 'editAndSave');
+
+    await migrationParams().retireProposedSettings();
+
+    expect(editAndSaveSpy).toHaveBeenCalledOnce();
+    expect(migrationParams().getProposedSettings()).toBeNull();
     plugin.unload();
   });
 
@@ -194,6 +263,31 @@ describe('Plugin', () => {
     plugin.unload();
   });
 });
+
+// The plugin's settings component is protected on `PluginBase`, so the instance it actually handed to the
+// Migration component is taken from the children it added.
+async function loadAndTakeSettingsComponent(plugin: Plugin): Promise<PluginSettingsComponent> {
+  const addChildSpy = vi.spyOn(plugin, 'addChild');
+
+  await plugin.onload();
+
+  const settingsComponent = addChildSpy.mock.calls
+    .map((call) => call[0])
+    .find((child) => child instanceof PluginSettingsComponent);
+  return ensureNonNullable(settingsComponent);
+}
+
+function migrationParams(): SettingsMigrationComponentParams {
+  return ensureNonNullable(settingsMigrationStub.mock.calls[0])[0];
+}
+
+// The settings are read-only from the outside, so a pending value is arranged the same way the plugin
+// Itself writes one.
+async function setPending(settingsComponent: PluginSettingsComponent, shouldHandleRenames: boolean): Promise<void> {
+  await settingsComponent.editAndSave((settings) => {
+    settings.proposedShouldHandleRenames = shouldHandleRenames;
+  });
+}
 
 function suggestionParams(): PluginSuggestionComponentParams {
   return ensureNonNullable(pluginSuggestionStub.mock.calls[0])[0];
