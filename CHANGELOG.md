@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 3.0.2
+
+- refactor: replace the hand-rolled settings-migration copy with the shared component
+- chore: adopt the npm run gate branch gate
+- docs: say where the debug command is run
+- test: bring the in-closure wait ceiling under the transport's per-eval cap
+- docs: name the unversioned demo-vault asset and the folder it unzips into
+- chore: make the LICENSE copyright line lintable and guard it against the year roll-over
+- fix(deps): move onto obsidian-dev-utils 101, and stop replacing the plugin registry
+- test(menu-patch): read Menu.items under its real name on obsidian-test-mocks 5
+- fix(build): wire build:compile to buildCompile and drop the duplicate leaf script
+
 ## 3.0.1
 
 - chore(deps): sweep caret-ranged dependencies to latest
