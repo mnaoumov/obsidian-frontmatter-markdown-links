@@ -1,10 +1,13 @@
 import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
 import { PluginSettingsTabComponent } from 'obsidian-dev-utils/obsidian/components/plugin-settings-tab-component';
 import { PluginSuggestionComponent } from 'obsidian-dev-utils/obsidian/components/plugin-suggestion-component';
+import { SettingsMigrationComponent } from 'obsidian-dev-utils/obsidian/components/settings-migration-component';
 import { PluginDataHandler } from 'obsidian-dev-utils/obsidian/data-handler';
 import { PluginEditorExtensionRegistrar } from 'obsidian-dev-utils/obsidian/editor-extension-registrar';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/plugin/plugin';
 import { PluginEventSourceImpl } from 'obsidian-dev-utils/obsidian/plugin/plugin-event-source';
+
+import type { MigratableSettings } from './advanced-rename-and-delete-handler.ts';
 
 import {
   ADVANCED_RENAME_AND_DELETE_HANDLER_PLUGIN_ID,
@@ -15,7 +18,6 @@ import { LinkFixer } from './link-fixer.ts';
 import { PatchedInputElementMap } from './patched-input-element-map.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
-import { RenameDeleteHandlerMigrationComponent } from './rename-delete-handler-migration-component.ts';
 
 const SUGGESTION_REASON = 'Frontmatter Markdown Links no longer handles renames itself.'
   + ' Without Advanced Rename and Delete Handler, Obsidian\'s own link update runs instead, and it can ruin some of your frontmatter links.';
@@ -77,9 +79,20 @@ export class Plugin extends PluginBase {
     );
 
     this.addChild(
-      new RenameDeleteHandlerMigrationComponent({
+      new SettingsMigrationComponent<MigratableSettings>({
+        apiVersionRange: '^1',
         app: this.app,
+        getProposedSettings: (): MigratableSettings | null => {
+          const proposedShouldHandleRenames = pluginSettingsComponent.settings.proposedShouldHandleRenames;
+          return proposedShouldHandleRenames === null ? null : { shouldHandleRenames: proposedShouldHandleRenames };
+        },
         pluginSettingsComponent,
+        providerPluginId: ADVANCED_RENAME_AND_DELETE_HANDLER_PLUGIN_ID,
+        retireProposedSettings: async (): Promise<void> => {
+          await pluginSettingsComponent.editAndSave((settings) => {
+            settings.proposedShouldHandleRenames = null;
+          });
+        },
         sourcePluginId: this.manifest.id
       })
     );
