@@ -1,8 +1,8 @@
 /**
  * @file
  *
- * Produces the mobile screenshots the community-store listing needs
- * (T461-P21), driving staged notes in Obsidian Mobile on a real Android
+ * Produces the mobile screenshots the community-store listing needs,
+ * driving staged notes in Obsidian Mobile on a real Android
  * emulator and writing images/screenshots/screenshot-mobile-N.png.
  *
  * The mobile counterpart of the desktop capture suite, showing the same three
@@ -11,7 +11,8 @@
  * `app.setting.open()`.
  *
  * There is no mobile equivalent of the desktop viewport override, so the AVD is
- * built at exactly 900x1600 — see [[T461-P21]] for its one-time provisioning.
+ * built at exactly 900x1600. Its one-time provisioning is described beside
+ * `SCREENSHOT_AVD_NAME` in `scripts/vitest-config.ts`.
  */
 
 import {
