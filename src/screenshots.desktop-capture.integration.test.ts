@@ -1,8 +1,8 @@
 /**
  * @file
  *
- * Produces the desktop screenshots the community-store listing needs
- * (T461-P21), driving staged notes in a real Obsidian and writing
+ * Produces the desktop screenshots the community-store listing needs,
+ * driving staged notes in a real Obsidian and writing
  * `images/screenshots/screenshot-desktop-N.png`.
  *
  * THREE shots: the property rendered as a real link, the backlink that only
