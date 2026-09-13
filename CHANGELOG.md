@@ -87,7 +87,7 @@
 ## 2.7.3
 
 - docs: standardize demo-vault README
-- docs: drop per-plugin demo-vault setup notes (bootstrap covered by ODU harness)
+- docs: drop per-plugin demo-vault setup notes (bootstrap covered by the obsidian-dev-utils harness)
 - docs(demo-vault): create the Frontmatter Markdown Links demo vault
 - chore: update libs
 - docs: update
