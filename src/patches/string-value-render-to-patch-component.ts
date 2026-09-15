@@ -30,9 +30,9 @@ export class StringValueRenderToPatchComponent extends MonkeyAroundComponent {
         originalArguments: [containerEl]
       }) => {
         // The native `StringValue.renderTo` sets the raw string as the container's text, so after
-        // The fallback the container text is the value. When it holds embedded links,
+        // the fallback the container text is the value. When it holds embedded links,
         // `didRenderStringValueLinks` empties the container and re-renders text + link spans; otherwise
-        // It leaves the native plain-text rendering untouched.
+        // it leaves the native plain-text rendering untouched.
         fallback();
         didRenderStringValueLinks({
           app: this.app,

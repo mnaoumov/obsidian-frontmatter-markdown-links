@@ -17,12 +17,12 @@ import {
 } from 'vitest';
 
 // Regression coverage for what this plugin must get out of frontmatter, pinned against the reality
-// That modern Obsidian (>= ~1.12; NOT 1.8.10) natively caches SINGLE-value internal links (wikilink
+// that modern Obsidian (>= ~1.12; NOT 1.8.10) natively caches SINGLE-value internal links (wikilink
 // AND markdown) plus array-element single links, but does NOT cache multiple links embedded in one
-// String value. The plugin's remaining job is that last case; everything the plugin needs to end up
-// In `cache.frontmatterLinks`, and every markdown frontmatter link rendering as a clickable link, is
-// Asserted here so a future refactor (e.g. delegating to `parseFrontmatterLinks`) cannot silently
-// Drop it. In 1.8.10 none of the markdown-link shapes below resolved/rendered without the plugin.
+// string value. The plugin's remaining job is that last case; everything the plugin needs to end up
+// in `cache.frontmatterLinks`, and every markdown frontmatter link rendering as a clickable link, is
+// asserted here so a future refactor (e.g. delegating to `parseFrontmatterLinks`) cannot silently
+// drop it. In 1.8.10 none of the markdown-link shapes below resolved/rendered without the plugin.
 
 const vault = getTemporaryVault();
 
@@ -156,8 +156,8 @@ describe('frontmatter markdown links render as clickable links (regression vs Ob
     expect(result.linkDataTexts).toContain('ListItem');
 
     // Every markdown frontmatter link resolves and renders as a clickable internal link — the single
-    // Value via native rendering, the multi-link string as per-segment link pills, the list item via
-    // The plugin. None of these worked in Obsidian 1.8.10.
+    // value via native rendering, the multi-link string as per-segment link pills, the list item via
+    // the plugin. None of these worked in Obsidian 1.8.10.
     for (const displayText of ['Single', 'A', 'B', 'ListItem']) {
       expect(result.metadataLinkTexts).toContain(displayText);
     }

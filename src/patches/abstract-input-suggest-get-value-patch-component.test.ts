@@ -17,7 +17,7 @@ interface ObsidianComponentModule {
 }
 
 // Stub the sibling patch component so this test isolates the get-value patch's
-// Own coverage. The real one installs another prototype patch as a side effect.
+// own coverage. The real one installs another prototype patch as a side effect.
 vi.mock('./abstract-input-suggest-select-suggestion-patch-component.ts', async () => {
   const { Component: ComponentCls } = await vi.importActual<ObsidianComponentModule>('obsidian');
   return {

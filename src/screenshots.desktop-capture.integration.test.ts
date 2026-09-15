@@ -119,7 +119,7 @@ beforeAll(async () => {
       });
 
       // The properties panel is the subject, so it has to be in the document
-      // Rather than tucked into a side pane.
+      // rather than tucked into a side pane.
       app.vault.setConfig('propertiesInDocument', 'visible');
 
       app.workspace.leftSplit.collapse();
@@ -145,7 +145,7 @@ describe('desktop store screenshots', () => {
   it('2 - the backlink it produces', async () => {
     const backlinks = await openBacklinksForTarget();
     // A still cannot show a click; a backlink on the TARGET is
-    // Visible proof the link actually resolved.
+    // visible proof the link actually resolved.
     expect(backlinks).toContain('Chapter one');
     await shoot(2, 'And the target counts them as backlinks');
   });
@@ -153,10 +153,10 @@ describe('desktop store screenshots', () => {
   it('3 - the settings it exposes', async () => {
     const names = await openObsidianSettingsTab({ tabId: PLUGIN_ID, vaultPath: vaultPath() });
     // The rows the tab drew ARE the proof it rendered, so asserting on one is
-    // What separates this from a frame of an empty modal. The frame also carries the
-    // Banner suggesting Advanced Rename and Delete Handler, which owns rename handling
-    // Since 3.0.0 — that row is deliberately unnamed, so the named toggle is what
-    // There is to assert on here.
+    // what separates this from a frame of an empty modal. The frame also carries the
+    // banner suggesting Advanced Rename and Delete Handler, which owns rename handling
+    // since 3.0.0 — that row is deliberately unnamed, so the named toggle is what
+    // there is to assert on here.
     expect(names).toContain('Should show initialization notice');
     await shoot(3, 'Rename handling now lives in a companion plugin');
   });
@@ -252,7 +252,7 @@ async function openNoteAndReadProperty(path: string): Promise<unknown> {
       const RESIZE_SETTLE_DELAY_IN_MILLISECONDS = 2000;
 
       // Let the previous shot's capture settle: the device-metrics override it
-      // Sets and clears disturbs anything opened too soon afterwards.
+      // sets and clears disturbs anything opened too soon afterwards.
       await sleep(RESIZE_SETTLE_DELAY_IN_MILLISECONDS);
 
       const file = app.vault.getFileByPath(notePath);
@@ -274,16 +274,16 @@ async function openNoteAndReadProperty(path: string): Promise<unknown> {
       });
 
       // Reopening a note Obsidian has already rendered reuses that render, so
-      // The frame taken straight after toggling the plugin showed the PREVIOUS
-      // State — a rendered link in the shot whose point is that there is none.
+      // the frame taken straight after toggling the plugin showed the PREVIOUS
+      // state — a rendered link in the shot whose point is that there is none.
       const view: unknown = app.workspace.getActiveViewOfType(obsidianModule.MarkdownView);
       (view as null | PreviewRenderView)?.previewMode.rerender(true);
 
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
       // A rendered LINK inside a property row is the whole difference. Obsidian
-      // Draws property links as divs carrying `.metadata-link-inner`, not as
-      // Anchors, so looking for an <a> found nothing even with the plugin on.
+      // draws property links as divs carrying `.metadata-link-inner`, not as
+      // anchors, so looking for an <a> found nothing even with the plugin on.
       const link = document.querySelector('.metadata-property-value .metadata-link-inner');
       return {
         hasLink: Boolean(link),

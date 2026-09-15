@@ -99,7 +99,7 @@ beforeAll(async () => {
   await evalInObsidian({
     async callback({ app, fontSizeInPixels, lib: { waitUntil }, sourceNotePath }) {
       // A closure runs inside ONE Appium execute/sync call, which WebDriver caps
-      // Around 30s, so every wait in here stays comfortably under it.
+      // around 30s, so every wait in here stays comfortably under it.
       const SETTLE_TIMEOUT_IN_MILLISECONDS = 15_000;
       const SETTLE_DELAY_IN_MILLISECONDS = 1000;
 
@@ -112,7 +112,7 @@ beforeAll(async () => {
       });
 
       // The properties panel is the subject, so it has to be in the document
-      // Rather than tucked into a side pane.
+      // rather than tucked into a side pane.
       app.vault.setConfig('propertiesInDocument', 'visible');
 
       app.vault.setConfig('baseFontSize', fontSizeInPixels);
@@ -140,7 +140,7 @@ describe('mobile store screenshots', () => {
   it('2 - the backlink it produces', async () => {
     const backlinks = await openBacklinksForTarget();
     // A still cannot show a click; a backlink on the TARGET is
-    // Visible proof the link actually resolved.
+    // visible proof the link actually resolved.
     expect(backlinks).toContain('Chapter one');
     await shoot(2, 'And the target counts them as backlinks');
   });
@@ -148,10 +148,10 @@ describe('mobile store screenshots', () => {
   it('3 - the settings it exposes', async () => {
     const names = await openObsidianSettingsTab({ tabId: PLUGIN_ID, vaultPath: vaultPath() });
     // The rows the tab drew ARE the proof it rendered, so asserting on one is
-    // What separates this from a frame of an empty modal. The frame also carries the
-    // Banner suggesting Advanced Rename and Delete Handler, which owns rename handling
-    // Since 3.0.0 — that row is deliberately unnamed, so the named toggle is what
-    // There is to assert on here.
+    // what separates this from a frame of an empty modal. The frame also carries the
+    // banner suggesting Advanced Rename and Delete Handler, which owns rename handling
+    // since 3.0.0 — that row is deliberately unnamed, so the named toggle is what
+    // there is to assert on here.
     expect(names).toContain('Should show initialization notice');
     await shoot(3, 'Rename handling now lives in a companion plugin');
   });
@@ -243,7 +243,7 @@ async function openNoteAndReadProperty(path: string): Promise<unknown> {
       const SETTLE_DELAY_IN_MILLISECONDS = 1500;
 
       // Let the previous shot's capture settle: the device-metrics override it
-      // Sets and clears disturbs anything opened too soon afterwards.
+      // sets and clears disturbs anything opened too soon afterwards.
       const file = app.vault.getFileByPath(notePath);
       if (!file) {
         throw new Error(`Note is missing from the vault: ${notePath}`);
@@ -263,16 +263,16 @@ async function openNoteAndReadProperty(path: string): Promise<unknown> {
       });
 
       // Reopening a note Obsidian has already rendered reuses that render, so
-      // The frame taken straight after toggling the plugin showed the PREVIOUS
-      // State — a rendered link in the shot whose point is that there is none.
+      // the frame taken straight after toggling the plugin showed the PREVIOUS
+      // state — a rendered link in the shot whose point is that there is none.
       const view: unknown = app.workspace.getActiveViewOfType(obsidianModule.MarkdownView);
       (view as null | PreviewRenderView)?.previewMode.rerender(true);
 
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
       // A rendered LINK inside a property row is the whole difference. Obsidian
-      // Draws property links as divs carrying `.metadata-link-inner`, not as
-      // Anchors, so looking for an <a> found nothing even with the plugin on.
+      // draws property links as divs carrying `.metadata-link-inner`, not as
+      // anchors, so looking for an <a> found nothing even with the plugin on.
       const link = document.querySelector('.metadata-property-value .metadata-link-inner');
       return {
         hasLink: Boolean(link),
@@ -297,8 +297,8 @@ async function shoot(index: number, caption: string): Promise<void> {
   const captured = await captureObsidianScreenshot({ vaultPath: vaultPath() });
 
   // The AVD is 900x1600, so the device frame IS the store size. Asserting it
-  // Here is what keeps that true: run this against any other AVD and it fails
-  // Loudly instead of quietly shipping an off-spec image.
+  // here is what keeps that true: run this against any other AVD and it fails
+  // loudly instead of quietly shipping an off-spec image.
   expect(readPngDimensions(captured)).toStrictEqual({
     heightInPixels: HEIGHT_IN_PIXELS,
     widthInPixels: WIDTH_IN_PIXELS

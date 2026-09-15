@@ -21,7 +21,7 @@ interface ObsidianModuleSubset {
 }
 
 // Stub the sibling component so loading the render patch does not install the real prototype patch,
-// Isolating coverage to this module. The stub is a no-op `Component` subclass.
+// isolating coverage to this module. The stub is a no-op `Component` subclass.
 vi.mock('./text-property-widget-component-render-patch-component.ts', async () => {
   const { Component } = await vi.importActual<ObsidianModuleSubset>('obsidian');
   return {
@@ -87,7 +87,7 @@ function createWidgetComponent(value: string): TextPropertyWidgetComponent {
 
 function createWidgetObject(): WidgetObject {
   // The real `originalMethod` returns a widget with `.inputEl`/`.containerEl`; this stub mirrors that
-  // Shape and appends each input element to the container so the focus DOM lookups work.
+  // shape and appends each input element to the container so the focus DOM lookups work.
   return {
     render: vi.fn().mockImplementation((el: HTMLElement, value: unknown, _context: PropertyRenderContext): TextPropertyWidgetComponent => {
       const component = createWidgetComponent(typeof value === 'string' ? value : '');
@@ -109,7 +109,7 @@ function loadPatch(widgetObject: WidgetObject, patchedInputElementMap: PatchedIn
 
 function stubInputElEnvironment(inputEl: HTMLElement, selection: null | Selection): void {
   // The test-mocks `.win`/`.doc` accessors are not real Window/Document objects, so stub the
-  // Specific members the source uses for caret/range manipulation.
+  // specific members the source uses for caret/range manipulation.
   Object.defineProperties(inputEl, {
     doc: {
       configurable: true,

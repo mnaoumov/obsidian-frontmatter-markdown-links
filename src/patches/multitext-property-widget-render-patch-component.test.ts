@@ -68,7 +68,7 @@ describe('MultitextPropertyWidgetRenderPatchComponent', () => {
 
     expect(result).toBeDefined();
     // The patch invokes the original render twice on the first call: once for the temp probe div
-    // And once for the real container.
+    // and once for the real container.
     const TOTAL_RENDER_CALLS = 2;
     expect(renderImpl).toHaveBeenCalledTimes(TOTAL_RENDER_CALLS);
     expect(containerEl.childElementCount).toBe(0);

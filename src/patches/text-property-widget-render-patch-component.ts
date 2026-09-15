@@ -71,9 +71,9 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
     };
 
     // A property that was JUST created has no value yet, so `data` is null rather than a string. It
-    // Still needs the re-render hook: without it, typing a link into that property called Obsidian's
-    // Own `onChange` and nothing ever re-rendered, so the link stayed plain text until the property's
-    // Type was flipped away and back (which forces a fresh render). That was issue #38.
+    // still needs the re-render hook: without it, typing a link into that property called Obsidian's
+    // own `onChange` and nothing ever re-rendered, so the link stayed plain text until the property's
+    // type was flipped away and back (which forces a fresh render). That was issue #38.
     if (typeof data !== 'string') {
       return originalMethod(containerEl, data, contextWithRerenderOnChange);
     }

@@ -40,8 +40,8 @@ interface SettingsMigrationComponentParams {
 }
 
 // Stub the plugin's OWN sibling modules (allowed test doubles). The component stub extends the real
-// Test-mocks `Component` so the real `PluginBase` lifecycle can load it as a child without pulling in
-// The heavy settings-base dependencies.
+// test-mocks `Component` so the real `PluginBase` lifecycle can load it as a child without pulling in
+// the heavy settings-base dependencies.
 vi.mock('./plugin-settings-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   const { PluginSettings } = await vi.importActual<typeof import('./plugin-settings.ts')>('./plugin-settings.ts');
@@ -58,16 +58,16 @@ vi.mock('./plugin-settings-component.ts', async () => {
 });
 
 // Capture the `PluginSuggestionComponent` constructor argument so the closures the plugin hands it — the
-// Declined-flag getter and setter — can be invoked directly. The stub returns a fresh real `Component` so
-// The real `PluginBase` lifecycle can load it as a child without reaching the community-plugin registry.
+// declined-flag getter and setter — can be invoked directly. The stub returns a fresh real `Component` so
+// the real `PluginBase` lifecycle can load it as a child without reaching the community-plugin registry.
 const { pluginSuggestionStub } = vi.hoisted(() => ({
   pluginSuggestionStub: vi.fn<(params: PluginSuggestionComponentParams) => object>()
 }));
 
 // The same treatment for the dev-utils settings-migration component. What is this plugin's own is the pair
-// Of closures it hands over — which pending value is offered, and how the retirement is persisted — so they
-// Are captured and invoked directly. The offer-and-retire dance around them belongs to dev-utils and is
-// Tested there.
+// of closures it hands over — which pending value is offered, and how the retirement is persisted — so they
+// are captured and invoked directly. The offer-and-retire dance around them belongs to dev-utils and is
+// tested there.
 const { settingsMigrationStub } = vi.hoisted(() => ({
   settingsMigrationStub: vi.fn<(params: SettingsMigrationComponentParams) => object>()
 }));
@@ -128,8 +128,8 @@ function createConfiguredApp(): App {
     callback();
   });
   // The suggestion component reads the registry on layout-ready to decide whether there is anything to
-  // Suggest. obsidian-test-mocks models `getPlugin` and `enabledPlugins`, but leaves `manifests` to throw,
-  // So only that one is seeded - on the real registry rather than replacing it.
+  // suggest. obsidian-test-mocks models `getPlugin` and `enabledPlugins`, but leaves `manifests` to throw,
+  // so only that one is seeded - on the real registry rather than replacing it.
   castTo<PluginsLike>(appMock.plugins).manifests = {};
   return appMock.asOriginalType__();
 }
@@ -152,7 +152,7 @@ describe('Plugin', () => {
   });
 
   // Advanced Rename and Delete Handler owns rename/delete handling since 3.0.0. Two handlers acting on one
-  // Rename corrupts links, so this plugin must register none — the inverse of what it used to assert.
+  // rename corrupts links, so this plugin must register none — the inverse of what it used to assert.
   it('should not construct a rename/delete handler of its own', async () => {
     const renameDeleteHandlerModule = await import('obsidian-dev-utils/obsidian/components/rename-delete-handler-component');
     const renameDeleteHandlerSpy = vi.spyOn(renameDeleteHandlerModule, 'RenameDeleteHandlerComponent');
@@ -237,7 +237,7 @@ describe('Plugin', () => {
   });
 
   // Retiring through `editAndSave` rather than `setProperty` is what makes the retirement outlive a
-  // Reload; the in-memory-only variant would offer the migration again forever.
+  // reload; the in-memory-only variant would offer the migration again forever.
   it('should retire the pending value to disk once the migration is applied', async () => {
     const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
     const settingsComponent = await loadAndTakeSettingsComponent(plugin);
@@ -265,7 +265,7 @@ describe('Plugin', () => {
 });
 
 // The plugin's settings component is protected on `PluginBase`, so the instance it actually handed to the
-// Migration component is taken from the children it added.
+// migration component is taken from the children it added.
 async function loadAndTakeSettingsComponent(plugin: Plugin): Promise<PluginSettingsComponent> {
   const addChildSpy = vi.spyOn(plugin, 'addChild');
 
@@ -282,7 +282,7 @@ function migrationParams(): SettingsMigrationComponentParams {
 }
 
 // The settings are read-only from the outside, so a pending value is arranged the same way the plugin
-// Itself writes one.
+// itself writes one.
 async function setPending(settingsComponent: PluginSettingsComponent, shouldHandleRenames: boolean): Promise<void> {
   await settingsComponent.editAndSave((settings) => {
     settings.proposedShouldHandleRenames = shouldHandleRenames;

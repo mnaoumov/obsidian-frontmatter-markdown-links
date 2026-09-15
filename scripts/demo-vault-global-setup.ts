@@ -9,8 +9,8 @@ import { createSetup } from 'obsidian-integration-testing/vitest-global-setup-pl
 
 // CodeScript Toolkit is what turns a ```code-button fence into a button, and its root-relative
 // `require('/demoSetup.ts')` into a call. In real use the in-vault `demo-vault-helper` installs it from
-// The community registry on first launch — a NETWORK step. Seeding the copy it already installed into
-// The in-repo demo vault keeps this run hermetic and independent of that bootstrap.
+// the community registry on first launch — a NETWORK step. Seeding the copy it already installed into
+// the in-repo demo vault keeps this run hermetic and independent of that bootstrap.
 const CODE_SCRIPT_TOOLKIT_SETTINGS = {
   invocableScriptsFolder: 'Invocables',
   modulesRoot: '_assets/CodeScriptToolkit',
@@ -29,7 +29,7 @@ function populate(): PopulateFilesParams {
 }
 
 // Pre-populates the whole `demo-vault/` tree (plus the CodeScript Toolkit binary and its settings)
-// Before Obsidian opens, so the startup scan indexes every note in one pass. Used by
+// before Obsidian opens, so the startup scan indexes every note in one pass. Used by
 // `integration-tests:demo-vault`.
 const { setup, teardown } = createSetup({
   enableCommunityPlugins: [CODE_SCRIPT_TOOLKIT_PLUGIN_ID],

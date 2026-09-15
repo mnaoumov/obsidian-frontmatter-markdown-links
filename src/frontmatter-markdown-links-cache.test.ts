@@ -78,7 +78,7 @@ function makeTFile(path: string, mtime = 0): MockTFileLike {
 describe('FrontmatterMarkdownLinksCache', () => {
   beforeEach(() => {
     // The real `debounce` schedules a `setTimeout`; fake timers keep store-action flushes
-    // Under the test's control instead of firing 5s later (and throwing on the uninitialized db).
+    // under the test's control instead of firing 5s later (and throwing on the uninitialized db).
     vi.useFakeTimers();
   });
 

@@ -51,7 +51,7 @@ describe('a link typed into a newly created property renders (issue #38)', () =>
         const leaf = app.workspace.getLeaf(true);
         await leaf.openFile(sourceFile);
         // Reveal before waiting: the desktop project runs several suites in ONE Obsidian, so another
-        // Suite may have left the workspace focused elsewhere and this view would never render.
+        // suite may have left the workspace focused elsewhere and this view would never render.
         await app.workspace.revealLeaf(leaf);
         const markdownView = leaf.view as MarkdownView;
         await markdownView.setState({ mode: 'source', source: false }, { history: false });
