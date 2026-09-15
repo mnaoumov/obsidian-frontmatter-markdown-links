@@ -38,7 +38,7 @@ Linking:
   await evalInObsidian({
     callback: async ({ app, context }) => {
       // "Always focus new tabs" off is part of the reported reproduction. With it off the duplicate
-      // Background tab is created and stays, so the leaf count reflects every open.
+      // background tab is created and stays, so the leaf count reflects every open.
       app.vault.setConfig('focusNewTab', false);
 
       const sourceFile = app.vault.getFileByPath('source.md');
@@ -88,8 +88,8 @@ describe('middle-clicking a markdown link in a List property', () => {
         const before = countTargetLeaves();
 
         // Browsers fire `mousedown` then `auxclick` (not `click`) for the middle mouse button — which is
-        // Why this used to hand-build the sequence. One trusted middle click produces all of it, and
-        // Produces it with `isTrusted === true`, so Obsidian's own link handling actually acts on it.
+        // why this used to hand-build the sequence. One trusted middle click produces all of it, and
+        // produces it with `isTrusted === true`, so Obsidian's own link handling actually acts on it.
         await clickElement({ button: 'middle', element: linkEl });
 
         await sleep(1500);

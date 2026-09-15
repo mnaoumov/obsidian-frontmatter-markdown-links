@@ -342,7 +342,7 @@ describe('buildDecorations - handleValue node type paths', () => {
 
   it('should extend the value range across multiple nodes on the same line after the colon', () => {
     // Two value nodes after the meta node on the same line: the first sets valueStartIndex,
-    // The second leaves valueStartIndex unchanged and only extends valueEndIndex.
+    // the second leaves valueStartIndex unchanged and only extends valueEndIndex.
     setupSyntaxTreeWithNodes([
       { from: 0, name: 'hmd-frontmatter_meta', to: 5 },
       { from: 6, name: 'value', to: 10 },
@@ -497,7 +497,7 @@ describe('getLinkStylingInfos - link type variations', () => {
   it('should return empty mark styling when no group pattern matches an empty raw value', () => {
     setupMetaValueNodes();
     // In source mode, getLinkStylingInfos is called. An empty string raw won't match any
-    // Group regex (all use .+ which requires at least one character), hitting the no-match path.
+    // group regex (all use .+ which requires at least one character), hitting the no-match path.
     const emptyRaw = '';
     vi.mocked(parseLinks).mockReturnValueOnce([{
       endOffset: 0,

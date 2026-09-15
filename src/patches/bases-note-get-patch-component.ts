@@ -16,7 +16,7 @@ import { BasesListRenderToPatchComponent } from './bases-list-render-to-patch-co
 import { StringValueRenderToPatchComponent } from './string-value-render-to-patch-component.ts';
 
 // A plain, non-link string so `BasesNote.get` returns a `StringValue` (the value type behind
-// Formula/text cells) rather than a link, list, tag, or number value.
+// formula/text cells) rather than a link, list, tag, or number value.
 const PLAIN_STRING_PROBE = 'text';
 
 interface BasesNoteGetPatchComponentConstructorParams {

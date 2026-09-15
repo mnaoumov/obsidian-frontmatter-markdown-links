@@ -67,7 +67,7 @@ key:
       // Reveal the leaf so the Bases view actually renders even if another suite left the workspace focused elsewhere.
       await app.workspace.revealLeaf(leaf);
       // Wait on a readiness signal (the Bases table rendering) rather than a fixed delay, so setup tolerates
-      // The shared Obsidian instance being slow under full-suite load (desktop runs after android).
+      // the shared Obsidian instance being slow under full-suite load (desktop runs after android).
       await waitUntil({
         message: 'Bases table cells to render',
         predicate: () => Boolean(leaf.view.containerEl.querySelector('.bases-td')),

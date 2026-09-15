@@ -236,9 +236,9 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     $event.stopImmediatePropagation();
 
     // The plugin opens the link itself on `mousedown`, so the browser's follow-up activation event must
-    // Be swallowed to stop Obsidian's native handler from opening the link a second time. A left-click
-    // Produces `click`, while a middle-click produces `auxclick` (no `click` fires for non-primary
-    // Buttons) - both must be blocked. Whichever fires removes both listeners so neither lingers.
+    // be swallowed to stop Obsidian's native handler from opening the link a second time. A left-click
+    // produces `click`, while a middle-click produces `auxclick` (no `click` fires for non-primary
+    // buttons) - both must be blocked. Whichever fires removes both listeners so neither lingers.
     target.addEventListener('click', swallowFollowUpEvent, { capture: true });
     target.addEventListener('auxclick', swallowFollowUpEvent, { capture: true });
 
@@ -358,8 +358,8 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
             const value = getNestedPropertyValue((cache.frontmatter ?? {}) as Record<string, unknown>, link.key);
             // Legacy single-value link entries (no offsets) were persisted by versions predating
             // Obsidian's native caching of single frontmatter links. Drop them so the plugin stops
-            // Shadowing and double-counting the now-native entry; current contributions always carry
-            // Offsets. When such an entry is dropped, restore Obsidian's own entry for that key.
+            // shadowing and double-counting the now-native entry; current contributions always carry
+            // offsets. When such an entry is dropped, restore Obsidian's own entry for that key.
             const isLegacySingleValueLink = !('startOffset' in link);
             if (isLegacySingleValueLink || value !== link.original) {
               this.frontmatterMarkdownLinksCache.deleteKey({ filePath: note.path, key: link.key });
@@ -401,10 +401,10 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     const { cache, filePath } = params;
 
     // Obsidian natively caches single-value internal frontmatter links (both wikilinks and markdown
-    // Links) as well as single links held as array elements, so the plugin only needs to contribute
-    // Links embedded within a multi-link string value - the one shape Obsidian does not cache. Those
-    // Are exactly the `multiValueFrontmatterLinks` from `parseFrontmatterLinks`, each carrying the
-    // Offsets into its frontmatter value.
+    // links) as well as single links held as array elements, so the plugin only needs to contribute
+    // links embedded within a multi-link string value - the one shape Obsidian does not cache. Those
+    // are exactly the `multiValueFrontmatterLinks` from `parseFrontmatterLinks`, each carrying the
+    // offsets into its frontmatter value.
     const { multiValueFrontmatterLinks } = parseFrontmatterLinks(cache.frontmatter);
 
     // Drop the plugin's previous contribution for this file before re-adding the current one.

@@ -62,7 +62,7 @@ function createTarget(prototype: RenderValuesPrototype, values: string[]): Multi
 
 function loadPatch(prototype: RenderValuesPrototype, getFirstLinkpathDestination: GetFirstLinkpathDestination = vi.fn().mockReturnValue(null)): void {
   // The component patches `getPrototypeOf(this.multiselect).renderValues`, so a multiselect whose
-  // Prototype is `proto` makes the patch install on `proto.renderValues`.
+  // prototype is `proto` makes the patch install on `proto.renderValues`.
   const multiselect = castTo<Multiselect>(Object.create(prototype));
   const app = strictProxy<App>({
     metadataCache: {

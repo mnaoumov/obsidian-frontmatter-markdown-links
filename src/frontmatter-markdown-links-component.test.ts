@@ -122,13 +122,13 @@ class MockBasesContext {
   public _local: BasesLocal;
   public constructor() {
     // The note's `get` lives on a real prototype so the BasesNoteGetPatchComponent (stubbed) can be
-    // Constructed with a real `getPrototypeOf(note)`.
+    // constructed with a real `getPrototypeOf(note)`.
     this._local = { note: new BasesNotePrototype() };
   }
 }
 
 // Stub the plugin's OWN sibling patch modules as no-op `Component` subclasses so the component's
-// Lifecycle loads them as children without driving real patch logic.
+// lifecycle loads them as children without driving real patch logic.
 vi.mock('./patches/text-property-widget-render-patch-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   return { TextPropertyWidgetRenderPatchComponent: class extends Component {} };
@@ -196,7 +196,7 @@ vi.mock('./frontmatter-markdown-links-cache.ts', () => ({
 }));
 
 // Stub the RETURN VALUE of specific dev-utils utility functions, spreading the real module so the
-// Other exports the real dev-utils components depend on remain intact.
+// other exports the real dev-utils components depend on remain intact.
 vi.mock('obsidian-dev-utils/obsidian/metadata-cache', async (importOriginal) => {
   const actual = await importOriginal<typeof import('obsidian-dev-utils/obsidian/metadata-cache')>();
   return {
@@ -944,7 +944,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       component['handleMouseDown']($event);
 
       // Browsers fire `auxclick` (not `click`) for the middle button. Obsidian's native handler opens
-      // The link on this event, so the plugin must swallow it to avoid opening the note a second time.
+      // the link on this event, so the plugin must swallow it to avoid opening the note a second time.
       const auxclickEvent = new MouseEvent('auxclick', { bubbles: true, button: MIDDLE_BUTTON, cancelable: true });
       const auxclickPreventSpy = vi.spyOn(auxclickEvent, 'preventDefault');
       const auxclickStopSpy = vi.spyOn(auxclickEvent, 'stopImmediatePropagation');
@@ -1385,7 +1385,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const { cacheInstance, processItem } = await captureProcessItem(component);
       cacheInstance.isCacheValid.mockReturnValue(true);
       // A single-value entry persisted by a version predating Obsidian's native caching: no offsets,
-      // Value unchanged. It must be dropped (not restored) even though its value still matches.
+      // value unchanged. It must be dropped (not restored) even though its value still matches.
       cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'expected-original' }]);
       const obsidianLink = { displayText: 'obs', key: 'key', link: 'target.md', original: 'expected-original' };
       const frontmatterLinks = [obsidianLink];

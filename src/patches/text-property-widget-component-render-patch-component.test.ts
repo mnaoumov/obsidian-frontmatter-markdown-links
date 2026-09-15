@@ -37,7 +37,7 @@ function createTarget(prototype: RenderPrototype, value: string): TextPropertyWi
 
 function loadPatch(prototype: RenderPrototype): void {
   // The component patches `getPrototypeOf(textPropertyWidgetComponent).render`, so an instance whose
-  // Prototype is `proto` makes the patch install on `proto.render`.
+  // prototype is `proto` makes the patch install on `proto.render`.
   const textPropertyWidgetComponent = Object.create(prototype) as TextPropertyWidgetComponent;
   const component = new TextPropertyWidgetComponentRenderPatchComponent({ textPropertyWidgetComponent });
   component.load();

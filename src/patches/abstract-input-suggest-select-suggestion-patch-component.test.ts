@@ -23,7 +23,7 @@ interface SuggestPrototypeWithSelect {
 }
 
 // Minimal concrete subclass so the abstract base can be instantiated and the
-// Prototype-level `selectSuggestion` can be patched and invoked.
+// prototype-level `selectSuggestion` can be patched and invoked.
 class TestSuggest extends AbstractInputSuggest<MySearchResult> {
   public lastSelectedValue: MySearchResult | null = null;
 

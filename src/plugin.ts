@@ -40,7 +40,7 @@ export class Plugin extends PluginBase {
         pluginSettingsComponent,
         reason: SUGGESTION_REASON,
         // `editAndSave`, not `setProperty`: a decline has to outlive a reload, and `setProperty` only edits
-        // The in-memory state.
+        // the in-memory state.
         setSuggestionDeclined: async (isDeclined): Promise<void> => {
           await pluginSettingsComponent.editAndSave((settings) => {
             settings.isAdvancedRenameAndDeleteHandlerSuggestionDeclined = isDeclined;

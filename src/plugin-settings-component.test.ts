@@ -91,7 +91,7 @@ function legacyConverter(): (record: GenericObject) => void {
 }
 
 // The base constructor calls `registerLegacySettingsConverters` itself, so constructing the component IS the
-// Registration.
+// registration.
 function registerConverters(): void {
   createComponent();
 }

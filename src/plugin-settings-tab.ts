@@ -22,8 +22,8 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   protected override getSettingDefinitionItems(): SettingDefinitionItem[] {
     return [
       // The suggestion banner has to travel as a row: Obsidian renders the declarative definitions and never
-      // Calls `display()` once `getSettingDefinitions()` is non-empty, so there is no container to write into
-      // Otherwise. The row body is emptied first, leaving the Setting element as a bare host for the banner.
+      // calls `display()` once `getSettingDefinitions()` is non-empty, so there is no container to write into
+      // otherwise. The row body is emptied first, leaving the Setting element as a bare host for the banner.
       this.settingEx({
         name: '',
         render: (setting) => {
