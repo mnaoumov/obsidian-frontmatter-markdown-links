@@ -43,7 +43,6 @@
     "deepmerge-ts": "^8.0.2",
     "eslint": "$eslint",
     "smol-toml": "^1.8.0",
-    "type-fest": "^5.9.0",
     "typescript": "6.0.3"
   },
   "devDependencies": {
