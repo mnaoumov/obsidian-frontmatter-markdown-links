@@ -23,7 +23,7 @@ interface FrontmatterMarkdownLinksCacheDeleteKeyParams {
 }
 
 interface StoreAction {
-  action(store: IDBObjectStore): void;
+  action: (store: IDBObjectStore) => void;
   storeName: string;
 }
 

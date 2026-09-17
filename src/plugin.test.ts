@@ -26,16 +26,16 @@ interface PluginsLike {
 }
 
 interface PluginSuggestionComponentParams {
-  isSuggestionDeclined(this: void): boolean;
-  setSuggestionDeclined(this: void, isDeclined: boolean): Promise<void>;
+  readonly isSuggestionDeclined: (this: void) => boolean;
+  readonly setSuggestionDeclined: (this: void, isDeclined: boolean) => Promise<void>;
   readonly suggestedPluginId: string;
 }
 
 interface SettingsMigrationComponentParams {
   readonly apiVersionRange: string;
-  getProposedSettings(this: void): MigratableSettings | null;
+  readonly getProposedSettings: (this: void) => MigratableSettings | null;
   readonly providerPluginId: string;
-  retireProposedSettings(this: void): Promise<void>;
+  readonly retireProposedSettings: (this: void) => Promise<void>;
   readonly sourcePluginId: string;
 }
 

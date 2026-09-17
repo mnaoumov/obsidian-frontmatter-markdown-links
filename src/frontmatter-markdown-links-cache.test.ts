@@ -14,7 +14,7 @@ import { FrontmatterMarkdownLinksCache } from './frontmatter-markdown-links-cach
 
 interface CacheWithMockDatabase {
   cache: FrontmatterMarkdownLinksCache;
-  flushStoreActions(): void;
+  flushStoreActions: () => void;
   objectStoreMock: ReturnType<typeof vi.fn>;
   transactionMock: ReturnType<typeof vi.fn>;
 }

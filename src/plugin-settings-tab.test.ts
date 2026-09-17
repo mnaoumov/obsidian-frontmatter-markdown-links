@@ -30,7 +30,7 @@ interface SearchableDefinition {
 }
 
 interface VisibleDefinition {
-  visible(): boolean;
+  visible: () => boolean;
 }
 
 let app: AppOriginal;
