@@ -485,7 +485,7 @@ describe('getLinkStylingInfos - link type variations', () => {
       startOffset: 0,
       url: fakeRaw
     }]);
-    // ParseLink returns null => getLinkStylingInfos returns [] => no mark decorations added.
+    // parseLink returns null => getLinkStylingInfos returns [] => no mark decorations added.
     vi.mocked(parseLink).mockReturnValueOnce(null);
     // Use source mode so we take the getLinkStylingInfos path (not the replace path).
     const factory = getViewPluginFactory(setupSourceModeApp());
@@ -510,7 +510,7 @@ describe('getLinkStylingInfos - link type variations', () => {
       startOffset: 0,
       url: emptyRaw
     }]);
-    // ParseLink must return non-null for the empty raw (so we pass the null guard).
+    // parseLink must return non-null for the empty raw (so we pass the null guard).
     vi.mocked(parseLink).mockReturnValueOnce({
       endOffset: 0,
       hasAngleBrackets: false,

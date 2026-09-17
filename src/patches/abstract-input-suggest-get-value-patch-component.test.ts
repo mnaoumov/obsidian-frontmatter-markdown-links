@@ -157,7 +157,7 @@ describe('AbstractInputSuggestGetValuePatchComponent', () => {
 
     const result = callGetValue(suggest);
 
-    // CaretOffset 0 means valueBeforeCaret is empty, so no open bracket is found.
+    // caretOffset 0 means valueBeforeCaret is empty, so no open bracket is found.
     expect(result).toBe('[[bar');
   });
 });
