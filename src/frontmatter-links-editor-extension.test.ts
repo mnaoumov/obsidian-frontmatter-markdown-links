@@ -17,7 +17,7 @@ import {
 import { FrontMatterLinksViewPlugin } from './frontmatter-links-editor-extension.ts';
 
 interface DecorationWidget {
-  toDOM(): HTMLElement;
+  toDOM: () => HTMLElement;
 }
 
 interface DecorationWidgetArgument {
@@ -25,7 +25,7 @@ interface DecorationWidgetArgument {
 }
 
 interface IterateConfig {
-  enter(node: SyntaxNode): void;
+  enter: (node: SyntaxNode) => void;
   from: number;
   to: number;
 }
@@ -42,14 +42,14 @@ interface SyntaxNode {
 }
 
 interface ViewPluginDefineConfig {
-  decorations?(pluginValue: unknown): unknown;
+  decorations?: (pluginValue: unknown) => unknown;
 }
 
 type ViewPluginFactory = (view: object) => ViewPluginFactoryResult;
 
 interface ViewPluginFactoryResult {
   readonly decorations: object;
-  update(update: ViewPluginUpdate): void;
+  readonly update: (update: ViewPluginUpdate) => void;
 }
 
 interface ViewPluginUpdate {

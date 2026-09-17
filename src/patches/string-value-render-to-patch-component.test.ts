@@ -18,7 +18,7 @@ type RenderToFunction = (this: StringValueLike, containerEl: HTMLElement) => voi
 
 interface RenderToPrototype {
   renderTo: RenderToFunction;
-  toString(this: StringValueLike): string;
+  toString: (this: StringValueLike) => string;
 }
 
 interface StringValueLike {

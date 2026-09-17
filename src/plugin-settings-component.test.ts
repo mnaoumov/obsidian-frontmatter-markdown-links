@@ -21,7 +21,7 @@ interface LegacySettingsInstance {
 }
 
 interface RegisteredLegacyConverter {
-  converter(record: GenericObject): void;
+  converter: (record: GenericObject) => void;
   legacySettingsClass: new () => LegacySettingsInstance;
 }
 

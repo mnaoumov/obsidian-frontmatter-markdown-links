@@ -21,9 +21,9 @@ interface EditorCmHolder {
 }
 
 interface EditorPrototype {
-  getClickableTokenAt(this: unknown, pos: EditorPosition): unknown;
-  offsetToPos(offset: number): EditorPosition;
-  posToOffset(pos: EditorPosition): number;
+  getClickableTokenAt: (this: unknown, pos: EditorPosition) => unknown;
+  offsetToPos: (offset: number) => EditorPosition;
+  posToOffset: (pos: EditorPosition) => number;
 }
 
 type EditorWithCm = Editor & EditorCmHolder;
