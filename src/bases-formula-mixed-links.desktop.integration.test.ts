@@ -87,6 +87,15 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
   it('renders the embedded wikilink in a mapped-list formula cell as an internal link', async () => {
     const result = await evalInObsidian({
       async callback({ app, context, lib: { waitUntil } }) {
+        /*
+         * Under the transport's ~30s per-closure cap, not at it.
+         * Read and deliberately left as it is. This is the closure's only wait, so the 25_000 below is the
+         * whole budget, and it was not inherited: `test: stabilize Bases integration with waitUntil and
+         * leaf reveal` chose it to stop a Bases view that re-renders late under load from failing the
+         * suite.
+         * Lowering it to buy margin would undo that, and there is margin to spare already - one wait at
+         * 25_000 cannot reach the cap the way several sibling waits can.
+         */
         const LINK_DATA_TIMEOUT_IN_MILLISECONDS = 25_000;
         const leaf = context.leaf;
         // Re-activate the leaf so its Bases view keeps rendering even if another suite changed focus under load.
@@ -119,6 +128,12 @@ describe('mixed-text wikilinks in Bases formula cells', () => {
   it('renders the embedded wikilink in a scalar-string formula cell as an internal link', async () => {
     const result = await evalInObsidian({
       async callback({ app, context, lib: { waitUntil } }) {
+        /*
+         * Under the transport's ~30s per-closure cap, not at it.
+         * Read and deliberately left as it is, for the same reason as the sibling closure above: one wait
+         * carries the whole budget, and the 25_000 was chosen to stop a late Bases re-render under load
+         * from failing the suite rather than inherited from anywhere.
+         */
         const LINK_DATA_TIMEOUT_IN_MILLISECONDS = 25_000;
         const leaf = context.leaf;
         // Re-activate the leaf so its Bases view keeps rendering even if another suite changed focus under load.
