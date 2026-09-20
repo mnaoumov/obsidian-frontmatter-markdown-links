@@ -63,10 +63,12 @@ export class FrontmatterMarkdownLinksCache {
     });
   }
 
+  // The file is gone - drop everything held for its path, in memory and in both stores. The mtime row
+  // has no other reaper, so skipping it here leaks a row per deleted note and per renamed old path.
   public delete(filePath: string): void {
-    this.fileFrontmatterLinkCacheMap.delete(filePath);
+    this.deleteLinks(filePath);
     this.pathMtimeMap.delete(filePath);
-    this.addStoreAction(FRONTMATTER_LINKS_STORE_NAME, (store) => {
+    this.addStoreAction(FILE_MTIME_STORE_NAME, (store) => {
       store.delete(filePath);
     });
   }
@@ -83,8 +85,11 @@ export class FrontmatterMarkdownLinksCache {
       return;
     }
 
+    // The note still exists and its mtime is still the one it was processed at - only its links are
+    // gone. Dropping the mtime here would make every launch reprocess a note the user emptied of
+    // frontmatter links, since `processFrontmatterLinks` clears stale keys right after `updateFile`.
     if (links.length === 0) {
-      this.delete(filePath);
+      this.deleteLinks(filePath);
       return;
     }
 
@@ -104,6 +109,13 @@ export class FrontmatterMarkdownLinksCache {
 
   public getLinks(note: TFile): FrontmatterLinkCache[] {
     return this.fileFrontmatterLinkCacheMap.get(note.path) ?? [];
+  }
+
+  // Every path the cache holds anything for, which is wider than `getFilePaths`: every processed note
+  // has an mtime, only link-bearing ones have links. The orphan sweep must use this one, or a note
+  // deleted while Obsidian was closed keeps its mtime row for the lifetime of the vault.
+  public getTrackedFilePaths(): string[] {
+    return [...new Set([...this.fileFrontmatterLinkCacheMap.keys(), ...this.pathMtimeMap.keys()])];
   }
 
   public async init(app: App): Promise<void> {
@@ -165,6 +177,13 @@ export class FrontmatterMarkdownLinksCache {
   private addStoreAction(storeName: string, storeAction: (store: IDBObjectStore) => void): void {
     this.pendingStoreActions.push({ action: storeAction, storeName });
     this.processStoreActionsDebounced();
+  }
+
+  private deleteLinks(filePath: string): void {
+    this.fileFrontmatterLinkCacheMap.delete(filePath);
+    this.addStoreAction(FRONTMATTER_LINKS_STORE_NAME, (store) => {
+      store.delete(filePath);
+    });
   }
 
   private processStoreActions(): void {

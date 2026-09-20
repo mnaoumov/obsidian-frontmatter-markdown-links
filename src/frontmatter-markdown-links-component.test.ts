@@ -86,6 +86,7 @@ interface LinkDataShape {
 interface MockCacheInstanceAccess {
   delete: ReturnType<typeof vi.fn>;
   getFilePaths: ReturnType<typeof vi.fn>;
+  getTrackedFilePaths: ReturnType<typeof vi.fn>;
 }
 
 interface ProcessFrontmatterLinksInFileAccess {
@@ -178,6 +179,7 @@ const { createMockCacheInstance, mockCacheConstructor } = vi.hoisted(() => {
       getFilePaths: vi.fn().mockReturnValue([]),
       getKeys: vi.fn().mockReturnValue([]),
       getLinks: vi.fn().mockReturnValue([]),
+      getTrackedFilePaths: vi.fn().mockReturnValue([]),
       init: vi.fn().mockResolvedValue(undefined),
       isCacheValid: vi.fn().mockReturnValue(false),
       rename: vi.fn(),
@@ -246,13 +248,15 @@ interface ComponentAppAccess {
 }
 
 interface CreateComponentOptions {
+  readonly abortSignalComponent?: AbortSignalComponent;
   readonly app?: App;
   readonly shouldShowInitializationNotice?: boolean;
 }
 
 function createComponent(options: CreateComponentOptions = {}): FrontmatterMarkdownLinksComponent {
   const app = options.app ?? createMockApp();
-  const abortSignalComponent = castTo<AbortSignalComponent>(new AbortSignalComponentCls('frontmatter-markdown-links'));
+  const abortSignalComponent = options.abortSignalComponent
+    ?? castTo<AbortSignalComponent>(new AbortSignalComponentCls('frontmatter-markdown-links'));
   const editorExtensionRegistrar = strictProxy<EditorExtensionRegistrar>({ registerEditorExtension: vi.fn() });
   const linkFixer = castTo<LinkFixer>(new LinkFixerCls());
   const patchedInputElementMap = castTo<PatchedInputElementMap>(new PatchedInputElementMapCls());
@@ -1225,7 +1229,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       });
       const component = createComponent();
       const nextInstance = castTo<MockCacheInstanceAccess>(createMockCacheInstance());
-      nextInstance.getFilePaths.mockReturnValue(['old-file.md']);
+      nextInstance.getTrackedFilePaths.mockReturnValue(['old-file.md']);
       mockCacheConstructor.mockImplementationOnce(function mockNextCacheInstance(this: Record<string, unknown>) {
         Object.assign(this, nextInstance);
         return this;
@@ -1234,6 +1238,44 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       await component['processAllNotes']();
 
       expect(nextInstance.delete).toHaveBeenCalledWith('old-file.md');
+    });
+
+    it('should sweep mtime-only paths, which getFilePaths does not report', async () => {
+      vi.mocked(loop).mockImplementation(async () => {
+        await noopAsync();
+      });
+      const component = createComponent();
+      const nextInstance = castTo<MockCacheInstanceAccess>(createMockCacheInstance());
+      // A note processed with no frontmatter links holds an mtime row and no links row.
+      nextInstance.getFilePaths.mockReturnValue([]);
+      nextInstance.getTrackedFilePaths.mockReturnValue(['mtime-only.md']);
+      mockCacheConstructor.mockImplementationOnce(function mockNextCacheInstance(this: Record<string, unknown>) {
+        Object.assign(this, nextInstance);
+        return this;
+      });
+
+      await component['processAllNotes']();
+
+      expect(nextInstance.delete).toHaveBeenCalledWith('mtime-only.md');
+    });
+
+    it('should not sweep when the loop was cut short by the abort signal', async () => {
+      vi.mocked(loop).mockImplementation(async () => {
+        await noopAsync();
+      });
+      const component = createComponent({ abortSignalComponent: castTo<AbortSignalComponent>({ abortSignal: AbortSignal.abort() }) });
+      const nextInstance = castTo<MockCacheInstanceAccess>(createMockCacheInstance());
+      nextInstance.getTrackedFilePaths.mockReturnValue(['unvisited.md']);
+      mockCacheConstructor.mockImplementationOnce(function mockNextCacheInstance(this: Record<string, unknown>) {
+        Object.assign(this, nextInstance);
+        return this;
+      });
+
+      await component['processAllNotes']();
+
+      // `loop` returns rather than throws on abort, so the unvisited paths are still in the set - they
+      // are notes the loop never reached, not notes missing from the vault.
+      expect(nextInstance.delete).not.toHaveBeenCalled();
     });
 
     it('should pass shouldShowInitializationNotice from settings to loop', async () => {
