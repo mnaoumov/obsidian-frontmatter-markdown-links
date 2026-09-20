@@ -1,5 +1,6 @@
 import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/parse-link';
 
+import { generateRawMarkdownLink } from 'obsidian-dev-utils/obsidian/link';
 import { parseLink } from 'obsidian-dev-utils/obsidian/parse-link';
 
 export const EXTERNAL_LINK_PREFIX = 'https://EXTERNAL_LINK_PREFIX.com/';
@@ -45,7 +46,11 @@ export class LinkFixer {
         return `${EXTERNAL_LINK_PREFIX}${String(this.externalLinkMaxId)}`;
       }
 
-      return parseLinkResult.alias ? `[[${parseLinkResult.url}|${parseLinkResult.alias}]]` : `[[${parseLinkResult.url}]]`;
+      return generateRawMarkdownLink({
+        alias: parseLinkResult.alias,
+        isWikilink: true,
+        url: parseLinkResult.url
+      });
     }
 
     if (Array.isArray(value)) {
