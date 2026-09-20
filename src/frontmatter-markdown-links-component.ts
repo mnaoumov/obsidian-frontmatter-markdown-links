@@ -323,7 +323,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     this.frontmatterMarkdownLinksCache = new FrontmatterMarkdownLinksCache();
     await this.frontmatterMarkdownLinksCache.init(this.app);
 
-    const cachedFilePaths = new Set(this.frontmatterMarkdownLinksCache.getFilePaths());
+    const cachedFilePaths = new Set(this.frontmatterMarkdownLinksCache.getTrackedFilePaths());
 
     await loop({
       abortSignal: this.abortSignalComponent.abortSignal,
@@ -392,6 +392,13 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
       shouldShowProgressBar: this.pluginSettingsComponent.settings.shouldShowInitializationNotice
     });
 
+    // `loop` RETURNS when the abort signal fires, it does not throw, so an unload mid-index lands here
+    // with every note it never reached still in the set. Those paths are unvisited, not orphaned.
+    if (this.abortSignalComponent.abortSignal.aborted) {
+      return;
+    }
+
+    // Whatever is left named no note in the vault - drop its links and its mtime row alike.
     for (const filePath of cachedFilePaths) {
       this.frontmatterMarkdownLinksCache.delete(filePath);
     }

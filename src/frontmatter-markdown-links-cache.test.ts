@@ -15,8 +15,14 @@ import { FrontmatterMarkdownLinksCache } from './frontmatter-markdown-links-cach
 interface CacheWithMockDatabase {
   cache: FrontmatterMarkdownLinksCache;
   flushStoreActions: () => void;
+  getStore: (storeName: string) => MockObjectStore;
   objectStoreMock: ReturnType<typeof vi.fn>;
   transactionMock: ReturnType<typeof vi.fn>;
+}
+
+interface MockObjectStore {
+  delete: ReturnType<typeof vi.fn>;
+  put: ReturnType<typeof vi.fn>;
 }
 
 interface MockTFileLike {
@@ -26,6 +32,42 @@ interface MockTFileLike {
 
 interface MockTFileStat {
   mtime: number;
+}
+
+// A cache wired to a mock database, with one mock object store PER store name so a test can assert
+// which store a queued action actually ran against - the whole point of the two-store fix.
+function buildCacheWithMockDatabase(): CacheWithMockDatabase {
+  const storeMocks = new Map<string, MockObjectStore>();
+  const objectStoreMock = vi.fn().mockImplementation((storeName: string) => getStore(storeName));
+  const transactionMock = vi.fn().mockReturnValue({ commit: vi.fn(), objectStore: objectStoreMock });
+  const mockDatabase = castTo<IDBDatabase>({ transaction: transactionMock });
+
+  const cache = new FrontmatterMarkdownLinksCache();
+  // Set the private _database directly to skip init() overhead.
+  cache['_database'] = mockDatabase;
+
+  return {
+    cache,
+    flushStoreActions,
+    getStore,
+    objectStoreMock,
+    transactionMock
+  };
+
+  // Fire the real debounced callback by flushing the pending fake timer.
+  function flushStoreActions(): void {
+    vi.runAllTimers();
+  }
+
+  function getStore(storeName: string): MockObjectStore {
+    let store = storeMocks.get(storeName);
+    if (!store) {
+      store = { delete: vi.fn(), put: vi.fn() };
+      storeMocks.set(storeName, store);
+    }
+
+    return store;
+  }
 }
 
 function makeIdbOpenRequest(database: IDBDatabase, upgradeNewVersion?: number): IDBOpenDBRequest {
@@ -176,12 +218,19 @@ describe('FrontmatterMarkdownLinksCache', () => {
     });
 
     it('should remove mtime entry along with links', () => {
-      const cache = new FrontmatterMarkdownLinksCache();
+      const { cache, flushStoreActions, getStore } = buildCacheWithMockDatabase();
       const file = makeTFile('file.md', 100);
       cache.updateFile(file as Parameters<typeof cache.updateFile>[0]);
+      cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
       cache.delete('file.md');
 
       expect(cache.isCacheValid(file as Parameters<typeof cache.isCacheValid>[0])).toBe(false);
+
+      flushStoreActions();
+
+      // The persisted half: both rows go, or the mtime store grows a row per deleted note forever.
+      expect(getStore('file-mtime').delete).toHaveBeenCalledWith('file.md');
+      expect(getStore('frontmatter-links').delete).toHaveBeenCalledWith('file.md');
     });
   });
 
@@ -222,6 +271,24 @@ describe('FrontmatterMarkdownLinksCache', () => {
       cache.deleteKey({ filePath: 'file.md', key: 'key1' });
 
       expect(cache.getFilePaths()).not.toContain('file.md');
+    });
+
+    it('should keep the mtime entry when the last key is removed', () => {
+      const { cache, flushStoreActions, getStore } = buildCacheWithMockDatabase();
+      const file = makeTFile('file.md', 100);
+      cache.updateFile(file as Parameters<typeof cache.updateFile>[0]);
+      cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
+
+      cache.deleteKey({ filePath: 'file.md', key: 'key1' });
+
+      // The note still exists and was processed at this mtime - only its links are gone, so the note
+      // is not reprocessed on the next launch.
+      expect(cache.isCacheValid(file as Parameters<typeof cache.isCacheValid>[0])).toBe(true);
+
+      flushStoreActions();
+
+      expect(getStore('frontmatter-links').delete).toHaveBeenCalledWith('file.md');
+      expect(getStore('file-mtime').delete).not.toHaveBeenCalled();
     });
   });
 
@@ -283,6 +350,55 @@ describe('FrontmatterMarkdownLinksCache', () => {
       cache.rename('nonexistent.md', newFile as Parameters<typeof cache.rename>[1]);
 
       expect(cache.getLinks(newFile as Parameters<typeof cache.getLinks>[0])).toEqual([]);
+    });
+
+    it('should remove the old path mtime row and write the new one', () => {
+      const { cache, flushStoreActions, getStore } = buildCacheWithMockDatabase();
+      const oldFile = makeTFile('old.md', 100);
+      cache.updateFile(oldFile as Parameters<typeof cache.updateFile>[0]);
+
+      const newFile = makeTFile('new.md', 100);
+      cache.rename('old.md', newFile as Parameters<typeof cache.rename>[1]);
+
+      expect(cache.isCacheValid(oldFile as Parameters<typeof cache.isCacheValid>[0])).toBe(false);
+      expect(cache.isCacheValid(newFile as Parameters<typeof cache.isCacheValid>[0])).toBe(true);
+
+      flushStoreActions();
+
+      expect(getStore('file-mtime').delete).toHaveBeenCalledWith('old.md');
+      expect(getStore('file-mtime').put).toHaveBeenCalledWith({ filePath: 'new.md', mtime: 100 });
+    });
+  });
+
+  describe('getTrackedFilePaths', () => {
+    it('should return empty array for an empty cache', () => {
+      const cache = new FrontmatterMarkdownLinksCache();
+
+      expect(cache.getTrackedFilePaths()).toEqual([]);
+    });
+
+    it('should include a file that has an mtime but no links', () => {
+      const cache = new FrontmatterMarkdownLinksCache();
+      cache.updateFile(makeTFile('no-links.md', 100) as Parameters<typeof cache.updateFile>[0]);
+
+      expect(cache.getFilePaths()).not.toContain('no-links.md');
+      expect(cache.getTrackedFilePaths()).toContain('no-links.md');
+    });
+
+    it('should list a file holding both links and an mtime exactly once', () => {
+      const cache = new FrontmatterMarkdownLinksCache();
+      cache.updateFile(makeTFile('file.md', 100) as Parameters<typeof cache.updateFile>[0]);
+      cache.add('file.md', makeLink('key1', 'link1', 'orig1'));
+
+      expect(cache.getTrackedFilePaths()).toEqual(['file.md']);
+    });
+
+    it('should drop a path that was deleted', () => {
+      const cache = new FrontmatterMarkdownLinksCache();
+      cache.updateFile(makeTFile('file.md', 100) as Parameters<typeof cache.updateFile>[0]);
+      cache.delete('file.md');
+
+      expect(cache.getTrackedFilePaths()).toEqual([]);
     });
   });
 
@@ -422,24 +538,6 @@ describe('FrontmatterMarkdownLinksCache', () => {
   });
 
   describe('processStoreActions and addStoreAction callbacks', () => {
-    function buildCacheWithMockDatabase(): CacheWithMockDatabase {
-      const mockStore = { commit: vi.fn(), delete: vi.fn(), put: vi.fn() };
-      const objectStoreMock = vi.fn().mockReturnValue(mockStore);
-      const transactionMock = vi.fn().mockReturnValue({ commit: vi.fn(), objectStore: objectStoreMock });
-      const mockDatabase = castTo<IDBDatabase>({ transaction: transactionMock });
-
-      const cache = new FrontmatterMarkdownLinksCache();
-      // Set the private _database directly to skip init() overhead.
-      cache['_database'] = mockDatabase;
-
-      return { cache, flushStoreActions, objectStoreMock, transactionMock };
-
-      // Fire the real debounced callback by flushing the pending fake timer.
-      function flushStoreActions(): void {
-        vi.runAllTimers();
-      }
-    }
-
     it('should execute add store action callback when processStoreActions is called', () => {
       const { cache, flushStoreActions, objectStoreMock } = buildCacheWithMockDatabase();
 
