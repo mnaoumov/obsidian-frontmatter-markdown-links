@@ -6,6 +6,7 @@ wikilink: "[[Target note]]"
 markdownLink: "[Second target](<Targets/Second target.md>)"
 externalUrl: "[Obsidian Help](https://help.obsidian.md)"
 multipleLinks: "[[Target note]] and [Second target](<Targets/Second target.md>)"
+quotedAlias: "[A \"quoted\" alias](<Targets/Second target.md>)"
 ---
 # Frontmatter markdown links
 
@@ -21,6 +22,8 @@ Open this note's **properties** (the panel at the top) and look at each value:
   - `[Obsidian Help](https://help.obsidian.md)`. A markdown link to an external site, also made clickable by the plugin.
 - `multipleLinks`
   - the plugin resolves **several links inside a single property**, mixing wikilinks and markdown links.
+- `quotedAlias`
+  - `[A \"quoted\" alias](<Targets/Second target.md>)`. The link text itself contains double quotes, escaped the way YAML requires inside a double-quoted value. It reads and resolves exactly like the unescaped one - see [Quoting, and lists](#quoting-and-lists) below.
 
 ## Try it
 
@@ -79,3 +82,20 @@ multilineList:
 inlineList: ["Non-clickable", "[[Wikilink]]", "[Alias](MarkdownLink.md)", "https://example.com"]
 ---
 ```
+
+### Quotes inside the link text
+
+If the link text contains a quote of the same kind as the one wrapping the value, YAML needs it escaped - `\"` inside double quotes, `''` inside single ones. Escaping it and wrapping the value in the other quote are two spellings of the same value, and the plugin renders both the same way:
+
+```yaml
+---
+# Both render as: A "quoted" alias
+escapedInDoubleQuotes: "[A \"quoted\" alias](MarkdownLink.md)"
+wrappedInSingleQuotes: '[A "quoted" alias](MarkdownLink.md)'
+
+# Renders as: A 'quoted' alias
+escapedInSingleQuotes: '[A ''quoted'' alias](MarkdownLink.md)'
+---
+```
+
+The escaping belongs to YAML, not to the link, so it is undone before the link is drawn - the text you read never shows the backslashes or the doubled quotes.

@@ -114,6 +114,42 @@ afterEach(() => {
   // The parseLink/parseLinks mocks retain their importOriginal-based implementations.
 });
 
+/**
+ * A view backed by a real document string, so `doc.lineAt` and `doc.sliceString` answer the way
+ * CodeMirror's do. The quoting tests need it: they turn on how the extension reads the raw line
+ * around a node, which the fixed-`sliceString` view above cannot express.
+ */
+function createDocumentMockView(docText: string, selectionRanges: SelectionRange[] = []): object {
+  const lines = docText.split('\n');
+  const lineStartOffsets: number[] = [];
+  let offset = 0;
+  for (const line of lines) {
+    lineStartOffsets.push(offset);
+    offset += line.length + 1;
+  }
+
+  return {
+    state: {
+      doc: {
+        lineAt: (position: number): object => {
+          let lineIndex = 0;
+          while (lineIndex + 1 < lineStartOffsets.length && (lineStartOffsets[lineIndex + 1] ?? 0) <= position) {
+            lineIndex++;
+          }
+          return {
+            from: lineStartOffsets[lineIndex] ?? 0,
+            number: lineIndex + 1,
+            text: lines[lineIndex] ?? ''
+          };
+        },
+        sliceString: (from: number, to: number): string => docText.slice(from, to)
+      },
+      selection: { ranges: selectionRanges }
+    },
+    visibleRanges: [{ from: 0, to: docText.length }]
+  };
+}
+
 function createMockApp(): App {
   return castTo<App>({
     workspace: {
@@ -527,6 +563,124 @@ describe('getLinkStylingInfos - link type variations', () => {
 
     // No mark styling because empty string doesn't match any group regex pattern.
     expect(mockDecoration.mark).not.toHaveBeenCalled();
+  });
+});
+
+describe('buildDecorations - YAML quoting of the value', () => {
+  const META_NODE: SyntaxNode = { from: 0, name: 'hmd-frontmatter_meta', to: 5 };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockDecoration.mark.mockReturnValue({});
+    mockDecoration.replace.mockReturnValue({});
+    mockViewPluginDefine.mockReturnValue({ extension: [] });
+  });
+
+  function getReplacedLinkTexts(): (null | string)[] {
+    return mockDecoration.replace.mock.calls.map((call) => {
+      const widgetArgument = call[0] as DecorationWidgetArgument | undefined;
+      return widgetArgument?.widget.toDOM().querySelector('a.cm-underline')?.textContent ?? null;
+    });
+  }
+
+  it('should render one link for a double-quoted value whose text escapes its quotes', () => {
+    // CodeMirror ends a double-quoted string at the first `"` it meets, escaped or not, so the value
+    // arrives as three nodes. All three belong to one scalar and must be read as one.
+    const docText = String.raw`key: "[a \"b\"](c.md)"`;
+    setupSyntaxTreeWithNodes([
+      META_NODE,
+      { from: 5, name: 'hmd-frontmatter_string', to: 11 },
+      { from: 11, name: 'hmd-frontmatter', to: 13 },
+      { from: 13, name: 'hmd-frontmatter_string', to: 22 }
+    ]);
+    const factory = getViewPluginFactory(createMockApp());
+
+    factory?.(createDocumentMockView(docText));
+
+    expect(getReplacedLinkTexts()).toEqual(['a "b"']);
+  });
+
+  it('should render one link for a single-quoted value whose text doubles its quotes', () => {
+    const docText = 'key: \'[a \'\'b\'\'](c.md)\'';
+    setupSyntaxTreeWithNodes([
+      META_NODE,
+      { from: 5, name: 'hmd-frontmatter_string', to: 22 }
+    ]);
+    const factory = getViewPluginFactory(createMockApp());
+
+    factory?.(createDocumentMockView(docText));
+
+    expect(getReplacedLinkTexts()).toEqual(['a \'b\'']);
+  });
+
+  it('should keep the raw text when the value holds an escape YAML does not define', () => {
+    const docText = String.raw`key: "[a \q b](c.md)"`;
+    setupSyntaxTreeWithNodes([
+      META_NODE,
+      { from: 5, name: 'hmd-frontmatter_string', to: 21 }
+    ]);
+    const factory = getViewPluginFactory(createMockApp());
+
+    factory?.(createDocumentMockView(docText));
+
+    expect(getReplacedLinkTexts()).toEqual([String.raw`a \q b`]);
+  });
+
+  it('should keep the raw text when unescaping leaves no link to pair the raw one with', () => {
+    // `\n\n` unescapes to a paragraph break, which ends the markdown link. The decoration still has
+    // to describe the link the raw line holds, so it falls back to the raw reading.
+    const docText = String.raw`key: "[a\n\nb](c.md)"`;
+    setupSyntaxTreeWithNodes([
+      META_NODE,
+      { from: 5, name: 'hmd-frontmatter_string', to: 21 }
+    ]);
+    const factory = getViewPluginFactory(createMockApp());
+
+    factory?.(createDocumentMockView(docText));
+
+    expect(getReplacedLinkTexts()).toEqual([String.raw`a\n\nb`]);
+  });
+
+  it('should fall back to the node end when the value never closes its quote', () => {
+    const docText = 'key: "[a](c.md)';
+    setupSyntaxTreeWithNodes([
+      META_NODE,
+      { from: 5, name: 'hmd-frontmatter_string', to: 15 }
+    ]);
+    const factory = getViewPluginFactory(createMockApp());
+
+    factory?.(createDocumentMockView(docText));
+
+    expect(mockDecoration.replace).not.toHaveBeenCalled();
+  });
+
+  it('should fall back to the node end when the value does not start with a quote', () => {
+    const docText = 'key: x[a](c.md)yy';
+    setupSyntaxTreeWithNodes([
+      META_NODE,
+      { from: 5, name: 'hmd-frontmatter_string', to: 17 }
+    ]);
+    const factory = getViewPluginFactory(createMockApp());
+
+    factory?.(createDocumentMockView(docText));
+
+    expect(getReplacedLinkTexts()).toEqual(['a']);
+  });
+
+  it('should render each quoted element of a flow sequence as its own link', () => {
+    const docText = 'key: ["[a](c.md)", "[b](d.md)"]';
+    setupSyntaxTreeWithNodes([
+      META_NODE,
+      { from: 5, name: 'hmd-frontmatter', to: 6 },
+      { from: 6, name: 'hmd-frontmatter_string', to: 18 },
+      { from: 18, name: 'hmd-frontmatter', to: 19 },
+      { from: 19, name: 'hmd-frontmatter_string', to: 30 }
+    ]);
+    const factory = getViewPluginFactory(createMockApp());
+
+    factory?.(createDocumentMockView(docText));
+
+    expect(getReplacedLinkTexts()).toEqual(['a', 'b']);
   });
 });
 
