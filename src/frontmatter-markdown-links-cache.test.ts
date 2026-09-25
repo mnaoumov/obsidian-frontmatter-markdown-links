@@ -75,14 +75,16 @@ function makeIdbOpenRequest(database: IDBDatabase, upgradeNewVersion?: number): 
   const request: Record<string, unknown> = {
     addEventListener: vi.fn().mockImplementation((event: string, handler: ($event?: unknown) => void) => {
       handlers[event] = handler;
-      if (event === 'success') {
-        // Set result before firing upgrade so request.result is available in the upgrade handler.
-        request['result'] = database;
-        if (upgradeNewVersion !== undefined && handlers['upgradeneeded']) {
-          handlers['upgradeneeded']({ newVersion: upgradeNewVersion });
-        }
-        handler();
+      if (event !== 'success') {
+        return;
       }
+
+      // Set result before firing upgrade so request.result is available in the upgrade handler.
+      request['result'] = database;
+      if (upgradeNewVersion !== undefined && handlers['upgradeneeded']) {
+        handlers['upgradeneeded']({ newVersion: upgradeNewVersion });
+      }
+      handler();
     }),
     readyState: 'pending'
   };

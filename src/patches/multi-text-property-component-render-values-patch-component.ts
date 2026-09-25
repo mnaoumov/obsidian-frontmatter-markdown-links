@@ -75,10 +75,7 @@ export class MultiTextPropertyComponentRenderValuesPatchComponent extends Monkey
           }, { capture: true });
 
           parentEl.addEventListener('click', ($event) => {
-            if (!($event.target instanceof Element)) {
-              return;
-            }
-            if ($event.target.closest('.multi-select-pill-remove-button')) {
+            if (!($event.target instanceof Element) || $event.target.closest('.multi-select-pill-remove-button')) {
               return;
             }
             $event.stopPropagation();

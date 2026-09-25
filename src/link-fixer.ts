@@ -53,10 +53,6 @@ export class LinkFixer {
       });
     }
 
-    if (Array.isArray(value)) {
-      return value.map((item) => this.patchLink(item));
-    }
-
-    return value;
+    return Array.isArray(value) ? value.map((item) => this.patchLink(item)) : value;
   }
 }

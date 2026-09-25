@@ -394,10 +394,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           getActiveFile: vi.fn().mockReturnValue(null),
           getActiveViewOfType: vi.fn().mockReturnValue(null),
           getLeavesOfType: vi.fn((viewType: string) => {
-            if (viewType === 'markdown') {
-              return [markdownLeaf];
-            }
-            return [];
+            return viewType === 'markdown' ? [markdownLeaf] : [];
           }),
           iterateAllLeaves: vi.fn(),
           on: vi.fn().mockReturnValue({}),

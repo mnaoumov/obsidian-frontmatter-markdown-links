@@ -36,9 +36,5 @@ export function getLinkData(el: HTMLElement): LinkData | null {
   }
 
   const dataset = parentEl.dataset as Partial<Dataset>;
-  if (!dataset.frontmatterMarkdownLinksLinkData) {
-    return null;
-  }
-
-  return JSON.parse(dataset.frontmatterMarkdownLinksLinkData) as LinkData;
+  return dataset.frontmatterMarkdownLinksLinkData ? (JSON.parse(dataset.frontmatterMarkdownLinksLinkData) as LinkData) : null;
 }

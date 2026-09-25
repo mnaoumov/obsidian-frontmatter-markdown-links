@@ -179,17 +179,19 @@ export class FrontMatterLinksViewPlugin implements PluginValue {
             valueEndIndex = node.to;
           }
 
-          if (node.name === 'hmd-frontmatter_string') {
-            const quoteCharacter = view.state.doc.sliceString(node.from, node.from + 1);
-            const closingQuoteIndex = findClosingQuoteIndex({ doc: view.state.doc, openingQuoteIndex: node.from, quoteCharacter });
-            // An unterminated scalar keeps the node's own end, which is what the extension used
-            // before it scanned for the real one.
-            const scalarEndIndex = closingQuoteIndex === NO_INDEX ? node.to - 1 : closingQuoteIndex;
-            handleValue({ endIndex: scalarEndIndex, isInQuotes: true, quoteCharacter, startIndex: node.from + 1 });
-            quotedScalarEndIndex = scalarEndIndex + 1;
-            valueStartIndex = NO_INDEX;
-            valueEndIndex = NO_INDEX;
+          if (node.name !== 'hmd-frontmatter_string') {
+            return;
           }
+
+          const quoteCharacter = view.state.doc.sliceString(node.from, node.from + 1);
+          const closingQuoteIndex = findClosingQuoteIndex({ doc: view.state.doc, openingQuoteIndex: node.from, quoteCharacter });
+          // An unterminated scalar keeps the node's own end, which is what the extension used
+          // before it scanned for the real one.
+          const scalarEndIndex = closingQuoteIndex === NO_INDEX ? node.to - 1 : closingQuoteIndex;
+          handleValue({ endIndex: scalarEndIndex, isInQuotes: true, quoteCharacter, startIndex: node.from + 1 });
+          quotedScalarEndIndex = scalarEndIndex + 1;
+          valueStartIndex = NO_INDEX;
+          valueEndIndex = NO_INDEX;
         },
         from,
         to
