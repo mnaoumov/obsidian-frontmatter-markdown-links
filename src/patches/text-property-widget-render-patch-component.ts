@@ -150,10 +150,7 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
           widget.inputEl.show();
           widget.inputEl.focus();
           const sel = widget.inputEl.win.getSelection();
-          if (!sel) {
-            return;
-          }
-          if (!widget.inputEl.firstChild) {
+          if (!sel || !widget.inputEl.firstChild) {
             return;
           }
 

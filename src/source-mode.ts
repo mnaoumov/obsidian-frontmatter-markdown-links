@@ -5,11 +5,7 @@ import {
 
 export function isSourceMode(app: App): boolean {
   const view = app.workspace.getActiveViewOfType(MarkdownView);
-  if (!view) {
-    return false;
-  }
-
-  if (view.getMode() !== 'source') {
+  if (view?.getMode() !== 'source') {
     return false;
   }
 

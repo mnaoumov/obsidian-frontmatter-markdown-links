@@ -190,11 +190,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
   }
 
   private handleFileOpen(): void {
-    if (this.isEditorPatched) {
-      return;
-    }
-
-    if (!this.app.workspace.activeEditor?.editor) {
+    if (this.isEditorPatched || !this.app.workspace.activeEditor?.editor) {
       return;
     }
 
@@ -266,11 +262,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
     const target = $event.target as HTMLElement;
     const linkData = getLinkData(target);
-    if (!linkData) {
-      return;
-    }
-
-    if (linkData.isExternalUrl) {
+    if (!linkData || linkData.isExternalUrl) {
       return;
     }
 

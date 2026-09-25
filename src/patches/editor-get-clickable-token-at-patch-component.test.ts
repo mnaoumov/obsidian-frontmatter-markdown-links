@@ -90,10 +90,7 @@ function stubFindWithoutLinkEnd(frontmatterEl: HTMLElement, linkEl: HTMLElement)
   const linkEndSelector = '.cm-formatting-link-end';
   // The real Obsidian `find` returns `null` for the missing link-end element; the test-mocks `find` throws, so stub the return value.
   vi.spyOn(frontmatterEl, 'find').mockImplementation((selector: string) => {
-    if (selector === linkEndSelector) {
-      return castTo<HTMLElement>(null);
-    }
-    return linkEl;
+    return selector === linkEndSelector ? castTo<HTMLElement>(null) : linkEl;
   });
 }
 
