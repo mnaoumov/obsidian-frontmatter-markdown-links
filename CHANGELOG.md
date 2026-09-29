@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## 3.0.3
+
+- test(screenshots): merge the applyObsidianTheme switch for the desktop capture
+- chore(deps): merge the obsidian-integration-testing 17 float
+- chore(deps): merge the obsidian-test-mocks 7 float
+- fix(test): merge the headless demo-vault toolkit install
+- fix(deps): restore the lockfile's missing resolved and integrity fields
+- fix(cache): delete the file-mtime row too, so the store stops growing
+- chore(cspell): add checkable by the linter, the word the changelog uses
+- fix(editor): keep the link in a frontmatter value whose text escapes its quotes
+- refactor(link-fixer): compose the wikilink with generateRawMarkdownLink
+- fix(deps): float devalue to 5.9.4, clearing GHSA-9rgm-9g3h-6x36
+- test: record both Bases formula budgets as deliberately under the cap
+- build(markdownlint): forbid hard-wrapped markdown paragraphs
+- style(comments): stop rewriting symbol names that open a comment
+- chore(deps): drop the dead type-fest override
+- chore(deps): drop the dead markdown-it override
+- chore(deps): drop the dead js-yaml override
+- style(comments): stop capitalizing the middle of a wrapped comment
+- docs: drop the rule-id citations from the pin table
+- docs(changelog): name obsidian-dev-utils by its package name
+- docs: replace the private tracker references with what they pointed at
+- chore(deps): move to obsidian-dev-utils 103
+
 ## 3.0.2
 
 - refactor: replace the hand-rolled settings-migration copy with the shared component
