@@ -1,6 +1,6 @@
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/parse-link';
+import type { ParseLinkResult } from '@mnaoumov/obsidian-lib/parse-link';
 
-import { castTo } from 'obsidian-dev-utils/object-utils';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import {
   describe,
   expect,

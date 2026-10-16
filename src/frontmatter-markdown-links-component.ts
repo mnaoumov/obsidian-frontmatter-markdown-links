@@ -1,13 +1,32 @@
+import type { AbortSignalComponent } from '@mnaoumov/obsidian-lib/components/abort-signal-component';
+import type { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
+import type { EditorExtensionRegistrar } from '@mnaoumov/obsidian-lib/editor-extension-registrar';
+import type { FrontmatterLinkCacheWithOffsets } from '@mnaoumov/obsidian-lib/frontmatter-link-cache-with-offsets';
 import type {
   App,
   CachedMetadata,
   FrontmatterLinkCache
 } from 'obsidian';
-import type { AbortSignalComponent } from 'obsidian-dev-utils/obsidian/components/abort-signal-component';
-import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
-import type { EditorExtensionRegistrar } from 'obsidian-dev-utils/obsidian/editor-extension-registrar';
-import type { FrontmatterLinkCacheWithOffsets } from 'obsidian-dev-utils/obsidian/frontmatter-link-cache-with-offsets';
 
+import { AllWindowsEventComponent } from '@mnaoumov/obsidian-lib/components/all-windows-event-component';
+import { LayoutReadyComponent } from '@mnaoumov/obsidian-lib/components/layout-ready-component';
+import { splitSubpath } from '@mnaoumov/obsidian-lib/link';
+import { loop } from '@mnaoumov/obsidian-lib/loop';
+import { getCacheSafe } from '@mnaoumov/obsidian-lib/metadata-cache';
+import { parseFrontmatterLinks } from '@mnaoumov/obsidian-lib/parse-link';
+import {
+  getMarkdownFilesSorted,
+  trashSafe
+} from '@mnaoumov/obsidian-lib/vault';
+import { filterInPlace } from '@mnaoumov/typescript-lib/array';
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely
+} from '@mnaoumov/typescript-lib/async';
+import {
+  getNestedPropertyValue,
+  normalizeOptionalProperties
+} from '@mnaoumov/typescript-lib/object-utils';
 import { getBasesContextConstructor } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   Keymap,
@@ -16,25 +35,6 @@ import {
   TAbstractFile,
   TFile
 } from 'obsidian';
-import { filterInPlace } from 'obsidian-dev-utils/array';
-import {
-  convertAsyncToSync,
-  invokeAsyncSafely
-} from 'obsidian-dev-utils/async';
-import {
-  getNestedPropertyValue,
-  normalizeOptionalProperties
-} from 'obsidian-dev-utils/object-utils';
-import { AllWindowsEventComponent } from 'obsidian-dev-utils/obsidian/components/all-windows-event-component';
-import { LayoutReadyComponent } from 'obsidian-dev-utils/obsidian/components/layout-ready-component';
-import { splitSubpath } from 'obsidian-dev-utils/obsidian/link';
-import { loop } from 'obsidian-dev-utils/obsidian/loop';
-import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
-import { parseFrontmatterLinks } from 'obsidian-dev-utils/obsidian/parse-link';
-import {
-  getMarkdownFilesSorted,
-  trashSafe
-} from 'obsidian-dev-utils/obsidian/vault';
 
 import type { LinkFixer } from './link-fixer.ts';
 import type { PatchedInputElementMap } from './patched-input-element-map.ts';

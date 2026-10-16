@@ -1,10 +1,10 @@
 import type { App } from 'obsidian';
 
-import { castTo } from 'obsidian-dev-utils/object-utils';
 import {
   parseLink,
   parseLinks
-} from 'obsidian-dev-utils/obsidian/parse-link';
+} from '@mnaoumov/obsidian-lib/parse-link';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import {
   afterEach,
   beforeEach,
@@ -69,8 +69,8 @@ const { mockDecoration, mockSyntaxTreeFactory, mockViewPluginDefine } = vi.hoist
   };
 });
 
-vi.mock('obsidian-dev-utils/obsidian/parse-link', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('obsidian-dev-utils/obsidian/parse-link')>();
+vi.mock('@mnaoumov/obsidian-lib/parse-link', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@mnaoumov/obsidian-lib/parse-link')>();
   return {
     ...actual,
     parseLink: vi.fn(actual.parseLink),

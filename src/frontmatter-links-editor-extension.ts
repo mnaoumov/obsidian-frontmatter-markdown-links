@@ -6,8 +6,8 @@ import type {
   DecorationSet,
   PluginValue
 } from '@codemirror/view';
+import type { ParseLinkResult } from '@mnaoumov/obsidian-lib/parse-link';
 import type { App } from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/parse-link';
 
 import { syntaxTree } from '@codemirror/language';
 import { RangeSetBuilder } from '@codemirror/state';
@@ -18,13 +18,13 @@ import {
   ViewUpdate,
   WidgetType
 } from '@codemirror/view';
-import { parseYaml } from 'obsidian';
 import {
   parseLink,
   parseLinks
-} from 'obsidian-dev-utils/obsidian/parse-link';
-import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
-import { ValueWrapper } from 'obsidian-dev-utils/value-wrapper';
+} from '@mnaoumov/obsidian-lib/parse-link';
+import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
+import { ValueWrapper } from '@mnaoumov/typescript-lib/value-wrapper';
+import { parseYaml } from 'obsidian';
 
 import { getDataAttributes } from './link-data.ts';
 import { isSourceMode } from './source-mode.ts';

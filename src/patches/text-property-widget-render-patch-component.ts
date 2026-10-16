@@ -5,8 +5,8 @@ import type {
   TextPropertyWidgetComponent
 } from '@obsidian-typings/obsidian-public-latest';
 
-import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
-import { parseLinks } from 'obsidian-dev-utils/obsidian/parse-link';
+import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
+import { parseLinks } from '@mnaoumov/obsidian-lib/parse-link';
 
 import type { PatchedInputElementMap } from '../patched-input-element-map.ts';
 

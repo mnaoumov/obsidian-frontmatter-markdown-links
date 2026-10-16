@@ -1,6 +1,6 @@
+import { noop } from '@mnaoumov/typescript-lib/function';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { AbstractInputSuggest } from 'obsidian';
-import { noop } from 'obsidian-dev-utils/function';
-import { castTo } from 'obsidian-dev-utils/object-utils';
 import { App as AppCls } from 'obsidian-test-mocks/obsidian';
 import {
   afterEach,
