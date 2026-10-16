@@ -11,7 +11,7 @@ interface PluginSettingsComponentConstructorParams {
 }
 
 class LegacySettings {
-  // Owned by Advanced Rename and Delete Handler since 3.0.0. The converter is what keeps the user's value:
+  // Owned by `Advanced Rename and Delete Handler` since 3.0.0. The converter is what keeps the user's value:
   // The saved record is rebuilt from the declared properties alone, so the first save after the property was
   // dropped would otherwise strip it from `data.json` before it could ever be offered.
   public shouldHandleRenames = true;

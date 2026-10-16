@@ -45,6 +45,6 @@ caption: Turn the plugin back on
 await require('/demoSetup.ts').enablePlugin(app);
 ```
 
-Manual equivalent for both: toggle **Frontmatter Markdown Links** in **Settings -> Community plugins**.
+Manual equivalent for both: toggle `Frontmatter Markdown Links` in **Settings -> Community plugins**.
 
 The `related` wikilink also makes this note a backlink of [Target note](<./Targets/Target note.md>), but Obsidian shows that one even without the plugin - wikilinks in frontmatter are supported natively. The plugin's job is to give **markdown links** in frontmatter the same power.

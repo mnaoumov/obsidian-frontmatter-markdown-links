@@ -7,7 +7,7 @@ import { getRootFolder } from 'obsidian-dev-utils/script-utils/root';
 import { buildDemoVaultPopulateAsync } from 'obsidian-integration-testing';
 import { createSetup } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 
-// CodeScript Toolkit is what turns a ```code-button fence into a button, and its root-relative
+// `CodeScript Toolkit` is what turns a ```code-button fence into a button, and its root-relative
 // `require('/demoSetup.ts')` into a call. In real use the in-vault `demo-vault-helper` installs it from
 // the community registry on first launch — a GUI step, and `.obsidian/plugins/*` is gitignored, so the
 // installed copy exists on exactly the one machine that did it and is invisible to a fresh clone, a new
@@ -35,7 +35,7 @@ async function populate(): Promise<PopulateFilesParams> {
   });
 }
 
-// Pre-populates the whole `demo-vault/` tree (plus the CodeScript Toolkit binary and its settings)
+// Pre-populates the whole `demo-vault/` tree (plus the `CodeScript Toolkit` binary and its settings)
 // before Obsidian opens, so the startup scan indexes every note in one pass. Used by
 // `integration-tests:demo-vault`.
 const { setup, teardown } = createSetup({

@@ -1,6 +1,6 @@
 # Settings
 
-Open **Settings -> Community plugins -> Frontmatter Markdown Links** to configure the plugin. Each option below lists the setting key stored in the plugin's `data.json`.
+Open **Settings -> Community plugins -> `Frontmatter Markdown Links`** to configure the plugin. Each option below lists the setting key stored in the plugin's `data.json`.
 
 ## Initialization
 
@@ -18,4 +18,4 @@ Two keys are left behind to make the handover work. Neither is a toggle you set 
 - `isAdvancedRenameAndDeleteHandlerSuggestionDeclined`
   - whether you have already answered "not now" to the suggestion notice. It silences the notice, not the banner at the top of this tab: opening these settings is a fresher signal than an answer you gave earlier.
 - `proposedShouldHandleRenames`
-  - the `shouldHandleRenames` value you had before the upgrade, held until it can be offered to Advanced Rename and Delete Handler. It is `null` once that offer has been accepted, and on a fresh install that never had the old setting. Cancelling the offer leaves it here, so it comes back next time.
+  - the `shouldHandleRenames` value you had before the upgrade, held until it can be offered to `Advanced Rename and Delete Handler`. It is `null` once that offer has been accepted, and on a fresh install that never had the old setting. Cancelling the offer leaves it here, so it comes back next time.

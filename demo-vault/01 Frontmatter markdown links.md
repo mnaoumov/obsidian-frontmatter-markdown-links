@@ -10,7 +10,7 @@ quotedAlias: "[A \"quoted\" alias](<Targets/Second target.md>)"
 ---
 # Frontmatter markdown links
 
-Obsidian natively makes only `[[wikilinks]]` clickable inside YAML frontmatter (properties). **Frontmatter Markdown Links** extends that so **markdown-style links** written in frontmatter also become real, clickable, resolvable links - in every mode: `Source mode`, `Live Preview`, and `Reading`.
+Obsidian natively makes only `[[wikilinks]]` clickable inside YAML frontmatter (properties). `Frontmatter Markdown Links` extends that so **markdown-style links** written in frontmatter also become real, clickable, resolvable links - in every mode: `Source mode`, `Live Preview`, and `Reading`.
 
 Open this note's **properties** (the panel at the top) and look at each value:
 
