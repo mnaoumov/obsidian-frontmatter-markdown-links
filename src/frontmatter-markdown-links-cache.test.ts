@@ -1,6 +1,6 @@
 import type { FrontmatterLinkCache } from 'obsidian';
 
-import { castTo } from 'obsidian-dev-utils/object-utils';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import {
   afterEach,
   beforeEach,

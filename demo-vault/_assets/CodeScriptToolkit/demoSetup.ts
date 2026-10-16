@@ -1,10 +1,6 @@
 import type { App } from 'obsidian';
 
 import { Notice } from 'obsidian';
-import {
-  disableCommunityPlugin,
-  enableCommunityPlugin
-} from 'obsidian-dev-utils/obsidian/community-plugins';
 
 const PLUGIN_ID = 'frontmatter-markdown-links';
 const SECOND_TARGET_PATH = 'Targets/Second target.md';
@@ -33,7 +29,7 @@ export async function showSecondTargetBacklinks(app: App): Promise<void> {
  * Manual equivalent: toggle `Frontmatter Markdown Links` off in **Settings -> Community plugins**.
  */
 export async function disablePlugin(app: App): Promise<void> {
-  await disableCommunityPlugin({ app, pluginId: PLUGIN_ID });
+  await app.plugins.disablePluginAndSave(PLUGIN_ID);
   new Notice('Plugin off. Look at the Backlinks pane — the markdown-link backlink is gone.');
 }
 
@@ -43,6 +39,6 @@ export async function disablePlugin(app: App): Promise<void> {
  * Manual equivalent: toggle `Frontmatter Markdown Links` back on in **Settings -> Community plugins**.
  */
 export async function enablePlugin(app: App): Promise<void> {
-  await enableCommunityPlugin({ app, pluginId: PLUGIN_ID });
+  await app.plugins.enablePluginAndSave(PLUGIN_ID);
   new Notice('Plugin on. The backlink is back.');
 }

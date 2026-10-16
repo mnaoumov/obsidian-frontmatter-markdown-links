@@ -1,10 +1,10 @@
+import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 import {
   App,
   Menu,
   MenuItem,
   MenuSeparator
 } from 'obsidian';
-import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
 
 import { getLinkData } from '../link-data.ts';
 

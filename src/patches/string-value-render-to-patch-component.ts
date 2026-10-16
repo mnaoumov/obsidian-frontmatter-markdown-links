@@ -1,8 +1,8 @@
 import type { BasesControl } from '@obsidian-typings/obsidian-public-latest';
 import type { App } from 'obsidian';
 
-import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
-import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
+import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
+import { getPrototypeOf } from '@mnaoumov/typescript-lib/object-utils';
 
 import { didRenderStringValueLinks } from '../render-links.ts';
 

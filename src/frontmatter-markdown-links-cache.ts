@@ -4,8 +4,8 @@ import type {
   TFile
 } from 'obsidian';
 
+import { filterInPlace } from '@mnaoumov/typescript-lib/array';
 import { debounce } from 'obsidian';
-import { filterInPlace } from 'obsidian-dev-utils/array';
 
 interface FileMtimeEntry {
   filePath: string;

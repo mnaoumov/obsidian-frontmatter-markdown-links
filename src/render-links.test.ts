@@ -1,10 +1,10 @@
+import type { ParseLinkResult } from '@mnaoumov/obsidian-lib/parse-link';
 import type { App } from 'obsidian';
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/parse-link';
 
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { parseLinks } from 'obsidian-dev-utils/obsidian/parse-link';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
-import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
+import { parseLinks } from '@mnaoumov/obsidian-lib/parse-link';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import {
   afterEach,
   describe,

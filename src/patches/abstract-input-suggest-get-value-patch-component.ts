@@ -1,7 +1,7 @@
 import type { PropertyValueSuggest } from '@obsidian-typings/obsidian-public-latest';
 
+import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 import { AbstractInputSuggest } from 'obsidian';
-import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
 
 import type { PatchedInputElementMap } from '../patched-input-element-map.ts';
 

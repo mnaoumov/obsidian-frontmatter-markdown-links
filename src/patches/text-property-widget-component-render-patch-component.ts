@@ -1,9 +1,9 @@
 import type { TextPropertyWidgetComponent } from '@obsidian-typings/obsidian-public-latest';
 
-import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
-import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
-import { parseLink } from 'obsidian-dev-utils/obsidian/parse-link';
-import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
+import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
+import { parseLink } from '@mnaoumov/obsidian-lib/parse-link';
+import { getPrototypeOf } from '@mnaoumov/typescript-lib/object-utils';
+import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 
 interface TextPropertyWidgetComponentRenderPatchComponentConstructorParams {
   readonly textPropertyWidgetComponent: TextPropertyWidgetComponent;

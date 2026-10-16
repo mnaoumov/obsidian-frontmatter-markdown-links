@@ -1,3 +1,6 @@
+import type { AbortSignalComponent } from '@mnaoumov/obsidian-lib/components/abort-signal-component';
+import type { PluginNoticeComponent } from '@mnaoumov/obsidian-lib/components/plugin-notice-component';
+import type { EditorExtensionRegistrar } from '@mnaoumov/obsidian-lib/editor-extension-registrar';
 import type {
   App,
   CachedMetadata,
@@ -8,15 +11,12 @@ import type {
   TFile,
   WorkspaceLeaf
 } from 'obsidian';
-import type { AbortSignalComponent } from 'obsidian-dev-utils/obsidian/components/abort-signal-component';
-import type { PluginNoticeComponent } from 'obsidian-dev-utils/obsidian/components/plugin-notice-component';
-import type { EditorExtensionRegistrar } from 'obsidian-dev-utils/obsidian/editor-extension-registrar';
 
-import { waitForAllAsyncOperations } from 'obsidian-dev-utils/async';
-import { noopAsync } from 'obsidian-dev-utils/function';
-import { castTo } from 'obsidian-dev-utils/object-utils';
-import { AbortSignalComponent as AbortSignalComponentCls } from 'obsidian-dev-utils/obsidian/components/abort-signal-component';
-import { strictProxy } from 'obsidian-dev-utils/strict-proxy';
+import { AbortSignalComponent as AbortSignalComponentCls } from '@mnaoumov/obsidian-lib/components/abort-signal-component';
+import { noopAsync } from '@mnaoumov/typescript-lib/function';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { waitForAllAsyncOperations } from '@mnaoumov/typescript-test-toolkit/async-operation-tracking';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import {
   App as AppCls,
   MarkdownView,
@@ -199,16 +199,16 @@ vi.mock('./frontmatter-markdown-links-cache.ts', () => ({
 
 // Stub the RETURN VALUE of specific dev-utils utility functions, spreading the real module so the
 // other exports the real dev-utils components depend on remain intact.
-vi.mock('obsidian-dev-utils/obsidian/metadata-cache', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('obsidian-dev-utils/obsidian/metadata-cache')>();
+vi.mock('@mnaoumov/obsidian-lib/metadata-cache', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@mnaoumov/obsidian-lib/metadata-cache')>();
   return {
     ...actual,
     getCacheSafe: vi.fn().mockResolvedValue(null)
   };
 });
 
-vi.mock('obsidian-dev-utils/obsidian/vault', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('obsidian-dev-utils/obsidian/vault')>();
+vi.mock('@mnaoumov/obsidian-lib/vault', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@mnaoumov/obsidian-lib/vault')>();
   return {
     ...actual,
     getMarkdownFilesSorted: vi.fn().mockReturnValue([]),
@@ -216,8 +216,8 @@ vi.mock('obsidian-dev-utils/obsidian/vault', async (importOriginal) => {
   };
 });
 
-vi.mock('obsidian-dev-utils/obsidian/loop', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('obsidian-dev-utils/obsidian/loop')>();
+vi.mock('@mnaoumov/obsidian-lib/loop', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@mnaoumov/obsidian-lib/loop')>();
   return {
     ...actual,
     loop: vi.fn().mockResolvedValue(undefined)
@@ -225,16 +225,16 @@ vi.mock('obsidian-dev-utils/obsidian/loop', async (importOriginal) => {
 });
 
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { getBasesContextConstructor } from '@obsidian-typings/obsidian-public-latest/implementations';
+import { loop } from '@mnaoumov/obsidian-lib/loop';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { loop } from 'obsidian-dev-utils/obsidian/loop';
-// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { getCacheSafe } from 'obsidian-dev-utils/obsidian/metadata-cache';
+import { getCacheSafe } from '@mnaoumov/obsidian-lib/metadata-cache';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import {
   getMarkdownFilesSorted,
   trashSafe
-} from 'obsidian-dev-utils/obsidian/vault';
+} from '@mnaoumov/obsidian-lib/vault';
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import { getBasesContextConstructor } from '@obsidian-typings/obsidian-public-latest/implementations';
 
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { FrontmatterMarkdownLinksComponent } from './frontmatter-markdown-links-component.ts';

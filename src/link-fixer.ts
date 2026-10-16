@@ -1,7 +1,7 @@
-import type { ParseLinkResult } from 'obsidian-dev-utils/obsidian/parse-link';
+import type { ParseLinkResult } from '@mnaoumov/obsidian-lib/parse-link';
 
-import { generateRawMarkdownLink } from 'obsidian-dev-utils/obsidian/link';
-import { parseLink } from 'obsidian-dev-utils/obsidian/parse-link';
+import { generateRawMarkdownLink } from '@mnaoumov/obsidian-lib/link';
+import { parseLink } from '@mnaoumov/obsidian-lib/parse-link';
 
 export const EXTERNAL_LINK_PREFIX = 'https://EXTERNAL_LINK_PREFIX.com/';
 

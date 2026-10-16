@@ -4,7 +4,7 @@ import type {
 } from '@obsidian-typings/obsidian-public-latest';
 import type { App } from 'obsidian';
 
-import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
+import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 
 import { MultiTextPropertyComponentRenderValuesPatchComponent } from './multi-text-property-component-render-values-patch-component.ts';
 
