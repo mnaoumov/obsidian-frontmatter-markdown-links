@@ -30,7 +30,7 @@ export async function showSecondTargetBacklinks(app: App): Promise<void> {
  * frontmatter MARKDOWN link disappears, while the wikilink-sourced one stays — which is the whole
  * difference this plugin makes, shown rather than asserted.
  *
- * Manual equivalent: toggle **Frontmatter Markdown Links** off in **Settings -> Community plugins**.
+ * Manual equivalent: toggle `Frontmatter Markdown Links` off in **Settings -> Community plugins**.
  */
 export async function disablePlugin(app: App): Promise<void> {
   await disableCommunityPlugin({ app, pluginId: PLUGIN_ID });
@@ -40,7 +40,7 @@ export async function disablePlugin(app: App): Promise<void> {
 /**
  * Turns the plugin back on.
  *
- * Manual equivalent: toggle **Frontmatter Markdown Links** back on in **Settings -> Community plugins**.
+ * Manual equivalent: toggle `Frontmatter Markdown Links` back on in **Settings -> Community plugins**.
  */
 export async function enablePlugin(app: App): Promise<void> {
   await enableCommunityPlugin({ app, pluginId: PLUGIN_ID });

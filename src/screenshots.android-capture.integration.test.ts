@@ -117,7 +117,7 @@ describe('mobile store screenshots', () => {
     const names = await openObsidianSettingsTab({ tabId: PLUGIN_ID, vaultPath: vaultPath() });
     // The rows the tab drew ARE the proof it rendered, so asserting on one is
     // what separates this from a frame of an empty modal. The frame also carries the
-    // banner suggesting Advanced Rename and Delete Handler, which owns rename handling
+    // banner suggesting `Advanced Rename and Delete Handler`, which owns rename handling
     // since 3.0.0 — that row is deliberately unnamed, so the named toggle is what
     // there is to assert on here.
     expect(names).toContain('Should show initialization notice');
