@@ -52,7 +52,7 @@
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "@commitlint/types": "^21.2.3",
-    "@obsidian-typings/obsidian-public-latest": "^6.38.0",
+    "@obsidian-typings/obsidian-public-latest": "^6.46.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/strictest": "^2.0.8",
     "@types/node": "^26.6.2",

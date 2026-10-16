@@ -1,7 +1,4 @@
-import type {
-  AbstractInputSuggest,
-  SearchResult
-} from 'obsidian';
+import type { PropertyValueSuggest } from '@obsidian-typings/obsidian-public-latest';
 
 import { getPrototypeOf } from 'obsidian-dev-utils/object-utils';
 import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
@@ -9,18 +6,13 @@ import { ensureNonNullable } from 'obsidian-dev-utils/type-guards';
 
 import type { PatchedInputElementMap } from '../patched-input-element-map.ts';
 
-export interface MySearchResult extends SearchResult {
-  readonly text: string;
-  readonly type: string;
-}
-
 interface AbstractInputSuggestSelectSuggestionPatchComponentConstructorParams {
-  readonly abstractInputSuggest: AbstractInputSuggest<MySearchResult>;
+  readonly abstractInputSuggest: PropertyValueSuggest;
   readonly patchedInputElementMap: PatchedInputElementMap;
 }
 
 export class AbstractInputSuggestSelectSuggestionPatchComponent extends MonkeyAroundComponent {
-  private readonly abstractInputSuggest: AbstractInputSuggest<MySearchResult>;
+  private readonly abstractInputSuggest: PropertyValueSuggest;
   private readonly patchedInputElementMap: PatchedInputElementMap;
 
   public constructor(params: AbstractInputSuggestSelectSuggestionPatchComponentConstructorParams) {
@@ -52,6 +44,8 @@ export class AbstractInputSuggestSelectSuggestionPatchComponent extends MonkeyAr
 
         const fixedValue = oldValue.slice(0, from) + newValue + oldValue.slice(to);
         originalMethodBound({
+          matches: null,
+          score: 0,
           ...value,
           text: fixedValue,
           type: 'text'

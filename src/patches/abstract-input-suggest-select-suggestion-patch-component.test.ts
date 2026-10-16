@@ -1,4 +1,7 @@
-import type { SearchResult } from 'obsidian';
+import type {
+  PropertyValueSuggest,
+  PropertyValueSuggestTextItem
+} from '@obsidian-typings/obsidian-public-latest';
 
 import { AbstractInputSuggest } from 'obsidian';
 import { castTo } from 'obsidian-dev-utils/object-utils';
@@ -11,12 +14,10 @@ import {
   vi
 } from 'vitest';
 
-import type { MySearchResult } from './abstract-input-suggest-select-suggestion-patch-component.ts';
-
 import { PatchedInputElementMap } from '../patched-input-element-map.ts';
 import { AbstractInputSuggestSelectSuggestionPatchComponent } from './abstract-input-suggest-select-suggestion-patch-component.ts';
 
-type SelectSuggestionFunction = (this: unknown, value: MySearchResult, $event: KeyboardEvent | MouseEvent) => unknown;
+type SelectSuggestionFunction = (this: unknown, value: null | PropertyValueSuggestTextItem, $event: KeyboardEvent | MouseEvent) => unknown;
 
 interface SuggestPrototypeWithSelect {
   selectSuggestion: SelectSuggestionFunction;
@@ -24,20 +25,20 @@ interface SuggestPrototypeWithSelect {
 
 // Minimal concrete subclass so the abstract base can be instantiated and the
 // prototype-level `selectSuggestion` can be patched and invoked.
-class TestSuggest extends AbstractInputSuggest<MySearchResult> {
-  public lastSelectedValue: MySearchResult | null = null;
+class TestSuggest extends AbstractInputSuggest<PropertyValueSuggestTextItem> {
+  public lastSelectedValue: null | PropertyValueSuggestTextItem = null;
 
-  public override getSuggestions(): MySearchResult[] {
+  public override getSuggestions(): PropertyValueSuggestTextItem[] {
     return [];
   }
 
-  public override renderSuggestion(value: MySearchResult, el: HTMLElement): void {
+  public override renderSuggestion(value: PropertyValueSuggestTextItem, el: HTMLElement): void {
     el.textContent = value.text;
   }
 
-  public override selectSuggestion(value: MySearchResult): void {
+  public override selectSuggestion(value: null | PropertyValueSuggestTextItem): void {
     this.lastSelectedValue = value;
-    this.textInputEl.textContent = value.text;
+    this.textInputEl.textContent = value?.text ?? '';
   }
 }
 
@@ -49,7 +50,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function callSelectSuggestion(suggest: TestSuggest, value: MySearchResult, $event: KeyboardEvent | MouseEvent): void {
+function callSelectSuggestion(suggest: TestSuggest, value: null | PropertyValueSuggestTextItem, $event: KeyboardEvent | MouseEvent): void {
   const prototype = Object.getPrototypeOf(suggest) as SuggestPrototypeWithSelect;
   prototype.selectSuggestion.call(suggest, value, $event);
 }
@@ -61,7 +62,7 @@ function createSuggest(textInputEl: HTMLDivElement): TestSuggest {
 
 function loadPatch(suggest: TestSuggest, patchedInputElementMap: PatchedInputElementMap): void {
   const component = new AbstractInputSuggestSelectSuggestionPatchComponent({
-    abstractInputSuggest: castTo<AbstractInputSuggest<MySearchResult>>(suggest),
+    abstractInputSuggest: castTo<PropertyValueSuggest>(suggest),
     patchedInputElementMap
   });
   component.load();
@@ -101,11 +102,30 @@ describe('AbstractInputSuggestSelectSuggestionPatchComponent', () => {
     // The offset should be reset to a zero range after splicing.
     expect(patchedInputElementMap.getOffset(textInputEl)).toEqual({ from: 0, to: 0 });
   });
+
+  it('should pass a complete text item when the patched input element selects no suggestion', () => {
+    const textInputEl = createDiv();
+    textInputEl.textContent = 'Foo [[bar';
+    const suggest = createSuggest(textInputEl);
+    const patchedInputElementMap = new PatchedInputElementMap();
+    patchedInputElementMap.setOffset(textInputEl, { from: 4, to: 9 });
+    loadPatch(suggest, patchedInputElementMap);
+
+    callSelectSuggestion(suggest, null, new MouseEvent('click'));
+
+    expect(suggest.lastSelectedValue).toEqual({
+      matches: null,
+      score: 0,
+      text: 'Foo ',
+      type: 'text'
+    });
+  });
 });
 
-function createSearchResult(text: string): MySearchResult {
+function createSearchResult(text: string): PropertyValueSuggestTextItem {
   return {
-    ...castTo<SearchResult>({ matches: [], score: 0 }),
+    matches: null,
+    score: 0,
     text,
     type: 'text'
   };
