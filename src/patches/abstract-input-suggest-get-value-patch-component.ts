@@ -1,8 +1,9 @@
+import type { PropertyValueSuggest } from '@obsidian-typings/obsidian-public-latest';
+
 import { AbstractInputSuggest } from 'obsidian';
 import { MonkeyAroundComponent } from 'obsidian-dev-utils/obsidian/components/monkey-around-component';
 
 import type { PatchedInputElementMap } from '../patched-input-element-map.ts';
-import type { MySearchResult } from './abstract-input-suggest-select-suggestion-patch-component.ts';
 
 import { getCaretCharacterOffset } from '../selection.ts';
 import { AbstractInputSuggestSelectSuggestionPatchComponent } from './abstract-input-suggest-select-suggestion-patch-component.ts';
@@ -30,7 +31,7 @@ export class AbstractInputSuggestGetValuePatchComponent extends MonkeyAroundComp
         if (!this.isCustomAbstractInputSuggestPatched) {
           this.addChild(
             new AbstractInputSuggestSelectSuggestionPatchComponent({
-              abstractInputSuggest: originalThis as AbstractInputSuggest<MySearchResult>,
+              abstractInputSuggest: originalThis as PropertyValueSuggest,
               patchedInputElementMap: this.patchedInputElementMap
             })
           );
