@@ -27,6 +27,7 @@ interface PluginsLike {
 
 interface PluginSuggestionComponentParams {
   readonly isSuggestionDeclined: (this: void) => boolean;
+  readonly reason: DocumentFragment | string;
   readonly setSuggestionDeclined: (this: void, isDeclined: boolean) => Promise<void>;
   readonly suggestedPluginId: string;
 }
@@ -171,6 +172,18 @@ describe('Plugin', () => {
 
     expect(pluginSuggestionStub).toHaveBeenCalled();
     expect(suggestionParams().suggestedPluginId).toBe('advanced-rename-and-delete-handler');
+    plugin.unload();
+  });
+
+  it('should name both plugins as code in the suggestion reason', async () => {
+    const plugin = new Plugin(createConfiguredApp(), PLUGIN_MANIFEST);
+
+    await plugin.onload();
+
+    const reason = suggestionParams().reason;
+    expect(reason).toBeInstanceOf(DocumentFragment);
+    const codeTexts = Array.from(castTo<DocumentFragment>(reason).querySelectorAll('code'), (code) => code.textContent);
+    expect(codeTexts).toEqual(['Frontmatter Markdown Links', 'Advanced Rename and Delete Handler']);
     plugin.unload();
   });
 

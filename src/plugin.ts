@@ -4,6 +4,7 @@ import { PluginSuggestionComponent } from '@mnaoumov/obsidian-lib/components/plu
 import { SettingsMigrationComponent } from '@mnaoumov/obsidian-lib/components/settings-migration-component';
 import { PluginDataHandler } from '@mnaoumov/obsidian-lib/data-handler';
 import { PluginEditorExtensionRegistrar } from '@mnaoumov/obsidian-lib/editor-extension-registrar';
+import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
 import { PluginBase } from '@mnaoumov/obsidian-lib/plugin/plugin';
 import { PluginEventSourceImpl } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
 
@@ -18,9 +19,6 @@ import { LinkFixer } from './link-fixer.ts';
 import { PatchedInputElementMap } from './patched-input-element-map.ts';
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 import { PluginSettingsTab } from './plugin-settings-tab.ts';
-
-const SUGGESTION_REASON = 'Frontmatter Markdown Links no longer handles renames itself.'
-  + ' Without Advanced Rename and Delete Handler, Obsidian\'s own link update runs instead, and it can ruin some of your frontmatter links.';
 
 export class Plugin extends PluginBase {
   protected override async onloadImpl(): Promise<void> {
@@ -38,7 +36,7 @@ export class Plugin extends PluginBase {
         isSuggestionDeclined: (): boolean => pluginSettingsComponent.settings.isAdvancedRenameAndDeleteHandlerSuggestionDeclined,
         pluginNoticeComponent: this.pluginNoticeComponent,
         pluginSettingsComponent,
-        reason: SUGGESTION_REASON,
+        reason: createSuggestionReason(this.manifest.name),
         // `editAndSave`, not `setProperty`: a decline has to outlive a reload, and `setProperty` only edits
         // the in-memory state.
         setSuggestionDeclined: async (isDeclined): Promise<void> => {
@@ -106,4 +104,13 @@ export class Plugin extends PluginBase {
       })
     ]);
   }
+}
+
+function createSuggestionReason(pluginName: string): DocumentFragment {
+  return createFragment((fragment) => {
+    appendCodeBlock(fragment, pluginName);
+    fragment.appendText(' no longer handles renames itself. Without ');
+    appendCodeBlock(fragment, ADVANCED_RENAME_AND_DELETE_HANDLER_PLUGIN_NAME);
+    fragment.appendText(', Obsidian\'s own link update runs instead, and it can ruin some of your frontmatter links.');
+  });
 }
