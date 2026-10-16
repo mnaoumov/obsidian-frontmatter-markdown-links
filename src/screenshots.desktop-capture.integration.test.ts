@@ -53,28 +53,6 @@ import {
   it
 } from 'vitest';
 
-/**
- * `App`, reduced to the inline-title toggle that `obsidian-typings` does not
- * declare. Setting the config alone changes nothing on screen.
- */
-interface InlineTitleApp {
-  updateInlineTitleDisplay: (this: void) => void;
-}
-
-/**
- * The preview half of a Markdown view, reduced to the call that re-renders it.
- */
-interface PreviewMode {
-  rerender: (this: void, isFull: boolean) => void;
-}
-
-/**
- * A Markdown view, reduced to {@link PreviewMode}.
- */
-interface PreviewRenderView {
-  previewMode: PreviewMode;
-}
-
 const WIDTH_IN_PIXELS = 1200;
 const HEIGHT_IN_PIXELS = 800;
 
@@ -129,8 +107,7 @@ beforeAll(async () => {
       app.workspace.leftSplit.collapse();
 
       app.vault.setConfig('showInlineTitle', false);
-      const inlineTitleApp: unknown = app;
-      (inlineTitleApp as InlineTitleApp).updateInlineTitleDisplay();
+      app.updateInlineTitleDisplay();
 
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
     },
@@ -280,8 +257,7 @@ async function openNoteAndReadProperty(path: string): Promise<unknown> {
       // Reopening a note Obsidian has already rendered reuses that render, so
       // the frame taken straight after toggling the plugin showed the PREVIOUS
       // state — a rendered link in the shot whose point is that there is none.
-      const view: unknown = app.workspace.getActiveViewOfType(obsidianModule.MarkdownView);
-      (view as null | PreviewRenderView)?.previewMode.rerender(true);
+      app.workspace.getActiveViewOfType(obsidianModule.MarkdownView)?.previewMode.rerender(true);
 
       await sleep(SETTLE_DELAY_IN_MILLISECONDS);
 
