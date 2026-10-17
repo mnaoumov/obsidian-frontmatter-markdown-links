@@ -94,7 +94,8 @@ wikilink: "[[Wikilink]]"
 wikilinkWithAlias: "[[Wikilink|Alias]]"
 externalUrl: "https://example.com"
 
-# These are what the plugin adds
+# Markdown-style forms. Obsidian draws some of these as links by itself when one fills a whole value;
+# the plugin makes every one a link in Source mode, and inside a value holding several links
 markdownLink: "[Alias](MarkdownLink.md)"
 markdownLinkWithSpace: "[Alias with space](MarkdownLink%20with%20space.md)"
 markdownLinkWithAngleBrackets: "[Alias with space](<MarkdownLink with space.md>)"

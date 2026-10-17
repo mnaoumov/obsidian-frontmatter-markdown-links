@@ -2,15 +2,15 @@
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/mnaoumov) [![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-frontmatter-markdown-links)](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/releases) [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-frontmatter-markdown-links/total)](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/releases) [![Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links)
 
-[Obsidian](https://obsidian.md/) makes `[[wikilinks]]` in frontmatter clickable, but a markdown link written in a property is just text: it does not resolve, it does not open, and it does not register as a backlink. So a vault that uses markdown links everywhere else has to switch styles the moment a link moves into a property.
+[Obsidian](https://obsidian.md/) treats a property whose whole value is one link, `[[wikilink]]` or `[text](note.md)`, as a real link. But put several links in one value, such as `"[[Chapter one]] and [Chapter two](<Chapter two.md>)"`, and Obsidian draws the whole value as one broken link: none of the links in it resolves, opens or counts as a backlink. And while you edit in Source mode, no link in the frontmatter is clickable at all.
 
-This plugin makes markdown links in frontmatter real links — clickable in Source mode, Live Preview and Reading, resolvable, and counted as backlinks on their targets.
+This plugin makes every link in frontmatter a real link — each link in a multi-link value on its own, wikilinks and markdown links alike, clickable in Source mode, Live Preview and Reading, resolvable, and counted as a backlink on its target.
 
 Long-requested on the Obsidian forum, for both [internal](https://forum.obsidian.md/t/properties-support-external-markdown-links/76918) and [external](https://forum.obsidian.md/t/properties-support-internal-markdown-links/63825/) links.
 
 <!-- markdownlint-disable MD033 -->
 
-<a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-desktop-1.png"><img src="images/screenshots/screenshot-desktop-1.png" alt="Markdown links in properties become real links" width="600"></a>
+<a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-desktop-1.png"><img src="images/screenshots/screenshot-desktop-1.png" alt="Several links in one property become real links" width="600"></a>
 
 <details>
 <summary>More screenshots</summary>
@@ -18,7 +18,7 @@ Long-requested on the Obsidian forum, for both [internal](https://forum.obsidian
 <div>
 <a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-desktop-2.png"><img src="images/screenshots/screenshot-desktop-2.png" alt="And the target counts them as backlinks" width="600"></a>
 <a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-desktop-3.png"><img src="images/screenshots/screenshot-desktop-3.png" alt="Rename handling now lives in a companion plugin" width="600"></a>
-<a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-mobile-1.png"><img src="images/screenshots/screenshot-mobile-1.png" alt="Markdown links in properties become real links" width="270"></a>
+<a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-mobile-1.png"><img src="images/screenshots/screenshot-mobile-1.png" alt="Several links in one property become real links" width="270"></a>
 <a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-mobile-2.png"><img src="images/screenshots/screenshot-mobile-2.png" alt="And the target counts them as backlinks" width="270"></a>
 <a href="https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/blob/HEAD/images/screenshots/screenshot-mobile-3.png"><img src="images/screenshots/screenshot-mobile-3.png" alt="Rename handling now lives in a companion plugin" width="270"></a>
 </div>
@@ -41,8 +41,8 @@ A copy of the vault ships with every release. You can access it via any of the f
 
 ## What it does
 
-- **Markdown links in properties become real links** — clickable in every mode, with paths that contain spaces working either percent-encoded or in angle brackets, and embeds supported too. Several links can live in one property. [01 Frontmatter markdown links](<./demo-vault/01 Frontmatter markdown links.md>)
-- **They count as backlinks**, so a note linked only from a property still shows up on its target. [02 Backlinks](<./demo-vault/02 Backlinks.md>)
+- **Several links in one property become separate real links**, and every frontmatter link is clickable in Source mode too — with paths that contain spaces working either percent-encoded or in angle brackets, and embeds supported too. [01 Frontmatter markdown links](<./demo-vault/01 Frontmatter markdown links.md>)
+- **They count as backlinks**, so a note linked only from inside a multi-link property still shows up on its target. [02 Backlinks](<./demo-vault/02 Backlinks.md>)
 - **Settings**, including how much of this you want. [03 Settings](<./demo-vault/03 Settings.md>)
 
 ## Renames

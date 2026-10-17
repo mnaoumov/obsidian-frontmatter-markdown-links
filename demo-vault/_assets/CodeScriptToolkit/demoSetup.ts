@@ -1,5 +1,6 @@
 import type {
   App,
+  TFile,
   WorkspaceLeaf
 } from 'obsidian';
 
@@ -9,22 +10,29 @@ import {
   Platform
 } from 'obsidian';
 
-const PLUGIN_ID = 'frontmatter-markdown-links';
-const SECOND_TARGET_PATH = 'Targets/Second target.md';
+interface BacklinkViewInternals {
+  backlink: { recomputeBacklink(file: TFile): void };
+  file: null | TFile;
+}
+
+const PLUGIN_ID ='frontmatter-markdown-links';
+const THIRD_TARGET_PATH = 'Targets/Third target.md';
 const FRONTMATTER_LINKS_NOTE_PATH = '01 Frontmatter markdown links.md';
 const LINK_DATA_SELECTOR = '[data-frontmatter-markdown-links-link-data]';
 const SOURCE_MODE_RENDER_TIMEOUT_IN_MILLISECONDS = 5000;
 const SOURCE_MODE_RENDER_POLL_IN_MILLISECONDS = 100;
+const BACKLINK_REFRESH_DELAY_IN_MILLISECONDS = 1000;
 
 /**
- * Opens the note the frontmatter markdown link points at and reveals its Backlinks pane.
+ * Opens the note that only the multi-link `seeAlso` property of `02 Backlinks` points at, and reveals its
+ * Backlinks pane.
  *
- * Manual equivalent: open `Targets/Second target.md`, then run **Backlinks: Show backlinks**.
+ * Manual equivalent: open `Targets/Third target.md`, then run **Backlinks: Show backlinks**.
  */
-export async function showSecondTargetBacklinks(app: App): Promise<void> {
-  const note = app.vault.getFileByPath(SECOND_TARGET_PATH);
+export async function showThirdTargetBacklinks(app: App): Promise<void> {
+  const note = app.vault.getFileByPath(THIRD_TARGET_PATH);
   if (!note) {
-    new Notice('The second target note is missing from Targets/.');
+    new Notice('The third target note is missing from Targets/.');
     return;
   }
 
@@ -33,16 +41,17 @@ export async function showSecondTargetBacklinks(app: App): Promise<void> {
 }
 
 /**
- * Turns the plugin off. With the Backlinks pane open on the second target, the backlink coming from a
- * frontmatter MARKDOWN link disappears, while the wikilink-sourced one stays — which is the whole
- * difference this plugin makes, shown rather than asserted.
+ * Turns the plugin off. With the Backlinks pane open on the third target, the backlink coming from a
+ * property holding several links disappears, because Obsidian does not count a link inside such a value
+ * by itself — which is the difference this plugin makes, shown rather than asserted.
  *
  * Manual equivalent: toggle `Frontmatter Markdown Links` off in **Settings -> Community plugins**.
  *
  * @param message - The notice to show once the plugin is off, saying what to look at.
  */
-export async function disablePlugin(app: App, message = 'Plugin off. Look at the Backlinks pane — the markdown-link backlink is gone.'): Promise<void> {
+export async function disablePlugin(app: App, message = 'Plugin off. Look at the Backlinks pane — the backlink from the multi-link property is gone.'): Promise<void> {
   await app.plugins.disablePluginAndSave(PLUGIN_ID);
+  await refreshBacklinkPanes(app);
   new Notice(message);
 }
 
@@ -55,6 +64,7 @@ export async function disablePlugin(app: App, message = 'Plugin off. Look at the
  */
 export async function enablePlugin(app: App, message = 'Plugin on. The backlink is back.'): Promise<void> {
   await app.plugins.enablePluginAndSave(PLUGIN_ID);
+  await refreshBacklinkPanes(app);
   new Notice(message);
 }
 
@@ -135,6 +145,25 @@ function findSourceModeLeaves(app: App): WorkspaceLeaf[] {
     && leaf.view.getMode() === 'source'
     && leaf.view.getState()['source'] === true
   );
+}
+
+/**
+ * Recomputes every open Backlinks pane. A pane does not redraw when the plugin is toggled, so without this
+ * it keeps listing what it listed before the toggle until another note is opened in it.
+ *
+ * The plugin adds and removes its links a moment after the toggle returns, so the recompute waits for that.
+ *
+ * `recomputeBacklink` is Obsidian-internal and untyped, so it is checked before the call; when a version
+ * drops it, the pane is merely left as it was.
+ */
+async function refreshBacklinkPanes(app: App): Promise<void> {
+  await sleep(BACKLINK_REFRESH_DELAY_IN_MILLISECONDS);
+  for (const leaf of app.workspace.getLeavesOfType('backlink')) {
+    const view = leaf.view as Partial<BacklinkViewInternals>;
+    if (view.file && typeof view.backlink?.recomputeBacklink === 'function') {
+      view.backlink.recomputeBacklink(view.file);
+    }
+  }
 }
 
 function getModifierName(): string {

@@ -5,7 +5,7 @@
  * driving staged notes in a real Obsidian and writing
  * `images/screenshots/screenshot-desktop-N.png`.
  *
- * THREE shots: the property rendered as a real link, the backlink that only
+ * THREE shots: several links in one property, each rendered as a real link, the backlink that only
  * exists because the link resolved, and the plugin's settings tab. The second
  * earns its slot because
  * whether a link can be clicked is a claim a still image struggles to make, while a backlink
@@ -19,12 +19,10 @@
  * afterwards leaves the modal on screen showing what it drew while detached)
  * and resolves to the rows the tab rendered.
  *
- * There is deliberately NO plugin-off frame. Disabling the plugin does not undo
- * what it did: the parsed links live in the metadata cache and the property
- * renderer reads from there, so the link stays on screen with the plugin off,
- * and a forced re-render does not clear it either. A frame captioned "without
- * the plugin" that still showed the link would be a lie, and rebuilding the
- * cache without the plugin is not something a capture run can force.
+ * The staged property holds SEVERAL links, because Obsidian draws a value that
+ * is one link as a link by itself: a frame of that would show nothing the
+ * plugin does. There is deliberately NO plugin-off frame; the demo vault's
+ * `02 Backlinks` shows the difference live, which a still cannot.
  *
  * Each shot asserts what it claims: that the property holds a rendered link,
  * that the target note names the source in its backlinks, and that the settings
@@ -58,6 +56,7 @@ const HEIGHT_IN_PIXELS = 800;
 
 const SOURCE_NOTE_PATH = 'Screenshots/Chapter one.md';
 const TARGET_NOTE_PATH = 'Screenshots/Chapter two.md';
+const PROLOGUE_NOTE_PATH = 'Screenshots/Prologue.md';
 
 /**
  * The plugin's settings tab id, which is its `manifest.json` `id`. Required by
@@ -73,6 +72,7 @@ beforeAll(async () => {
   const vault = getTemporaryVault();
 
   vault.populate({
+    [PROLOGUE_NOTE_PATH]: '# Prologue\n\nThe other note the property points at.\n',
     [SOURCE_NOTE_PATH]: buildSourceNote(),
     [TARGET_NOTE_PATH]: '# Chapter two\n\nThe note the property points at.\n'
   });
@@ -117,10 +117,10 @@ beforeAll(async () => {
 });
 
 describe('desktop store screenshots', () => {
-  it('1 - the property rendered as a real link', async () => {
+  it('1 - several links in one property, each rendered as a real link', async () => {
     const probe = await openNoteAndReadProperty(SOURCE_NOTE_PATH);
-    expect(probe).toMatchObject({ hasLink: true });
-    await shoot(1, 'Markdown links in properties become real links');
+    expect(probe).toEqual({ relatedLinkTexts: ['Prologue', 'Chapter two'] });
+    await shoot(1, 'Several links in one property become real links');
   });
 
   it('2 - the backlink it produces', async () => {
@@ -144,13 +144,14 @@ describe('desktop store screenshots', () => {
 });
 
 /**
- * Builds the staged note whose property holds a markdown link.
+ * Builds the staged note whose `related` property holds two links, a wikilink and a markdown link. A
+ * value that is ONE link is drawn as a link by Obsidian itself, so it would show nothing of the plugin.
  *
  * @returns The note's Markdown.
  */
 function buildSourceNote(): string {
   return '---\n'
-    + 'related: "[Chapter two](<./Chapter two.md>)"\n'
+    + 'related: "[[Prologue]] and [Chapter two](<./Chapter two.md>)"\n'
     + 'source: "[Obsidian Help](https://help.obsidian.md)"\n'
     + '---\n'
     + '# Chapter one\n\n'
@@ -264,10 +265,12 @@ async function openNoteAndReadProperty(path: string): Promise<unknown> {
       // A rendered LINK inside a property row is the whole difference. Obsidian
       // draws property links as divs carrying `.metadata-link-inner`, not as
       // anchors, so looking for an <a> found nothing even with the plugin on.
-      const link = document.querySelector('.metadata-property-value .metadata-link-inner');
+      // With the plugin on, Obsidian's own single collapsed link stays in the row, hidden, beside the
+      // plugin's two, so only the visible ones are the frame's subject.
       return {
-        hasLink: Boolean(link),
-        linkText: link?.textContent ?? null
+        relatedLinkTexts: [...document.querySelectorAll('.metadata-property[data-property-key="related"] .metadata-link-inner')]
+          .filter((link) => link.checkVisibility())
+          .map((link) => link.textContent)
       };
     },
     input: { path },
