@@ -6,7 +6,7 @@
  * emulator and writing images/screenshots/screenshot-mobile-N.png.
  *
  * The mobile counterpart of the desktop capture suite, showing the same three
- * frames. See the desktop suite for why there is no plugin-off frame, and for
+ * frames. See the desktop suite for why the property holds several links, and for
  * why the settings frame goes through `openObsidianSettingsTab` rather than
  * `app.setting.open()`.
  *
@@ -47,6 +47,7 @@ const MOBILE_FONT_SIZE_IN_PIXELS = 13;
 
 const SOURCE_NOTE_PATH = 'Screenshots/Chapter one.md';
 const TARGET_NOTE_PATH = 'Screenshots/Chapter two.md';
+const PROLOGUE_NOTE_PATH = 'Screenshots/Prologue.md';
 
 /**
  * The plugin's settings tab id, which is its `manifest.json` `id`. Required by
@@ -61,6 +62,7 @@ beforeAll(async () => {
   const vault = getTemporaryVault();
 
   vault.populate({
+    [PROLOGUE_NOTE_PATH]: '# Prologue\n\nThe other note the property points at.\n',
     [SOURCE_NOTE_PATH]: buildSourceNote(),
     [TARGET_NOTE_PATH]: '# Chapter two\n\nThe note the property points at.\n'
   });
@@ -99,10 +101,10 @@ beforeAll(async () => {
 });
 
 describe('mobile store screenshots', () => {
-  it('1 - the property rendered as a real link', async () => {
+  it('1 - several links in one property, each rendered as a real link', async () => {
     const probe = await openNoteAndReadProperty(SOURCE_NOTE_PATH);
-    expect(probe).toMatchObject({ hasLink: true });
-    await shoot(1, 'Markdown links in properties become real links');
+    expect(probe).toEqual({ relatedLinkTexts: ['Prologue', 'Chapter two'] });
+    await shoot(1, 'Several links in one property become real links');
   });
 
   it('2 - the backlink it produces', async () => {
@@ -126,13 +128,14 @@ describe('mobile store screenshots', () => {
 });
 
 /**
- * Builds the staged note whose property holds a markdown link.
+ * Builds the staged note whose `related` property holds two links, a wikilink and a markdown link. A
+ * value that is ONE link is drawn as a link by Obsidian itself, so it would show nothing of the plugin.
  *
  * @returns The note's Markdown.
  */
 function buildSourceNote(): string {
   return '---\n'
-    + 'related: "[Chapter two](<./Chapter two.md>)"\n'
+    + 'related: "[[Prologue]] and [Chapter two](<./Chapter two.md>)"\n'
     + 'source: "[Obsidian Help](https://help.obsidian.md)"\n'
     + '---\n'
     + '# Chapter one\n\n'
@@ -240,10 +243,12 @@ async function openNoteAndReadProperty(path: string): Promise<unknown> {
       // A rendered LINK inside a property row is the whole difference. Obsidian
       // draws property links as divs carrying `.metadata-link-inner`, not as
       // anchors, so looking for an <a> found nothing even with the plugin on.
-      const link = document.querySelector('.metadata-property-value .metadata-link-inner');
+      // With the plugin on, Obsidian's own single collapsed link stays in the row, hidden, beside the
+      // plugin's two, so only the visible ones are the frame's subject.
       return {
-        hasLink: Boolean(link),
-        linkText: link?.textContent ?? null
+        relatedLinkTexts: [...document.querySelectorAll('.metadata-property[data-property-key="related"] .metadata-link-inner')]
+          .filter((link) => link.checkVisibility())
+          .map((link) => link.textContent)
       };
     },
     input: { path },
