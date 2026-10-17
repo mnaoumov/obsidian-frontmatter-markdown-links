@@ -1,6 +1,5 @@
 import type {
   App,
-  TFile,
   WorkspaceLeaf
 } from 'obsidian';
 
@@ -10,10 +9,6 @@ import {
   Platform
 } from 'obsidian';
 
-interface BacklinkViewInternals {
-  backlink: { recomputeBacklink(file: TFile): void };
-  file: null | TFile;
-}
 
 const PLUGIN_ID ='frontmatter-markdown-links';
 const THIRD_TARGET_PATH = 'Targets/Third target.md';
@@ -21,7 +16,6 @@ const FRONTMATTER_LINKS_NOTE_PATH = '01 Frontmatter markdown links.md';
 const LINK_DATA_SELECTOR = '[data-frontmatter-markdown-links-link-data]';
 const SOURCE_MODE_RENDER_TIMEOUT_IN_MILLISECONDS = 5000;
 const SOURCE_MODE_RENDER_POLL_IN_MILLISECONDS = 100;
-const BACKLINK_REFRESH_DELAY_IN_MILLISECONDS = 1000;
 
 /**
  * Opens the note that only the multi-link `seeAlso` property of `02 Backlinks` points at, and reveals its
@@ -51,7 +45,6 @@ export async function showThirdTargetBacklinks(app: App): Promise<void> {
  */
 export async function disablePlugin(app: App, message = 'Plugin off. Look at the Backlinks pane — the backlink from the multi-link property is gone.'): Promise<void> {
   await app.plugins.disablePluginAndSave(PLUGIN_ID);
-  await refreshBacklinkPanes(app);
   new Notice(message);
 }
 
@@ -64,7 +57,6 @@ export async function disablePlugin(app: App, message = 'Plugin off. Look at the
  */
 export async function enablePlugin(app: App, message = 'Plugin on. The backlink is back.'): Promise<void> {
   await app.plugins.enablePluginAndSave(PLUGIN_ID);
-  await refreshBacklinkPanes(app);
   new Notice(message);
 }
 
@@ -147,24 +139,6 @@ function findSourceModeLeaves(app: App): WorkspaceLeaf[] {
   );
 }
 
-/**
- * Recomputes every open Backlinks pane. A pane does not redraw when the plugin is toggled, so without this
- * it keeps listing what it listed before the toggle until another note is opened in it.
- *
- * The plugin adds and removes its links a moment after the toggle returns, so the recompute waits for that.
- *
- * `recomputeBacklink` is Obsidian-internal and untyped, so it is checked before the call; when a version
- * drops it, the pane is merely left as it was.
- */
-async function refreshBacklinkPanes(app: App): Promise<void> {
-  await sleep(BACKLINK_REFRESH_DELAY_IN_MILLISECONDS);
-  for (const leaf of app.workspace.getLeavesOfType('backlink')) {
-    const view = leaf.view as Partial<BacklinkViewInternals>;
-    if (view.file && typeof view.backlink?.recomputeBacklink === 'function') {
-      view.backlink.recomputeBacklink(view.file);
-    }
-  }
-}
 
 function getModifierName(): string {
   return Platform.isMacOS ? 'Cmd' : 'Ctrl';
