@@ -93,8 +93,8 @@ interface ProcessFrontmatterLinksInFileAccess {
   processFrontmatterLinksInFile: AnyFunction;
 }
 
-interface UpdateResolvedOrUnresolvedLinksCacheAccess {
-  updateResolvedOrUnresolvedLinksCache: AnyFunction;
+interface ResolveLinksAccess {
+  resolveLinks: AnyFunction;
 }
 
 interface ValidCacheInstance {
@@ -291,6 +291,7 @@ function createMockApp(): App {
       getFirstLinkpathDest: vi.fn().mockReturnValue(null),
       on: vi.fn().mockReturnValue({}),
       resolvedLinks,
+      resolveLinks: vi.fn(),
       trigger: vi.fn(),
       unresolvedLinks
     },
@@ -371,6 +372,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
           getCache: vi.fn().mockReturnValue(null),
           on: metadataCacheOn,
           resolvedLinks: {},
+          resolveLinks: vi.fn(),
           trigger: vi.fn(),
           unresolvedLinks: {}
         },
@@ -472,6 +474,27 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         expect(metadataCacheOn).toHaveBeenCalledWith('changed', expect.any(Function));
         expect(vi.mocked(loop)).toHaveBeenCalled();
         component.unload();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('should register no cache listener when unloaded while the notes are still being processed', async () => {
+      vi.useFakeTimers();
+      try {
+        const { app, metadataCacheOn, registerEditorExtension } = createLifecycleApp();
+        const registrar = strictProxy<EditorExtensionRegistrar>({ registerEditorExtension });
+        const component = createLifecycleComponent(app, registrar);
+        vi.mocked(loop).mockImplementation(async () => {
+          await noopAsync();
+          component.unload();
+        });
+
+        component.load();
+        await vi.runAllTimersAsync();
+
+        expect(vi.mocked(loop)).toHaveBeenCalled();
+        expect(metadataCacheOn).not.toHaveBeenCalled();
       } finally {
         vi.useRealTimers();
       }
@@ -643,7 +666,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = {};
 
-      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, file: makeTFile('file.md') });
 
       expect(isResult).toBe(false);
     });
@@ -652,7 +675,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'plain text' }) };
 
-      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, file: makeTFile('file.md') });
 
       expect(isResult).toBe(false);
     });
@@ -661,7 +684,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'https://example.com' }) };
 
-      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, file: makeTFile('file.md') });
 
       expect(isResult).toBe(false);
     });
@@ -670,7 +693,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ markdown: '[note](target.md)', wiki: '[[some/note]]' }) };
 
-      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, file: makeTFile('file.md') });
 
       expect(isResult).toBe(false);
       expect(cache.frontmatterLinks ?? []).toHaveLength(0);
@@ -680,7 +703,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'text [a](x.md) and [b](y.md)' }) };
 
-      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, file: makeTFile('file.md') });
 
       expect(isResult).toBe(true);
       const links = cache.frontmatterLinks ?? [];
@@ -693,7 +716,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ outer: { inner: 'text [a](x.md) and [b](y.md)' } }) };
 
-      const isResult = component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      const isResult = component['processFrontmatterLinks']({ cache, file: makeTFile('file.md') });
 
       expect(isResult).toBe(true);
       expect((cache.frontmatterLinks ?? []).every((link) => link.key === 'outer.inner')).toBe(true);
@@ -703,7 +726,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const component = createComponent();
       const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'see [My Note](target.md) and [Other](other.md)' }) };
 
-      component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      component['processFrontmatterLinks']({ cache, file: makeTFile('file.md') });
 
       expect(cache.frontmatterLinks?.[0]?.displayText).toBe('My Note');
     });
@@ -720,12 +743,44 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         ]
       };
 
-      component['processFrontmatterLinks']({ cache, filePath: 'file.md' });
+      component['processFrontmatterLinks']({ cache, file: makeTFile('file.md') });
 
       expect(mockCache.deleteKey).toHaveBeenCalledWith({ filePath: 'file.md', key: 'key' });
       const keyLinks = (cache.frontmatterLinks ?? []).filter((link) => link.key === 'key');
       expect(keyLinks.map((link) => link.link).sort()).toEqual(['x.md', 'y.md']);
       expect((cache.frontmatterLinks ?? []).map((link) => link.key)).toContain('other');
+    });
+
+    it('should recount the note\'s links after contributing', () => {
+      const component = createComponent();
+      const file = makeTFile('file.md');
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'text [a](x.md) and [b](y.md)' }) };
+
+      component['processFrontmatterLinks']({ cache, file });
+
+      expect(getApp(component).metadataCache.resolveLinks).toHaveBeenCalledWith('file.md');
+      expect(getApp(component).metadataCache.trigger).toHaveBeenCalledWith('resolve', file);
+    });
+
+    it('should recount the note\'s links when its last contribution is gone', () => {
+      const component = createComponent();
+      const mockCache = castTo<CacheGetKeysAccess & ValidCacheInstance>(component['frontmatterMarkdownLinksCache']);
+      mockCache.getKeys.mockReturnValue(['key']);
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'plain text' }) };
+
+      const isResult = component['processFrontmatterLinks']({ cache, file: makeTFile('file.md') });
+
+      expect(isResult).toBe(false);
+      expect(getApp(component).metadataCache.resolveLinks).toHaveBeenCalledWith('file.md');
+    });
+
+    it('should leave the counts to Obsidian for a note the plugin never contributed to', () => {
+      const component = createComponent();
+      const cache: CachedMetadata = { frontmatter: castTo<FrontMatterCache>({ key: 'plain text' }) };
+
+      component['processFrontmatterLinks']({ cache, file: makeTFile('file.md') });
+
+      expect(getApp(component).metadataCache.resolveLinks).not.toHaveBeenCalled();
     });
   });
 
@@ -1170,6 +1225,8 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       await component['clearMetadataCache']();
 
       expect(getApp(component).metadataCache.trigger).toHaveBeenCalledWith('changed', tfile, 'file content', expect.any(Object));
+      expect(getApp(component).metadataCache.resolveLinks).toHaveBeenCalledWith('file.md');
+      expect(getApp(component).metadataCache.trigger).toHaveBeenCalledWith('resolve', tfile);
     });
 
     it('should keep remaining frontmatter links when not all keys match', async () => {
@@ -1195,34 +1252,15 @@ describe('FrontmatterMarkdownLinksComponent', () => {
     });
   });
 
-  describe('updateResolvedOrUnresolvedLinksCache', () => {
-    it('should increment the resolved link count for a known file', () => {
+  describe('resolveLinks', () => {
+    it('should rebuild the note\'s link counts through Obsidian and announce them', () => {
       const component = createComponent();
-      const tfile = makeTFile('target.md');
-      vi.mocked(getApp(component).metadataCache.getFirstLinkpathDest).mockReturnValue(tfile);
+      const tfile = makeTFile('note.md');
 
-      component['updateResolvedOrUnresolvedLinksCache']({ link: 'target.md', notePath: 'note.md' });
+      component['resolveLinks'](tfile);
 
-      expect(getApp(component).metadataCache.resolvedLinks['note.md']?.['target.md']).toBe(1);
-    });
-
-    it('should increment the unresolved link count for an unknown file', () => {
-      const component = createComponent();
-      vi.mocked(getApp(component).metadataCache.getFirstLinkpathDest).mockReturnValue(null);
-
-      component['updateResolvedOrUnresolvedLinksCache']({ link: 'unknown.md', notePath: 'note.md' });
-
-      expect(getApp(component).metadataCache.unresolvedLinks['note.md']?.['unknown.md']).toBe(1);
-    });
-
-    it('should accumulate counts for multiple calls to the same note', () => {
-      const component = createComponent();
-      vi.mocked(getApp(component).metadataCache.getFirstLinkpathDest).mockReturnValue(null);
-
-      component['updateResolvedOrUnresolvedLinksCache']({ link: 'link1.md', notePath: 'note.md' });
-      component['updateResolvedOrUnresolvedLinksCache']({ link: 'link1.md', notePath: 'note.md' });
-
-      expect(getApp(component).metadataCache.unresolvedLinks['note.md']?.['link1.md']).toBe(2);
+      expect(getApp(component).metadataCache.resolveLinks).toHaveBeenCalledWith('note.md');
+      expect(getApp(component).metadataCache.trigger).toHaveBeenCalledWith('resolve', tfile);
     });
   });
 
@@ -1344,12 +1382,18 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       };
     }
 
+    // The live cache Obsidian holds and the copy `getCacheSafe` returns hold the same arrays, as in Obsidian.
+    function mockNoteCache(component: FrontmatterMarkdownLinksComponent, cache: Awaited<ReturnType<typeof getCacheSafe>>): void {
+      vi.mocked(getCacheSafe).mockResolvedValue(cache);
+      vi.mocked(getApp(component).metadataCache.getCache).mockReturnValue(cache);
+    }
+
     it('should process invalid-cache notes via processFrontmatterLinksInFile', async () => {
       const component = createComponent();
       const note = makeTFile('note.md');
       const processSpy = vi.spyOn(castTo<ProcessFrontmatterLinksInFileAccess>(component), 'processFrontmatterLinksInFile')
         .mockResolvedValue(undefined);
-      vi.mocked(getCacheSafe).mockResolvedValue({ features: [] });
+      mockNoteCache(component, { features: [] });
       const { processItem } = await captureProcessItem(component);
 
       await processItem(note);
@@ -1363,7 +1407,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const note = makeTFile('note.md');
       const processSpy = vi.spyOn(castTo<ProcessFrontmatterLinksInFileAccess>(component), 'processFrontmatterLinksInFile')
         .mockResolvedValue(undefined);
-      vi.mocked(getCacheSafe).mockResolvedValue(null);
+      mockNoteCache(component, null);
       const { processItem } = await captureProcessItem(component);
 
       await processItem(note);
@@ -1390,12 +1434,12 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const { cacheInstance, processItem } = await captureProcessItem(component);
       cacheInstance.isCacheValid.mockReturnValue(true);
       cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'orig' }]);
-      vi.mocked(getCacheSafe).mockResolvedValue(null);
-      const updateSpy = vi.spyOn(castTo<UpdateResolvedOrUnresolvedLinksCacheAccess>(component), 'updateResolvedOrUnresolvedLinksCache');
+      mockNoteCache(component, null);
+      const resolveSpy = vi.spyOn(castTo<ResolveLinksAccess>(component), 'resolveLinks');
 
       await processItem(note);
 
-      expect(updateSpy).not.toHaveBeenCalled();
+      expect(resolveSpy).not.toHaveBeenCalled();
     });
 
     it('should restore obsidian links and delete keys whose value changed', async () => {
@@ -1405,7 +1449,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       cacheInstance.isCacheValid.mockReturnValue(true);
       cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', endOffset: 9, key: 'key', link: 'target.md', original: 'expected-original', startOffset: 0 }]);
       const obsidianLink = { displayText: 'obs', key: 'key', link: 'obs-target.md', original: 'obs' };
-      vi.mocked(getCacheSafe).mockResolvedValue({
+      mockNoteCache(component, {
         features: [],
         frontmatter: castTo<FrontMatterCache>({ key: 'different-value' }),
         frontmatterLinks: [obsidianLink]
@@ -1416,22 +1460,22 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       expect(cacheInstance.deleteKey).toHaveBeenCalledWith({ filePath: 'note.md', key: 'key' });
     });
 
-    it('should keep matching links and update the resolved-links cache', async () => {
+    it('should keep matching links and recount the note\'s links', async () => {
       const component = createComponent();
       const note = makeTFile('note.md');
       const { cacheInstance, processItem } = await captureProcessItem(component);
       cacheInstance.isCacheValid.mockReturnValue(true);
       cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', endOffset: 9, key: 'key', link: 'target.md', original: 'expected-original', startOffset: 0 }]);
-      vi.mocked(getCacheSafe).mockResolvedValue({
+      mockNoteCache(component, {
         features: [],
         frontmatter: castTo<FrontMatterCache>({ key: 'expected-original' }),
         frontmatterLinks: []
       });
-      const updateSpy = vi.spyOn(castTo<UpdateResolvedOrUnresolvedLinksCacheAccess>(component), 'updateResolvedOrUnresolvedLinksCache');
+      const resolveSpy = vi.spyOn(castTo<ResolveLinksAccess>(component), 'resolveLinks');
 
       await processItem(note);
 
-      expect(updateSpy).toHaveBeenCalledWith({ link: 'target.md', notePath: 'note.md' });
+      expect(resolveSpy).toHaveBeenCalledWith(note);
     });
 
     it('should drop a legacy offset-less cached link and restore the obsidian entry', async () => {
@@ -1444,17 +1488,18 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', key: 'key', link: 'target.md', original: 'expected-original' }]);
       const obsidianLink = { displayText: 'obs', key: 'key', link: 'target.md', original: 'expected-original' };
       const frontmatterLinks = [obsidianLink];
-      vi.mocked(getCacheSafe).mockResolvedValue({
+      mockNoteCache(component, {
         features: [],
         frontmatter: castTo<FrontMatterCache>({ key: 'expected-original' }),
         frontmatterLinks
       });
-      const updateSpy = vi.spyOn(castTo<UpdateResolvedOrUnresolvedLinksCacheAccess>(component), 'updateResolvedOrUnresolvedLinksCache');
+      const resolveSpy = vi.spyOn(castTo<ResolveLinksAccess>(component), 'resolveLinks');
 
       await processItem(note);
 
       expect(cacheInstance.deleteKey).toHaveBeenCalledWith({ filePath: 'note.md', key: 'key' });
-      expect(updateSpy).not.toHaveBeenCalled();
+      // The counts are rebuilt from the restored entry, so the legacy link is not counted on top of it.
+      expect(resolveSpy).toHaveBeenCalledWith(note);
       // Obsidian's own entry for the key is restored so the single link is not lost.
       expect(frontmatterLinks).toContain(obsidianLink);
     });
@@ -1465,7 +1510,7 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       const { cacheInstance, processItem } = await captureProcessItem(component);
       cacheInstance.isCacheValid.mockReturnValue(true);
       cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', endOffset: 9, key: 'key', link: 'target.md', original: 'expected-original', startOffset: 0 }]);
-      vi.mocked(getCacheSafe).mockResolvedValue({
+      mockNoteCache(component, {
         features: [],
         frontmatter: castTo<FrontMatterCache>({ key: 'changed-value' }),
         frontmatterLinks: []
@@ -1476,13 +1521,31 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       expect(cacheInstance.deleteKey).toHaveBeenCalledWith({ filePath: 'note.md', key: 'key' });
     });
 
+    it('should add the cached links to the cache Obsidian holds, not to the copy getCacheSafe returns', async () => {
+      const component = createComponent();
+      const note = makeTFile('note.md');
+      const { cacheInstance, processItem } = await captureProcessItem(component);
+      cacheInstance.isCacheValid.mockReturnValue(true);
+      const link = { displayText: 'd', endOffset: 9, key: 'key', link: 'target.md', original: 'expected-original', startOffset: 0 };
+      cacheInstance.getLinks.mockReturnValue([link]);
+      // The plugin took its links back on unload, so neither object has a `frontmatterLinks` array.
+      const frontmatter = castTo<FrontMatterCache>({ key: 'expected-original' });
+      const liveCache: CachedMetadata = { frontmatter };
+      vi.mocked(getCacheSafe).mockResolvedValue({ features: [], frontmatter });
+      vi.mocked(getApp(component).metadataCache.getCache).mockReturnValue(liveCache);
+
+      await processItem(note);
+
+      expect(liveCache.frontmatterLinks).toEqual([link]);
+    });
+
     it('should default to an empty frontmatter object when the cache has none', async () => {
       const component = createComponent();
       const note = makeTFile('note.md');
       const { cacheInstance, processItem } = await captureProcessItem(component);
       cacheInstance.isCacheValid.mockReturnValue(true);
       cacheInstance.getLinks.mockReturnValue([{ displayText: 'd', endOffset: 9, key: 'key', link: 'target.md', original: 'orig', startOffset: 0 }]);
-      vi.mocked(getCacheSafe).mockResolvedValue({ features: [], frontmatterLinks: [] });
+      mockNoteCache(component, { features: [], frontmatterLinks: [] });
 
       await processItem(note);
 

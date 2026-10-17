@@ -11,7 +11,6 @@ import type {
 import { AllWindowsEventComponent } from '@mnaoumov/obsidian-lib/components/all-windows-event-component';
 import { LayoutReadyComponent } from '@mnaoumov/obsidian-lib/components/layout-ready-component';
 import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
-import { splitSubpath } from '@mnaoumov/obsidian-lib/link';
 import { loop } from '@mnaoumov/obsidian-lib/loop';
 import { getCacheSafe } from '@mnaoumov/obsidian-lib/metadata-cache';
 import { parseFrontmatterLinks } from '@mnaoumov/obsidian-lib/parse-link';
@@ -76,12 +75,7 @@ interface FrontmatterMarkdownLinksComponentProcessFrontmatterLinksInFileParams {
 
 interface FrontmatterMarkdownLinksComponentProcessFrontmatterLinksParams {
   readonly cache: CachedMetadata;
-  readonly filePath: string;
-}
-
-interface FrontmatterMarkdownLinksComponentUpdateResolvedOrUnresolvedLinksCacheParams {
-  readonly link: string;
-  readonly notePath: string;
+  readonly file: TFile;
 }
 
 export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
@@ -141,6 +135,13 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
   protected override async onLayoutReady(): Promise<void> {
     await this.processAllNotes();
+    // The plugin can be turned off while the notes are still being processed. Whatever is registered on an
+    // unloaded component is never unregistered, so a `changed` handler added now would outlive the plugin
+    // and put its links straight back when the unload's own `changed` triggers reach it.
+    if (!this._loaded) {
+      return;
+    }
+
     this.registerEvent(this.app.metadataCache.on('changed', convertAsyncToSync((file, data, cache) => this.handleMetadataCacheChanged({ cache, data, file }))));
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
@@ -181,9 +182,20 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
       if (!file) {
         continue;
       }
+      this.resolveLinks(file);
       const data = await this.app.vault.read(file);
       this.app.metadataCache.trigger('changed', file, data, cache);
     }
+  }
+
+  /**
+   * Brings the note's cache up to date and returns the object Obsidian holds for it. `getCacheSafe` returns
+   * a shallow copy, so a `frontmatterLinks` array created on that copy (the note had none, as after the
+   * plugin took its links back on unload) never reaches Obsidian, and `resolveLinks` would not count it.
+   */
+  private async getLiveCache(note: TFile): Promise<CachedMetadata | null> {
+    const cacheCopy = await getCacheSafe(this.app, note);
+    return cacheCopy ? this.app.metadataCache.getCache(note.path) : null;
   }
 
   private handleDelete(file: TAbstractFile): void {
@@ -330,7 +342,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
           if (frontmatterMarkdownLinksCacheLinks.length === 0) {
             return;
           }
-          const cache = await getCacheSafe(this.app, note);
+          const cache = await this.getLiveCache(note);
           if (!cache) {
             return;
           }
@@ -344,8 +356,6 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
           const frontmatterMarkdownLinksCacheKeys = new Set(frontmatterMarkdownLinksCacheLinks.map((link) => link.key));
           filterInPlace(cache.frontmatterLinks, (link) => !frontmatterMarkdownLinksCacheKeys.has(link.key));
-
-          const newLinks: FrontmatterLinkCache[] = [];
 
           for (const link of frontmatterMarkdownLinksCacheLinks) {
             const value = getNestedPropertyValue((cache.frontmatter ?? {}) as Record<string, unknown>, link.key);
@@ -365,16 +375,13 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
             }
 
             cache.frontmatterLinks.push(link);
-            newLinks.push(link);
           }
 
-          for (const link of newLinks) {
-            this.updateResolvedOrUnresolvedLinksCache({ link: link.link, notePath: note.path });
-          }
+          this.resolveLinks(note);
           return;
         }
 
-        const cache = await getCacheSafe(this.app, note);
+        const cache = await this.getLiveCache(note);
         if (!cache) {
           return;
         }
@@ -401,7 +408,8 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
   }
 
   private processFrontmatterLinks(params: FrontmatterMarkdownLinksComponentProcessFrontmatterLinksParams): boolean {
-    const { cache, filePath } = params;
+    const { cache, file } = params;
+    const filePath = file.path;
 
     // Obsidian natively caches single-value internal frontmatter links (both wikilinks and markdown
     // links) as well as single links held as array elements, so the plugin only needs to contribute
@@ -411,11 +419,15 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     const { multiValueFrontmatterLinks } = parseFrontmatterLinks(cache.frontmatter);
 
     // Drop the plugin's previous contribution for this file before re-adding the current one.
-    for (const staleKey of new Set(this.frontmatterMarkdownLinksCache.getKeys(filePath))) {
+    const staleKeys = new Set(this.frontmatterMarkdownLinksCache.getKeys(filePath));
+    for (const staleKey of staleKeys) {
       this.frontmatterMarkdownLinksCache.deleteKey({ filePath, key: staleKey });
     }
 
     if (multiValueFrontmatterLinks.length === 0) {
+      if (staleKeys.size > 0) {
+        this.resolveLinks(file);
+      }
       return false;
     }
 
@@ -435,9 +447,9 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
       cache.frontmatterLinks.push(link);
       this.frontmatterMarkdownLinksCache.add(filePath, link);
-      this.updateResolvedOrUnresolvedLinksCache({ link: link.link, notePath: filePath });
     }
 
+    this.resolveLinks(file);
     return true;
   }
 
@@ -449,7 +461,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
       return;
     }
 
-    const hasFrontmatterLinks = this.processFrontmatterLinks({ cache, filePath: file.path });
+    const hasFrontmatterLinks = this.processFrontmatterLinks({ cache, file });
     if (!hasFrontmatterLinks) {
       return;
     }
@@ -477,17 +489,16 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     }
   }
 
-  private updateResolvedOrUnresolvedLinksCache(params: FrontmatterMarkdownLinksComponentUpdateResolvedOrUnresolvedLinksCacheParams): void {
-    const { link, notePath } = params;
-    const { linkPath } = splitSubpath(link);
-    const resolvedFile = this.app.metadataCache.getFirstLinkpathDest(linkPath, notePath);
-    const linksCacheMap = resolvedFile ? this.app.metadataCache.resolvedLinks : this.app.metadataCache.unresolvedLinks;
-    const linksCacheForNote = linksCacheMap[notePath] ?? {};
-    linksCacheMap[notePath] = linksCacheForNote;
-
-    const resolvedLinkPath = resolvedFile?.path ?? linkPath;
-    linksCacheForNote[resolvedLinkPath] ??= 0;
-    linksCacheForNote[resolvedLinkPath]++;
+  /**
+   * Rebuilds the note's `resolvedLinks` / `unresolvedLinks` rows from its cache as it stands now, then
+   * announces it. Obsidian's own `resolveLinks` recounts every reference of the note, `frontmatterLinks`
+   * included, and replaces the rows rather than adding to them, so the plugin's links are counted exactly
+   * once however often a note is re-processed, and drop out of the counts when the plugin takes them back.
+   * The `resolve` event is what an open Backlinks pane redraws on; `resolveLinks` does not fire it itself.
+   */
+  private resolveLinks(file: TFile): void {
+    this.app.metadataCache.resolveLinks(file.path);
+    this.app.metadataCache.trigger('resolve', file);
   }
 }
 
