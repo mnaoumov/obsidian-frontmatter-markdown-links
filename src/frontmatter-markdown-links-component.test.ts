@@ -824,6 +824,22 @@ describe('FrontmatterMarkdownLinksComponent', () => {
       expect(synchronize).toHaveBeenCalledTimes(2);
       expect(synchronize).toHaveBeenLastCalledWith({ title: 'Hello' });
     });
+
+    it('should skip a leaf whose raw frontmatter is not valid YAML and still synchronize the others', () => {
+      const component = createComponent();
+      const invalidSynchronize = vi.fn();
+      const validSynchronize = vi.fn();
+      const invalidLeaf = createMarkdownLeaf('key: value: it is: invalid', invalidSynchronize);
+      const validLeaf = createMarkdownLeaf('title: Hello', validSynchronize);
+      vi.mocked(getApp(component).workspace.getLeavesOfType).mockReturnValue([invalidLeaf, validLeaf]);
+
+      expect(() => {
+        component['refreshMarkdownViews']();
+      }).not.toThrow();
+
+      expect(invalidSynchronize).not.toHaveBeenCalled();
+      expect(validSynchronize).toHaveBeenLastCalledWith({ title: 'Hello' });
+    });
   });
 
   describe('handleMouseDown', () => {
