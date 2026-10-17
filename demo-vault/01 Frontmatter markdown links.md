@@ -10,25 +10,76 @@ quotedAlias: "[A \"quoted\" alias](<Targets/Second target.md>)"
 ---
 # Frontmatter markdown links
 
-Obsidian natively makes only `[[wikilinks]]` clickable inside YAML frontmatter (properties). `Frontmatter Markdown Links` extends that so **markdown-style links** written in frontmatter also become real, clickable, resolvable links - in every mode: `Source mode`, `Live Preview`, and `Reading`.
+`Frontmatter Markdown Links` makes **markdown-style links** written in frontmatter real, clickable, resolvable links - in every mode: `Source mode`, `Live Preview`, and `Reading`.
+
+Current Obsidian already draws a property whose whole value is ONE link as a link, markdown or wiki. What it still does not do is the two things below, and they are what the plugin adds:
+
+- **Several links inside one value.** Obsidian draws the whole value as a single link with mangled text; the plugin draws each link on its own, with the text between them kept as text.
+- **Links in `Source mode`.** There the frontmatter is raw YAML, and Obsidian leaves every value in it as plain text; the plugin makes each link in it clickable.
 
 Open this note's **properties** (the panel at the top) and look at each value:
 
 - `wikilink`
   - `[[Target note]]`. Obsidian handles this one on its own.
 - `markdownLink`
-  - `[Second target](<Targets/Second target.md>)`. **This is what the plugin adds.** Without it, the value is plain text; with it, it is a link you can click to open [Second target](<./Targets/Second target.md>).
+  - `[Second target](<Targets/Second target.md>)`. A single markdown link: a link you can click to open [Second target](<./Targets/Second target.md>), and in `Source mode` one only the plugin makes clickable.
 - `externalUrl`
-  - `[Obsidian Help](https://help.obsidian.md)`. A markdown link to an external site, also made clickable by the plugin.
+  - `[Obsidian Help](https://help.obsidian.md)`. A markdown link to an external site.
 - `multipleLinks`
-  - the plugin resolves **several links inside a single property**, mixing wikilinks and markdown links.
+  - **several links inside a single property**, mixing wikilinks and markdown links. This is the value the properties panel needs the plugin for.
 - `quotedAlias`
   - `[A \"quoted\" alias](<Targets/Second target.md>)`. The link text itself contains double quotes, escaped the way YAML requires inside a double-quoted value. It reads and resolves exactly like the unescaped one - see [Quoting, and lists](#quoting-and-lists) below.
 
 ## Try it
 
-1. Click the `markdownLink` value in the properties above - it opens [Second target](<./Targets/Second target.md>).
-2. Disable the plugin under **Settings -> Community plugins** and reload. The markdown links become plain text again, while `wikilink` still works. Re-enable the plugin to restore them.
+**Step 1.** Look at `multipleLinks` in the properties above: two links, `Target note` and `Second target`, with ` and ` between them as text. Turn the plugin off and watch the panel redraw it as ONE link reading `[Target note]] and [Second target`, while every single-link value stays a link:
+
+```code-button
+---
+caption: Turn the plugin off
+---
+await require('/demoSetup.ts').disablePlugin(app, 'Plugin off. multipleLinks is one mangled link now; the single-link values are still links.');
+```
+
+Turn it back on and the two links return:
+
+```code-button
+---
+caption: Turn the plugin back on
+---
+await require('/demoSetup.ts').enablePlugin(app, 'Plugin on. multipleLinks shows two links again.');
+```
+
+Manual equivalent for both: toggle `Frontmatter Markdown Links` in **Settings -> Community plugins**. The properties panel redraws by itself.
+
+**Step 2.** Open this note again in `Source mode`, in a split beside this one, so its frontmatter shows as raw YAML. Every link value there is underlined:
+
+```code-button
+---
+caption: Open this note in Source mode beside this one
+---
+await require('/demoSetup.ts').openFrontmatterLinksNoteInSourceMode(app);
+```
+
+In `Source mode` a link opens on a `Ctrl`-click (`Cmd`-click on macOS), as links in the note body do there. Do it on `[Second target]` in the `markdownLink:` line, or let the button do it - [Second target](<./Targets/Second target.md>) opens in a new tab:
+
+```code-button
+---
+caption: Ctrl-click the markdownLink value in Source mode
+---
+await require('/demoSetup.ts').modifierClickMarkdownLinkInSourceMode(app);
+```
+
+With the plugin off, the same lines are plain text and the click does nothing. Close the `Source mode` copy when you are done:
+
+```code-button
+---
+caption: Close the Source mode copy
+---
+require('/demoSetup.ts').closeFrontmatterLinksNoteSourceMode(app);
+```
+
+Manual equivalent: open this note in a new pane, switch it to `Source mode` (the **Toggle Live Preview/Source mode** command), `Ctrl`-click the link, then close the pane.
 
 Every link above points at a real note, so they all resolve. Because they resolve, they also register as **backlinks** on their targets - see [02 Backlinks](<./02 Backlinks.md>).
 
