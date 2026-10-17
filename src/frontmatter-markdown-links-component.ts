@@ -466,7 +466,12 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
         continue;
       }
 
-      const frontmatter = parseYaml(leaf.view.rawFrontmatter) as Record<string, unknown>;
+      const frontmatter = parseFrontmatter(leaf.view.rawFrontmatter);
+      if (!frontmatter) {
+        // Invalid YAML: Obsidian shows its own invalid-properties state, and a throw here would fail the plugin's load or unload.
+        continue;
+      }
+
       leaf.view.metadataEditor.synchronize({});
       leaf.view.metadataEditor.synchronize(frontmatter);
     }
@@ -483,5 +488,13 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     const resolvedLinkPath = resolvedFile?.path ?? linkPath;
     linksCacheForNote[resolvedLinkPath] ??= 0;
     linksCacheForNote[resolvedLinkPath]++;
+  }
+}
+
+function parseFrontmatter(rawFrontmatter: string): null | Record<string, unknown> {
+  try {
+    return parseYaml(rawFrontmatter) as Record<string, unknown>;
+  } catch {
+    return null;
   }
 }
