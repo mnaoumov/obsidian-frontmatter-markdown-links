@@ -19,6 +19,7 @@ import {
 const vault = getTemporaryVault();
 
 interface Context {
+  previousFocusNewTab: unknown;
   sourceFile: TFile;
 }
 
@@ -39,6 +40,8 @@ Linking:
     callback: async ({ app, context }) => {
       // "Always focus new tabs" off is part of the reported reproduction. With it off the duplicate
       // background tab is created and stays, so the leaf count reflects every open.
+      // The desktop project runs every suite in one Obsidian, so fterAll puts the old value back.
+      context.previousFocusNewTab = app.vault.getConfig('focusNewTab');
       app.vault.setConfig('focusNewTab', false);
 
       const sourceFile = app.vault.getFileByPath('source.md');
@@ -59,6 +62,13 @@ Linking:
 });
 
 afterAll(async () => {
+  await evalInObsidian({
+    callback: ({ app, context }) => {
+      app.vault.setConfig('focusNewTab', context.previousFocusNewTab);
+    },
+    contextId,
+    vaultPath: vault.path
+  });
   await contextId.dispose();
 });
 
