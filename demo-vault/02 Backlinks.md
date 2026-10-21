@@ -1,5 +1,5 @@
 ---
-obsidian-dev-utils:
+obsidian-dev-toolkit:
   demo-vault-validation:
     allow-wikilinks: "The related property is a wikilink on purpose: it is the natively-resolved backlink this note compares against."
 related: "[[Target note]]"
