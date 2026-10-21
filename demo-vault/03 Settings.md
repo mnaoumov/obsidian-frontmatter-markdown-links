@@ -9,7 +9,7 @@ Open **Settings -> Community plugins -> `Frontmatter Markdown Links`** to config
 
 ## Renames moved to another plugin
 
-Up to version 2, this plugin handled note renames itself, because Obsidian's own link update can ruin some of your frontmatter links. Since **3.0.0** it does not: rename and delete handling is owned by [Advanced Rename and Delete Handler](https://github.com/mnaoumov/obsidian-advanced-rename-and-delete-handler), a separate plugin, so a vault has exactly one of them rather than one per plugin that happened to bundle a copy.
+On a rename, Obsidian itself updates a property whose whole value is one link, markdown or wiki, and each link of a list property. Inside a value holding several links its update cannot be relied on: it can leave a link pointing at the old name, or update the wrong one. Up to version 2, this plugin handled note renames itself. Since **3.0.0** it does not: rename and delete handling is owned by [Advanced Rename and Delete Handler](https://github.com/mnaoumov/obsidian-advanced-rename-and-delete-handler), a separate plugin, so a vault has exactly one of them rather than one per plugin that happened to bundle a copy.
 
 Nothing here replaces it. Install that plugin and its settings tab holds every rename and delete option, including the `shouldHandleRenames` toggle that used to live on this page. Decline, and this plugin keeps all of its other features while Obsidian's own link update runs on renames.
 

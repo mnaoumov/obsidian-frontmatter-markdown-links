@@ -47,7 +47,7 @@ A copy of the vault ships with every release. You can access it via any of the f
 
 ## Renames
 
-Obsidian's own link update can ruin some of your frontmatter links, so up to version 2 this plugin handled renames itself. Since **3.0.0** it does not, and rename and delete handling belongs to [Advanced Rename and Delete Handler](https://github.com/mnaoumov/obsidian-advanced-rename-and-delete-handler) instead — one plugin owning it for the whole vault, rather than a copy inside each plugin that happened to need it.
+On a rename, Obsidian itself updates a property whose whole value is one link, markdown or wiki, and each link of a list property. Inside a value holding several links its update cannot be relied on: it can leave a link pointing at the old name, or update the wrong one. Up to version 2 this plugin handled renames itself. Since **3.0.0** it does not, and rename and delete handling belongs to [Advanced Rename and Delete Handler](https://github.com/mnaoumov/obsidian-advanced-rename-and-delete-handler) instead — one plugin owning it for the whole vault, rather than a copy inside each plugin that happened to need it.
 
 This plugin offers to install it, once, and carries your old `Should handle renames` value over for you to approve. Declining costs you nothing else: every feature above keeps working.
 
