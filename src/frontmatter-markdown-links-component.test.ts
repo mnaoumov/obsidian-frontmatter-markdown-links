@@ -150,6 +150,11 @@ vi.mock('./patches/menu-show-at-mouse-event-patch-component.ts', async () => {
   return { MenuShowAtMouseEventPatchComponent: class extends Component {} };
 });
 
+vi.mock('./patches/multi-link-property-update-patch-component.ts', async () => {
+  const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
+  return { MultiLinkPropertyUpdatePatchComponent: class extends Component {} };
+});
+
 vi.mock('./patches/bases-note-get-patch-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   return { BasesNoteGetPatchComponent: class extends Component {} };

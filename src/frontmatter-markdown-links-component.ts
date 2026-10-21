@@ -47,6 +47,7 @@ import { AbstractInputSuggestGetValuePatchComponent } from './patches/abstract-i
 import { BasesNoteGetPatchComponent } from './patches/bases-note-get-patch-component.ts';
 import { EditorGetClickableTokenAtPatchComponent } from './patches/editor-get-clickable-token-at-patch-component.ts';
 import { MenuShowAtMouseEventPatchComponent } from './patches/menu-show-at-mouse-event-patch-component.ts';
+import { MultiLinkPropertyUpdatePatchComponent } from './patches/multi-link-property-update-patch-component.ts';
 import { MultitextPropertyWidgetRenderPatchComponent } from './patches/multitext-property-widget-render-patch-component.ts';
 import { TextPropertyWidgetRenderPatchComponent } from './patches/text-property-widget-render-patch-component.ts';
 import { isSourceMode } from './source-mode.ts';
@@ -149,6 +150,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     this.handleFileOpen();
 
     this.addChild(new MenuShowAtMouseEventPatchComponent(this.app));
+    this.addChild(new MultiLinkPropertyUpdatePatchComponent(this.app));
 
     const allWindowsEventComponent = this.addChild(new AllWindowsEventComponent(this.app));
     allWindowsEventComponent.registerAllDocumentsDomEvent({
