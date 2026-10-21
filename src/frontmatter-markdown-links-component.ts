@@ -10,7 +10,6 @@ import type {
 
 import { AllWindowsEventComponent } from '@mnaoumov/obsidian-lib/components/all-windows-event-component';
 import { LayoutReadyComponent } from '@mnaoumov/obsidian-lib/components/layout-ready-component';
-import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
 import { loop } from '@mnaoumov/obsidian-lib/loop';
 import { getCacheSafe } from '@mnaoumov/obsidian-lib/metadata-cache';
 import { parseFrontmatterLinks } from '@mnaoumov/obsidian-lib/parse-link';
@@ -389,10 +388,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
         }
         await this.processFrontmatterLinksInFile({ cache, file: note });
       },
-      progressBarTitle: createFragment((fragment) => {
-        appendCodeBlock(fragment, 'Frontmatter Markdown Links');
-        fragment.appendText(': Initializing...');
-      }),
+      progressBarTitle: 'Initializing...',
       shouldContinueOnError: true,
       shouldShowProgressBar: this.pluginSettingsComponent.settings.shouldShowInitializationNotice
     });
