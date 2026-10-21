@@ -40,7 +40,7 @@ Linking:
     callback: async ({ app, context }) => {
       // "Always focus new tabs" off is part of the reported reproduction. With it off the duplicate
       // background tab is created and stays, so the leaf count reflects every open.
-      // The desktop project runs every suite in one Obsidian, so fterAll puts the old value back.
+      // The desktop project runs every suite in one Obsidian, so afterAll puts the old value back.
       context.previousFocusNewTab = app.vault.getConfig('focusNewTab');
       app.vault.setConfig('focusNewTab', false);
 
