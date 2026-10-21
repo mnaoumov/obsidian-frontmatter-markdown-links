@@ -1,5 +1,5 @@
 ---
-obsidian-dev-utils:
+obsidian-dev-toolkit:
   demo-vault-validation:
     allow-wikilinks: The wikilink property value is what Obsidian resolves on its own, which this note contrasts the plugin against.
 wikilink: "[[Target note]]"
