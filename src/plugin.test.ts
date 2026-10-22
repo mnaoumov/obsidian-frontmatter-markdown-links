@@ -65,9 +65,9 @@ const { pluginSuggestionStub } = vi.hoisted(() => ({
   pluginSuggestionStub: vi.fn<(params: PluginSuggestionComponentParams) => object>()
 }));
 
-// The same treatment for the dev-utils settings-migration component. What is this plugin's own is the pair
+// The same treatment for the obsidian-lib settings-migration component. What is this plugin's own is the pair
 // of closures it hands over — which pending value is offered, and how the retirement is persisted — so they
-// are captured and invoked directly. The offer-and-retire dance around them belongs to dev-utils and is
+// are captured and invoked directly. The offer-and-retire dance around them belongs to obsidian-lib and is
 // tested there.
 const { settingsMigrationStub } = vi.hoisted(() => ({
   settingsMigrationStub: vi.fn<(params: SettingsMigrationComponentParams) => object>()

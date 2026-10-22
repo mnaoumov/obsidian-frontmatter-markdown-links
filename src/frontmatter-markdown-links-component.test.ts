@@ -202,8 +202,8 @@ vi.mock('./frontmatter-markdown-links-cache.ts', () => ({
   FrontmatterMarkdownLinksCache: mockCacheConstructor
 }));
 
-// Stub the RETURN VALUE of specific dev-utils utility functions, spreading the real module so the
-// other exports the real dev-utils components depend on remain intact.
+// Stub the RETURN VALUE of specific obsidian-lib utility functions, spreading the real module so the
+// other exports the real obsidian-lib components depend on remain intact.
 vi.mock('@mnaoumov/obsidian-lib/metadata-cache', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@mnaoumov/obsidian-lib/metadata-cache')>();
   return {
