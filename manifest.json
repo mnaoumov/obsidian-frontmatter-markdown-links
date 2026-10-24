@@ -1,11 +1,11 @@
 {
   "id": "frontmatter-markdown-links",
   "name": "Frontmatter Markdown Links",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Adds support for markdown links in frontmatter.",
   "author": "mnaoumov",
   "authorUrl": "https://github.com/mnaoumov/",
   "isDesktopOnly": false,
-  "minAppVersion": "1.13.7",
+  "minAppVersion": "1.14.5",
   "fundingUrl": "https://www.buymeacoffee.com/mnaoumov"
 }

@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## 3.0.4
+
+- fix(deps): read a frontmatter link whose caption holds an unbalanced [ as one link
+- test: make the middle-click List-property test deterministic
+- chore(deps): move to obsidian-lib 6 and obsidian-dev-toolkit 5
+- docs: name obsidian-lib where comments said dev-utils
+- chore(deps): move to obsidian-dev-toolkit 4 and its demo-vault directive spelling
+- fix: drop the plugin name from notice text
+- docs: shorten the debugging section
+- chore: drop the leftover obsidian-dev-utils mentions from the README and pin reasons
+- docs(readme): lead the Debugging section with `Advanced Debug Mode`
+- fix: steer a rename into the renamed link of a multi-link property
+- docs: state what Obsidian updates on a rename and pin it with a test
+- build(deps): float brace-expansion, sharp and fast-uri past their advisories
+- test(integration): restore focusNewTab after the middle-click suite
+- fix(cache): count multi-link property links once, and drop them when the plugin is off
+- docs: show the multi-link and Source mode cases the plugin adds, not single links Obsidian draws itself
+- fix(properties): keep the plugin loadable with an invalid-frontmatter note open
+- docs(demo-vault): give the frontmatter links note's Try it code buttons
+- chore(github): point questions to Discussions from the new-issue page
+- ci: merge attesting release assets through the toolkit's reusable workflow
+- fix(ui): merge rendering plugin names as code in the suggestion reason and progress title
+- refactor: merge the move off obsidian-dev-utils onto the @mnaoumov packages
+- docs: mark plugin names as code in markdown and comments
+- refactor: merge reading MarkdownView state and suggest items through obsidian-typings
+- test: merge using the obsidian-typings declarations of Obsidian internals
+
 ## 3.0.3
 
 - test(screenshots): merge the applyObsidianTheme switch for the desktop capture
