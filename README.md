@@ -51,6 +51,13 @@ On a rename, Obsidian itself updates a property whose whole value is one link, m
 
 This plugin offers to install it, once, and carries your old `Should handle renames` value over for you to approve. Declining costs you nothing else: every feature above keeps working.
 
+## Similar plugins
+
+- [`Frontmatter Links`](https://github.com/Trikzon/obsidian-frontmatter-links) — renders the links, wikilinks and markdown links in a note's frontmatter as links; its repository is archived and it is no longer in the community directory, while this plugin also splits a value holding several links and makes each one resolve and count as a backlink.
+- [`Frontmatter Link Repair`](https://community.obsidian.md/plugins/frontmatter-link-repair) — finds unquoted wikilinks in raw frontmatter and, after a preview you check, rewrites the notes with the links quoted so Obsidian reads them; it changes the files once, while this plugin changes no note text and makes the links already there work.
+
+Last searched for similar plugins on 2026-10-26.
+
 ## Installation
 
 The plugin is available in [the official Community Plugins repository](https://community.obsidian.md/plugins/frontmatter-markdown-links).
