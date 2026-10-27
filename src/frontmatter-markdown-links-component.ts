@@ -22,6 +22,8 @@ import {
   convertAsyncToSync,
   invokeAsyncSafely
 } from '@mnaoumov/typescript-lib/async';
+import { ErrorWrapper } from '@mnaoumov/typescript-lib/error';
+import { noopAsync } from '@mnaoumov/typescript-lib/function';
 import {
   getNestedPropertyValue,
   normalizeOptionalProperties
@@ -88,6 +90,8 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
   private readonly patchedInputElementMap: PatchedInputElementMap;
   private readonly pluginNoticeComponent: PluginNoticeComponent;
   private readonly pluginSettingsComponent: PluginSettingsComponent;
+  private processing: null | Promise<void> = null;
+  private seedTimer: null | number = null;
 
   public constructor(params: FrontmatterMarkdownLinksComponentConstructorParams) {
     super(params.app);
@@ -129,6 +133,13 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     this.editorExtensionRegistrar.registerEditorExtension(FrontMatterLinksViewPlugin.createEditorExtension(this.app));
 
     this.register(convertAsyncToSync(this.clearMetadataCache.bind(this)));
+    this.register(() => {
+      if (this.seedTimer !== null) {
+        window.clearTimeout(this.seedTimer);
+        this.seedTimer = null;
+      }
+      invokeAsyncSafely(() => this.frontmatterMarkdownLinksCache.dispose());
+    });
     this.register(this.refreshMarkdownViews.bind(this));
     this.refreshMarkdownViews();
   }
@@ -164,6 +175,10 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     });
 
     await this.patchBasesNote();
+  }
+
+  private checkAborted(): boolean {
+    return this.abortSignalComponent.abortSignal.aborted;
   }
 
   private async clearMetadataCache(): Promise<void> {
@@ -326,8 +341,38 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
   }
 
   private async processAllNotes(): Promise<void> {
+    this.processing = (this.processing ?? noopAsync()).then(() => this.processAllNotesImpl());
+    await this.processing;
+  }
+
+  private async processAllNotesImpl(): Promise<void> {
+    if (this.seedTimer !== null) {
+      window.clearTimeout(this.seedTimer);
+      this.seedTimer = null;
+    }
+    await this.frontmatterMarkdownLinksCache.dispose();
+    if (this.checkAborted()) {
+      return;
+    }
     this.frontmatterMarkdownLinksCache = new FrontmatterMarkdownLinksCache();
-    await this.frontmatterMarkdownLinksCache.init(this.app);
+    try {
+      await this.frontmatterMarkdownLinksCache.init(this.app);
+    } catch (error) {
+      // A local persistence failure must not prevent the ordinary in-memory rebuild.
+      invokeAsyncSafely(() => Promise.reject(ErrorWrapper.create(error)));
+    }
+    if (this.checkAborted()) {
+      await this.frontmatterMarkdownLinksCache.dispose();
+      return;
+    }
+    try {
+      await this.frontmatterMarkdownLinksCache.adoptSeeds({ app: this.app, settings: this.pluginSettingsComponent.settings });
+    } catch (error) {
+      invokeAsyncSafely(() => Promise.reject(ErrorWrapper.create(error)));
+    }
+    if (this.checkAborted()) {
+      return;
+    }
 
     const cachedFilePaths = new Set(this.frontmatterMarkdownLinksCache.getTrackedFilePaths());
 
@@ -344,7 +389,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
             return;
           }
           const cache = await this.getLiveCache(note);
-          if (!cache) {
+          if (!cache || this.checkAborted()) {
             return;
           }
           cache.frontmatterLinks ??= [];
@@ -383,7 +428,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
         }
 
         const cache = await this.getLiveCache(note);
-        if (!cache) {
+        if (!cache || this.checkAborted()) {
           return;
         }
         await this.processFrontmatterLinksInFile({ cache, file: note });
@@ -395,7 +440,7 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
 
     // `loop` RETURNS when the abort signal fires, it does not throw, so an unload mid-index lands here
     // with every note it never reached still in the set. Those paths are unvisited, not orphaned.
-    if (this.abortSignalComponent.abortSignal.aborted) {
+    if (this.checkAborted()) {
       return;
     }
 
@@ -403,6 +448,11 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     for (const filePath of cachedFilePaths) {
       this.frontmatterMarkdownLinksCache.delete(filePath);
     }
+    const SEED_DELAY_IN_MILLISECONDS = 60_000;
+    this.seedTimer = window.setTimeout(() => {
+      this.seedTimer = null;
+      invokeAsyncSafely(() => this.frontmatterMarkdownLinksCache.publishSeeds({ app: this.app, settings: this.pluginSettingsComponent.settings }));
+    }, SEED_DELAY_IN_MILLISECONDS);
   }
 
   private processFrontmatterLinks(params: FrontmatterMarkdownLinksComponentProcessFrontmatterLinksParams): boolean {
@@ -452,6 +502,9 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
   }
 
   private async processFrontmatterLinksInFile(params: FrontmatterMarkdownLinksComponentProcessFrontmatterLinksInFileParams): Promise<void> {
+    if (this.checkAborted()) {
+      return;
+    }
     const { cache, file } = params;
     this.frontmatterMarkdownLinksCache.updateFile(file);
 
@@ -465,9 +518,15 @@ export class FrontmatterMarkdownLinksComponent extends LayoutReadyComponent {
     }
 
     this.currentlyProcessingFiles.add(file.path);
-    const data = params.data ?? await this.app.vault.read(file);
-    this.app.metadataCache.trigger('changed', file, data, cache);
-    this.currentlyProcessingFiles.delete(file.path);
+    try {
+      const data = params.data ?? await this.app.vault.read(file);
+      if (this.checkAborted()) {
+        return;
+      }
+      this.app.metadataCache.trigger('changed', file, data, cache);
+    } finally {
+      this.currentlyProcessingFiles.delete(file.path);
+    }
   }
 
   private refreshMarkdownViews(): void {

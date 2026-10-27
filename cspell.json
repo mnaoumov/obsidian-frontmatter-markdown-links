@@ -15,6 +15,7 @@
     "contenteditable",
     "frontmatter",
     "GHSA",
+    "indexeddb",
     "inspectable",
     "Invocables",
     "katex",

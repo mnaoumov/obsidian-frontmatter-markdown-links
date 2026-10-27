@@ -49,7 +49,7 @@ describe('PluginSettingsTab', () => {
   it('should declare the suggestion banner row first and the initialization toggle after it', () => {
     const tab = createTab();
 
-    expect(settingNames(tab)).toEqual(['', 'Should show initialization notice']);
+    expect(settingNames(tab)).toEqual(['', 'Should show initialization notice', 'Share frontmatter cache', 'Cache sharing folder']);
   });
 
   it('should keep the banner row out of the settings search', () => {
@@ -89,6 +89,15 @@ describe('PluginSettingsTab', () => {
 
     expect(boundKeys()).toContain('shouldShowInitializationNotice');
   });
+
+  it('binds optional cache sharing and the configurable folder, disabled by default', () => {
+    const tab = createTab();
+    renderRow(tab, 2, new SettingEx(tab.containerEl));
+    renderRow(tab, 3, new SettingEx(tab.containerEl));
+    expect(boundKeys()).toEqual(['shouldShareCache', 'cacheSharingFolder']);
+    expect(new PluginSettings().shouldShareCache).toBe(false);
+    expect(new PluginSettings().cacheSharingFolder).toBe('Plugin data');
+  });
 });
 
 function boundKeys(): unknown[] {
@@ -97,8 +106,10 @@ function boundKeys(): unknown[] {
 
 function createMockSettingsComponent(): PluginSettingsComponentBase<PluginSettings> {
   const validationMessages = {
+    cacheSharingFolder: '',
     isAdvancedRenameAndDeleteHandlerSuggestionDeclined: '',
     proposedShouldHandleRenames: '',
+    shouldShareCache: '',
     shouldShowInitializationNotice: ''
   };
   return strictProxy<PluginSettingsComponentBase<PluginSettings>>({
