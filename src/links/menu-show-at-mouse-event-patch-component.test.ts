@@ -20,16 +20,18 @@ import {
 import { MenuShowAtMouseEventPatchComponent } from './menu-show-at-mouse-event-patch-component.ts';
 
 interface LinkDataShape {
-  isExternalUrl: boolean;
-  isWikilink: boolean;
-  url: string;
+  readonly isExternalUrl: boolean;
+  readonly isWikilink: boolean;
+  readonly url: string;
 }
 
 interface MenuItemsAccess {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   items: unknown[];
 }
 
 interface MenuItemSectionAccess {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   section: string;
 }
 

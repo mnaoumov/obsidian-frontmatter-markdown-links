@@ -41,9 +41,9 @@ interface FindClosingQuoteIndexParams {
 }
 
 interface GroupDescription {
-  cssClass: string;
-  isClickable?: boolean;
-  regExp: RegExp;
+  readonly cssClass: string;
+  readonly isClickable?: boolean;
+  readonly regExp: RegExp;
 }
 
 interface HandleValueParams {
@@ -57,10 +57,10 @@ interface HandleValueParams {
 }
 
 interface LinkStylingInfo {
-  cssClass: string;
-  from: number;
-  isClickable?: boolean;
-  to: number;
+  readonly cssClass: string;
+  readonly from: number;
+  readonly isClickable?: boolean;
+  readonly to: number;
 }
 
 const BACKSLASH = '\\';

@@ -20,15 +20,15 @@ import {
  */
 
 interface BacklinksSnapshot {
-  targetNoteBacklinks: string[];
-  thirdTargetBacklinks: string[];
-  thirdTargetPane: string[];
+  readonly targetNoteBacklinks: string[];
+  readonly thirdTargetBacklinks: string[];
+  readonly thirdTargetPane: string[];
 }
 
 interface DemoSetup {
-  disablePlugin: (app: unknown, message?: string) => Promise<void>;
-  enablePlugin: (app: unknown, message?: string) => Promise<void>;
-  showThirdTargetBacklinks: (app: unknown) => Promise<void>;
+  readonly disablePlugin: (app: unknown, message?: string) => Promise<void>;
+  readonly enablePlugin: (app: unknown, message?: string) => Promise<void>;
+  readonly showThirdTargetBacklinks: (app: unknown) => Promise<void>;
 }
 
 const vault = getTemporaryVault();

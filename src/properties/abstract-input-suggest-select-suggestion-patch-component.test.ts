@@ -20,7 +20,7 @@ import { PatchedInputElementMap } from './patched-input-element-map.ts';
 type SelectSuggestionFunction = (this: unknown, value: null | PropertyValueSuggestTextItem, $event: KeyboardEvent | MouseEvent) => unknown;
 
 interface SuggestPrototypeWithSelect {
-  selectSuggestion: SelectSuggestionFunction;
+  readonly selectSuggestion: SelectSuggestionFunction;
 }
 
 // Minimal concrete subclass so the abstract base can be instantiated and the

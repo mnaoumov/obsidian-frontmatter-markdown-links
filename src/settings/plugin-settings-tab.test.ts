@@ -26,11 +26,11 @@ import { PluginSettingsTab } from './plugin-settings-tab.ts';
 import { PluginSettings } from './plugin-settings.ts';
 
 interface SearchableDefinition {
-  searchable?: boolean;
+  readonly searchable?: boolean;
 }
 
 interface VisibleDefinition {
-  visible: () => boolean;
+  readonly visible: () => boolean;
 }
 
 let app: AppOriginal;

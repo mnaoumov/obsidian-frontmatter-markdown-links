@@ -19,7 +19,9 @@ import {
 const vault = getTemporaryVault();
 
 interface Context {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   previousFocusNewTab: unknown;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   sourceLeaf: WorkspaceLeaf;
 }
 

@@ -13,7 +13,7 @@ import {
 import { PatchedInputElementMap } from './patched-input-element-map.ts';
 
 interface ObsidianComponentModule {
-  Component: new () => object;
+  readonly Component: new () => object;
 }
 
 // Stub the sibling patch component so this test isolates the get-value patch's

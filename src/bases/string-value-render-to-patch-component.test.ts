@@ -17,11 +17,12 @@ type GetFirstLinkpathDestination = App['metadataCache']['getFirstLinkpathDest'];
 type RenderToFunction = (this: StringValueLike, containerEl: HTMLElement) => void;
 
 interface RenderToPrototype {
-  renderTo: RenderToFunction;
-  toString: (this: StringValueLike) => string;
+  readonly renderTo: RenderToFunction;
+  readonly toString: (this: StringValueLike) => string;
 }
 
 interface StringValueLike {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   data: string;
 }
 

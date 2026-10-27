@@ -17,7 +17,7 @@ import {
 import { PatchedInputElementMap } from './patched-input-element-map.ts';
 
 interface ObsidianModuleSubset {
-  Component: new () => object;
+  readonly Component: new () => object;
 }
 
 // Stub the sibling component so loading the render patch does not install the real prototype patch,
@@ -35,7 +35,7 @@ import { TextPropertyWidgetRenderPatchComponent } from './text-property-widget-r
 type RenderFunction = PropertyWidget<TextPropertyWidgetComponent>['render'];
 
 interface WidgetObject {
-  render: RenderFunction;
+  readonly render: RenderFunction;
 }
 
 let loadedComponent: null | TextPropertyWidgetRenderPatchComponent = null;

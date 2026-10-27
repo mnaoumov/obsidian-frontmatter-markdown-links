@@ -17,14 +17,16 @@ import { MultiTextPropertyComponentRenderValuesPatchComponent } from './multi-te
 type GetFirstLinkpathDestination = App['metadataCache']['getFirstLinkpathDest'];
 
 interface MultiselectLike {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   rootEl: HTMLElement;
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   values: string[];
 }
 
 type RenderValuesFunction = (this: MultiselectLike) => void;
 
 interface RenderValuesPrototype {
-  renderValues: RenderValuesFunction;
+  readonly renderValues: RenderValuesFunction;
 }
 
 let loadedComponent: MultiTextPropertyComponentRenderValuesPatchComponent | null = null;

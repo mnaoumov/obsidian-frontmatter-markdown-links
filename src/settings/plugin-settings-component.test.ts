@@ -17,12 +17,12 @@ import {
 import { PluginSettingsComponent } from './plugin-settings-component.ts';
 
 interface LegacySettingsInstance {
-  shouldHandleRenames: boolean;
+  readonly shouldHandleRenames: boolean;
 }
 
 interface RegisteredLegacyConverter {
-  converter: (record: GenericObject) => void;
-  legacySettingsClass: new () => LegacySettingsInstance;
+  readonly converter: (record: GenericObject) => void;
+  readonly legacySettingsClass: new () => LegacySettingsInstance;
 }
 
 let registeredLegacyConverters: RegisteredLegacyConverter[];

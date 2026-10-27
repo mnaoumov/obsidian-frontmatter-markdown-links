@@ -40,76 +40,77 @@ import { PluginSettings } from './settings/plugin-settings.ts';
 type AnyFunction = (...$arguments: never[]) => unknown;
 
 interface BasesLocal {
-  note: BasesNotePrototype;
+  readonly note: BasesNotePrototype;
 }
 
 interface CacheGetKeysAccess {
-  getKeys: ReturnType<typeof vi.fn>;
+  readonly getKeys: ReturnType<typeof vi.fn>;
 }
 
 interface CacheInitAccess {
-  init: ReturnType<typeof vi.fn>;
+  readonly init: ReturnType<typeof vi.fn>;
 }
 
 interface CacheRenameAccess {
-  rename: ReturnType<typeof vi.fn>;
+  readonly rename: ReturnType<typeof vi.fn>;
 }
 
 interface ClearMetadataCacheAccess {
-  clearMetadataCache: AnyFunction;
+  readonly clearMetadataCache: AnyFunction;
 }
 
 interface ComponentModuleActual {
-  Component: new () => object;
+  readonly Component: new () => object;
 }
 
 interface HandleMetadataCacheChangedAccess {
-  handleMetadataCacheChanged: AnyFunction;
+  readonly handleMetadataCacheChanged: AnyFunction;
 }
 
 interface InternalPluginsLike {
-  getEnabledPluginById: AnyFunction;
+  readonly getEnabledPluginById: AnyFunction;
 }
 
 interface LifecycleAugmentApp {
-  internalPlugins: InternalPluginsLike;
-  vault: VaultGetMarkdownFilesLike;
-  workspace: WorkspaceLeavesAndOnLike;
+  readonly internalPlugins: InternalPluginsLike;
+  readonly vault: VaultGetMarkdownFilesLike;
+  readonly workspace: WorkspaceLeavesAndOnLike;
 }
 
 interface LinkDataShape {
-  isExternalUrl: boolean;
-  isWikilink: boolean;
-  url: string;
+  readonly isExternalUrl: boolean;
+  readonly isWikilink: boolean;
+  readonly url: string;
 }
 
 interface MockCacheInstanceAccess {
-  delete: ReturnType<typeof vi.fn>;
-  getFilePaths: ReturnType<typeof vi.fn>;
-  getTrackedFilePaths: ReturnType<typeof vi.fn>;
+  readonly delete: ReturnType<typeof vi.fn>;
+  readonly getFilePaths: ReturnType<typeof vi.fn>;
+  readonly getTrackedFilePaths: ReturnType<typeof vi.fn>;
 }
 
 interface ProcessFrontmatterLinksInFileAccess {
-  processFrontmatterLinksInFile: AnyFunction;
+  readonly processFrontmatterLinksInFile: AnyFunction;
 }
 
 interface ResolveLinksAccess {
-  resolveLinks: AnyFunction;
+  readonly resolveLinks: AnyFunction;
 }
 
 interface ValidCacheInstance {
-  deleteKey: ReturnType<typeof vi.fn>;
-  getLinks: ReturnType<typeof vi.fn>;
-  isCacheValid: ReturnType<typeof vi.fn>;
+  readonly deleteKey: ReturnType<typeof vi.fn>;
+  readonly getLinks: ReturnType<typeof vi.fn>;
+  readonly isCacheValid: ReturnType<typeof vi.fn>;
 }
 
 interface VaultGetMarkdownFilesLike {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   getMarkdownFiles: AnyFunction;
 }
 
 interface WorkspaceLeavesAndOnLike {
-  getLeavesOfType: AnyFunction;
-  on: AnyFunction;
+  readonly getLeavesOfType: AnyFunction;
+  readonly on: AnyFunction;
 }
 
 class BasesNotePrototype {
@@ -249,6 +250,7 @@ import { FrontmatterMarkdownLinksComponent } from './frontmatter-markdown-links-
 import { PatchedInputElementMap as PatchedInputElementMapCls } from './properties/patched-input-element-map.ts';
 
 interface ComponentAppAccess {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   app: App;
 }
 

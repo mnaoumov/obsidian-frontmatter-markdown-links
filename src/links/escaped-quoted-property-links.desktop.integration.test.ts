@@ -26,7 +26,7 @@ import {
  */
 
 interface RenderedLinkData {
-  url?: string;
+  readonly url?: string;
 }
 
 const vault = getTemporaryVault();

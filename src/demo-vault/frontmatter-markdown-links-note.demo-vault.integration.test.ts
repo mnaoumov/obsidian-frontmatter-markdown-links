@@ -21,22 +21,22 @@ import {
  */
 
 interface DemoSetup {
-  closeFrontmatterLinksNoteSourceMode: (app: unknown) => void;
-  disablePlugin: (app: unknown, message?: string) => Promise<void>;
-  enablePlugin: (app: unknown, message?: string) => Promise<void>;
-  modifierClickMarkdownLinkInSourceMode: (app: unknown) => Promise<void>;
-  openFrontmatterLinksNoteInSourceMode: (app: unknown) => Promise<void>;
+  readonly closeFrontmatterLinksNoteSourceMode: (app: unknown) => void;
+  readonly disablePlugin: (app: unknown, message?: string) => Promise<void>;
+  readonly enablePlugin: (app: unknown, message?: string) => Promise<void>;
+  readonly modifierClickMarkdownLinkInSourceMode: (app: unknown) => Promise<void>;
+  readonly openFrontmatterLinksNoteInSourceMode: (app: unknown) => Promise<void>;
 }
 
 interface PropertiesSnapshot {
-  markdownLink: string[];
-  multipleLinks: string[];
-  wikilink: string[];
+  readonly markdownLink: string[];
+  readonly multipleLinks: string[];
+  readonly wikilink: string[];
 }
 
 interface SourceModeSnapshot {
-  markdownLink: boolean;
-  wikilink: boolean;
+  readonly markdownLink: boolean;
+  readonly wikilink: boolean;
 }
 
 const vault = getTemporaryVault();
