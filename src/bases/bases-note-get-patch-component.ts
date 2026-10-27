@@ -7,12 +7,12 @@ import type { App } from 'obsidian';
 import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 import { getPrototypeOf } from '@mnaoumov/typescript-lib/object-utils';
 
+import { BasesExternalLinkRenderToPatchComponent } from './bases-external-link-render-to-patch-component.ts';
+import { BasesListRenderToPatchComponent } from './bases-list-render-to-patch-component.ts';
 import {
   EXTERNAL_LINK_PREFIX,
   LinkFixer
-} from '../link-fixer.ts';
-import { BasesExternalLinkRenderToPatchComponent } from './bases-external-link-render-to-patch-component.ts';
-import { BasesListRenderToPatchComponent } from './bases-list-render-to-patch-component.ts';
+} from './link-fixer.ts';
 import { StringValueRenderToPatchComponent } from './string-value-render-to-patch-component.ts';
 
 // A plain, non-link string so `BasesNote.get` returns a `StringValue` (the value type behind

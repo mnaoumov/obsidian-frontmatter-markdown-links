@@ -1,28 +1,28 @@
-import type { BasesExternalLink } from '@obsidian-typings/obsidian-public-latest';
+import type { BasesList } from '@obsidian-typings/obsidian-public-latest';
 
 import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 import { getPrototypeOf } from '@mnaoumov/typescript-lib/object-utils';
 
-import type { LinkFixer } from '../link-fixer.ts';
+import type { LinkFixer } from './link-fixer.ts';
 
-interface BasesExternalLinkRenderToPatchComponentConstructorParams {
-  readonly basesExternalLink: BasesExternalLink;
+interface BasesListRenderToPatchComponentConstructorParams {
+  readonly basesList: BasesList;
   readonly linkFixer: LinkFixer;
 }
 
-export class BasesExternalLinkRenderToPatchComponent extends MonkeyAroundComponent {
-  private readonly basesExternalLink: BasesExternalLink;
+export class BasesListRenderToPatchComponent extends MonkeyAroundComponent {
+  private readonly basesList: BasesList;
   private readonly linkFixer: LinkFixer;
 
-  public constructor(params: BasesExternalLinkRenderToPatchComponentConstructorParams) {
+  public constructor(params: BasesListRenderToPatchComponentConstructorParams) {
     super();
-    this.basesExternalLink = params.basesExternalLink;
+    this.basesList = params.basesList;
     this.linkFixer = params.linkFixer;
   }
 
   public override onload(): void {
     this.registerMethodPatch({
-      $object: getPrototypeOf(this.basesExternalLink),
+      $object: getPrototypeOf(this.basesList),
       methodName: 'renderTo',
       patchHandler: ({
         fallback,

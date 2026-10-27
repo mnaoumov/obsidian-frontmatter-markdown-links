@@ -15,7 +15,7 @@ import {
   vi
 } from 'vitest';
 
-import type { MigratableSettings } from './advanced-rename-and-delete-handler.ts';
+import type { MigratableSettings } from './settings/advanced-rename-and-delete-handler.ts';
 
 interface ComponentModuleActual {
   Component: new () => object;
@@ -43,9 +43,9 @@ interface SettingsMigrationComponentParams {
 // Stub the plugin's OWN sibling modules (allowed test doubles). The component stub extends the real
 // test-mocks `Component` so the real `PluginBase` lifecycle can load it as a child without pulling in
 // the heavy settings-base dependencies.
-vi.mock('./plugin-settings-component.ts', async () => {
+vi.mock('./settings/plugin-settings-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
-  const { PluginSettings } = await vi.importActual<typeof import('./plugin-settings.ts')>('./plugin-settings.ts');
+  const { PluginSettings } = await vi.importActual<typeof import('./settings/plugin-settings.ts')>('./settings/plugin-settings.ts');
   class PluginSettingsComponent extends Component {
     public settings = new PluginSettings();
 
@@ -99,7 +99,7 @@ vi.mock('@mnaoumov/obsidian-lib/components/plugin-suggestion-component', async (
   };
 });
 
-vi.mock('./plugin-settings-tab.ts', () => ({
+vi.mock('./settings/plugin-settings-tab.ts', () => ({
   PluginSettingsTab: vi.fn()
 }));
 
@@ -110,9 +110,9 @@ vi.mock('./frontmatter-markdown-links-component.ts', async () => {
 });
 
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { PluginSettingsComponent } from './plugin-settings-component.ts';
-// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { Plugin } from './plugin.ts';
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
 
 const PLUGIN_MANIFEST: PluginManifest = {
   author: 'test',

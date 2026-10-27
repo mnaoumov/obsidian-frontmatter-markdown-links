@@ -3,7 +3,7 @@ import type { Editor } from 'obsidian';
 import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 import { getPrototypeOf } from '@mnaoumov/typescript-lib/object-utils';
 
-import { getLinkData } from '../link-data.ts';
+import { getLinkData } from '../links/link-data.ts';
 
 interface EditorGetClickableTokenAtPatchComponentConstructorParams {
   readonly editor: Editor;

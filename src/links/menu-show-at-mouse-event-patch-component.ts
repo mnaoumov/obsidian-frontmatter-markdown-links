@@ -6,7 +6,7 @@ import {
   MenuSeparator
 } from 'obsidian';
 
-import { getLinkData } from '../link-data.ts';
+import { getLinkData } from './link-data.ts';
 
 export class MenuShowAtMouseEventPatchComponent extends MonkeyAroundComponent {
   public constructor(private readonly app: App) {

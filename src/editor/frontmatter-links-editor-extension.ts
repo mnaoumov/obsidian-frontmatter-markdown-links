@@ -26,7 +26,7 @@ import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 import { ValueWrapper } from '@mnaoumov/typescript-lib/value-wrapper';
 import { parseYaml } from 'obsidian';
 
-import { getDataAttributes } from './link-data.ts';
+import { getDataAttributes } from '../links/link-data.ts';
 import { isSourceMode } from './source-mode.ts';
 
 interface DecodeYamlScalarParams {

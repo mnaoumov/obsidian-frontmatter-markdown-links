@@ -3,10 +3,10 @@ import type { PropertyValueSuggest } from '@obsidian-typings/obsidian-public-lat
 import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 import { AbstractInputSuggest } from 'obsidian';
 
-import type { PatchedInputElementMap } from '../patched-input-element-map.ts';
+import type { PatchedInputElementMap } from './patched-input-element-map.ts';
 
-import { getCaretCharacterOffset } from '../selection.ts';
 import { AbstractInputSuggestSelectSuggestionPatchComponent } from './abstract-input-suggest-select-suggestion-patch-component.ts';
+import { getCaretCharacterOffset } from './selection.ts';
 
 interface AbstractInputSuggestGetValuePatchComponentConstructorParams {
   readonly patchedInputElementMap: PatchedInputElementMap;

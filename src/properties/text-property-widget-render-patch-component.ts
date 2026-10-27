@@ -8,9 +8,9 @@ import type {
 import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 import { parseLinks } from '@mnaoumov/obsidian-lib/parse-link';
 
-import type { PatchedInputElementMap } from '../patched-input-element-map.ts';
+import type { PatchedInputElementMap } from './patched-input-element-map.ts';
 
-import { getCaretCharacterOffset } from '../selection.ts';
+import { getCaretCharacterOffset } from './selection.ts';
 import { TextPropertyWidgetComponentRenderPatchComponent } from './text-property-widget-component-render-patch-component.ts';
 
 interface CreateChildWidgetParams {
