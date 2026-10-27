@@ -35,21 +35,21 @@ import {
   TFile
 } from 'obsidian';
 
-import type { LinkFixer } from './link-fixer.ts';
-import type { PatchedInputElementMap } from './patched-input-element-map.ts';
-import type { PluginSettingsComponent } from './plugin-settings-component.ts';
+import type { LinkFixer } from './bases/link-fixer.ts';
+import type { PatchedInputElementMap } from './properties/patched-input-element-map.ts';
+import type { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
 
-import { FrontMatterLinksViewPlugin } from './frontmatter-links-editor-extension.ts';
-import { FrontmatterMarkdownLinksCache } from './frontmatter-markdown-links-cache.ts';
-import { getLinkData } from './link-data.ts';
-import { AbstractInputSuggestGetValuePatchComponent } from './patches/abstract-input-suggest-get-value-patch-component.ts';
-import { BasesNoteGetPatchComponent } from './patches/bases-note-get-patch-component.ts';
-import { EditorGetClickableTokenAtPatchComponent } from './patches/editor-get-clickable-token-at-patch-component.ts';
-import { MenuShowAtMouseEventPatchComponent } from './patches/menu-show-at-mouse-event-patch-component.ts';
-import { MultiLinkPropertyUpdatePatchComponent } from './patches/multi-link-property-update-patch-component.ts';
-import { MultitextPropertyWidgetRenderPatchComponent } from './patches/multitext-property-widget-render-patch-component.ts';
-import { TextPropertyWidgetRenderPatchComponent } from './patches/text-property-widget-render-patch-component.ts';
-import { isSourceMode } from './source-mode.ts';
+import { BasesNoteGetPatchComponent } from './bases/bases-note-get-patch-component.ts';
+import { EditorGetClickableTokenAtPatchComponent } from './editor/editor-get-clickable-token-at-patch-component.ts';
+import { FrontMatterLinksViewPlugin } from './editor/frontmatter-links-editor-extension.ts';
+import { isSourceMode } from './editor/source-mode.ts';
+import { getLinkData } from './links/link-data.ts';
+import { MenuShowAtMouseEventPatchComponent } from './links/menu-show-at-mouse-event-patch-component.ts';
+import { FrontmatterMarkdownLinksCache } from './metadata-cache/frontmatter-markdown-links-cache.ts';
+import { MultiLinkPropertyUpdatePatchComponent } from './metadata-cache/multi-link-property-update-patch-component.ts';
+import { AbstractInputSuggestGetValuePatchComponent } from './properties/abstract-input-suggest-get-value-patch-component.ts';
+import { MultitextPropertyWidgetRenderPatchComponent } from './properties/multitext-property-widget-render-patch-component.ts';
+import { TextPropertyWidgetRenderPatchComponent } from './properties/text-property-widget-render-patch-component.ts';
 
 interface FrontmatterMarkdownLinksComponentConstructorParams {
   readonly abortSignalComponent: AbortSignalComponent;

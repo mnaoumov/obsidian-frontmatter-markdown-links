@@ -31,11 +31,11 @@ import {
   vi
 } from 'vitest';
 
-import type { LinkFixer } from './link-fixer.ts';
-import type { PatchedInputElementMap } from './patched-input-element-map.ts';
-import type { PluginSettingsComponent } from './plugin-settings-component.ts';
+import type { LinkFixer } from './bases/link-fixer.ts';
+import type { PatchedInputElementMap } from './properties/patched-input-element-map.ts';
+import type { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
 
-import { PluginSettings } from './plugin-settings.ts';
+import { PluginSettings } from './settings/plugin-settings.ts';
 
 type AnyFunction = (...$arguments: never[]) => unknown;
 
@@ -130,37 +130,37 @@ class MockBasesContext {
 
 // Stub the plugin's OWN sibling patch modules as no-op `Component` subclasses so the component's
 // lifecycle loads them as children without driving real patch logic.
-vi.mock('./patches/text-property-widget-render-patch-component.ts', async () => {
+vi.mock('./properties/text-property-widget-render-patch-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   return { TextPropertyWidgetRenderPatchComponent: class extends Component {} };
 });
 
-vi.mock('./patches/abstract-input-suggest-get-value-patch-component.ts', async () => {
+vi.mock('./properties/abstract-input-suggest-get-value-patch-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   return { AbstractInputSuggestGetValuePatchComponent: class extends Component {} };
 });
 
-vi.mock('./patches/multitext-property-widget-render-patch-component.ts', async () => {
+vi.mock('./properties/multitext-property-widget-render-patch-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   return { MultitextPropertyWidgetRenderPatchComponent: class extends Component {} };
 });
 
-vi.mock('./patches/menu-show-at-mouse-event-patch-component.ts', async () => {
+vi.mock('./links/menu-show-at-mouse-event-patch-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   return { MenuShowAtMouseEventPatchComponent: class extends Component {} };
 });
 
-vi.mock('./patches/multi-link-property-update-patch-component.ts', async () => {
+vi.mock('./metadata-cache/multi-link-property-update-patch-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   return { MultiLinkPropertyUpdatePatchComponent: class extends Component {} };
 });
 
-vi.mock('./patches/bases-note-get-patch-component.ts', async () => {
+vi.mock('./bases/bases-note-get-patch-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   return { BasesNoteGetPatchComponent: class extends Component {} };
 });
 
-vi.mock('./patches/editor-get-clickable-token-at-patch-component.ts', async () => {
+vi.mock('./editor/editor-get-clickable-token-at-patch-component.ts', async () => {
   const { Component } = await vi.importActual<ComponentModuleActual>('obsidian');
   return { EditorGetClickableTokenAtPatchComponent: class extends Component {} };
 });
@@ -171,7 +171,7 @@ vi.mock('@obsidian-typings/obsidian-public-latest/implementations', () => ({
   getBasesContextConstructor: vi.fn()
 }));
 
-vi.mock('./frontmatter-links-editor-extension.ts', () => ({
+vi.mock('./editor/frontmatter-links-editor-extension.ts', () => ({
   FrontMatterLinksViewPlugin: { createEditorExtension: vi.fn().mockReturnValue([]) }
 }));
 
@@ -198,7 +198,7 @@ const { createMockCacheInstance, mockCacheConstructor } = vi.hoisted(() => {
   };
 });
 
-vi.mock('./frontmatter-markdown-links-cache.ts', () => ({
+vi.mock('./metadata-cache/frontmatter-markdown-links-cache.ts', () => ({
   FrontmatterMarkdownLinksCache: mockCacheConstructor
 }));
 
@@ -242,11 +242,11 @@ import {
 import { getBasesContextConstructor } from '@obsidian-typings/obsidian-public-latest/implementations';
 
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
+import { LinkFixer as LinkFixerCls } from './bases/link-fixer.ts';
+// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
 import { FrontmatterMarkdownLinksComponent } from './frontmatter-markdown-links-component.ts';
 // eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { LinkFixer as LinkFixerCls } from './link-fixer.ts';
-// eslint-disable-next-line import-x/first, import-x/imports-first -- vi.mock must precede imports.
-import { PatchedInputElementMap as PatchedInputElementMapCls } from './patched-input-element-map.ts';
+import { PatchedInputElementMap as PatchedInputElementMapCls } from './properties/patched-input-element-map.ts';
 
 interface ComponentAppAccess {
   app: App;

@@ -14,7 +14,7 @@ import {
   vi
 } from 'vitest';
 
-import { PatchedInputElementMap } from '../patched-input-element-map.ts';
+import { PatchedInputElementMap } from './patched-input-element-map.ts';
 
 interface ObsidianModuleSubset {
   Component: new () => object;

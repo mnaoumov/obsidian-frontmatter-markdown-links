@@ -9,8 +9,8 @@ import {
   vi
 } from 'vitest';
 
-import { LinkFixer } from '../link-fixer.ts';
 import { BasesExternalLinkRenderToPatchComponent } from './bases-external-link-render-to-patch-component.ts';
+import { LinkFixer } from './link-fixer.ts';
 
 type RenderToFunction = (this: unknown, containerEl: HTMLElement) => unknown;
 

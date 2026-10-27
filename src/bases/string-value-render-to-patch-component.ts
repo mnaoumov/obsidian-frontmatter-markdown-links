@@ -4,7 +4,7 @@ import type { App } from 'obsidian';
 import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 import { getPrototypeOf } from '@mnaoumov/typescript-lib/object-utils';
 
-import { didRenderStringValueLinks } from '../render-links.ts';
+import { didRenderStringValueLinks } from '../links/render-links.ts';
 
 interface StringValueRenderToPatchComponentConstructorParams {
   readonly app: App;

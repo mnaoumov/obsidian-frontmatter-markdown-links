@@ -13,7 +13,7 @@ import {
   vi
 } from 'vitest';
 
-import { attachLinkData } from '../link-data.ts';
+import { attachLinkData } from '../links/link-data.ts';
 import { EditorGetClickableTokenAtPatchComponent } from './editor-get-clickable-token-at-patch-component.ts';
 
 interface EditorCmHolder {

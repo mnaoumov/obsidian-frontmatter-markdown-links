@@ -10,7 +10,7 @@ import {
   vi
 } from 'vitest';
 
-import { PatchedInputElementMap } from '../patched-input-element-map.ts';
+import { PatchedInputElementMap } from './patched-input-element-map.ts';
 
 interface ObsidianComponentModule {
   Component: new () => object;

@@ -6,7 +6,7 @@ import { parseLinks } from '@mnaoumov/obsidian-lib/parse-link';
 import { getPrototypeOf } from '@mnaoumov/typescript-lib/object-utils';
 import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 
-import { renderLinkChild } from '../render-links.ts';
+import { renderLinkChild } from '../links/render-links.ts';
 
 interface MultiTextPropertyComponentRenderValuesPatchComponentConstructorParams {
   readonly app: App;

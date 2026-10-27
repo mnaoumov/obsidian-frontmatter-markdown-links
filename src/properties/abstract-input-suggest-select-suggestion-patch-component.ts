@@ -4,7 +4,7 @@ import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-
 import { getPrototypeOf } from '@mnaoumov/typescript-lib/object-utils';
 import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 
-import type { PatchedInputElementMap } from '../patched-input-element-map.ts';
+import type { PatchedInputElementMap } from './patched-input-element-map.ts';
 
 interface AbstractInputSuggestSelectSuggestionPatchComponentConstructorParams {
   readonly abstractInputSuggest: PropertyValueSuggest;

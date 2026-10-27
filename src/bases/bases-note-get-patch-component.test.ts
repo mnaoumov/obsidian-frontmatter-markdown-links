@@ -11,8 +11,8 @@ import {
   vi
 } from 'vitest';
 
-import { LinkFixer } from '../link-fixer.ts';
 import { BasesNoteGetPatchComponent } from './bases-note-get-patch-component.ts';
+import { LinkFixer } from './link-fixer.ts';
 
 interface ComponentModuleActual {
   Component: new () => object;

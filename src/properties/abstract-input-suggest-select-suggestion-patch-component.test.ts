@@ -14,8 +14,8 @@ import {
   vi
 } from 'vitest';
 
-import { PatchedInputElementMap } from '../patched-input-element-map.ts';
 import { AbstractInputSuggestSelectSuggestionPatchComponent } from './abstract-input-suggest-select-suggestion-patch-component.ts';
+import { PatchedInputElementMap } from './patched-input-element-map.ts';
 
 type SelectSuggestionFunction = (this: unknown, value: null | PropertyValueSuggestTextItem, $event: KeyboardEvent | MouseEvent) => unknown;
 

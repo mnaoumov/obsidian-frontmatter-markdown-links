@@ -8,17 +8,17 @@ import { appendCodeBlock } from '@mnaoumov/obsidian-lib/html-element';
 import { PluginBase } from '@mnaoumov/obsidian-lib/plugin/plugin';
 import { PluginEventSourceImpl } from '@mnaoumov/obsidian-lib/plugin/plugin-event-source';
 
-import type { MigratableSettings } from './advanced-rename-and-delete-handler.ts';
+import type { MigratableSettings } from './settings/advanced-rename-and-delete-handler.ts';
 
+import { LinkFixer } from './bases/link-fixer.ts';
+import { FrontmatterMarkdownLinksComponent } from './frontmatter-markdown-links-component.ts';
+import { PatchedInputElementMap } from './properties/patched-input-element-map.ts';
 import {
   ADVANCED_RENAME_AND_DELETE_HANDLER_PLUGIN_ID,
   ADVANCED_RENAME_AND_DELETE_HANDLER_PLUGIN_NAME
-} from './advanced-rename-and-delete-handler.ts';
-import { FrontmatterMarkdownLinksComponent } from './frontmatter-markdown-links-component.ts';
-import { LinkFixer } from './link-fixer.ts';
-import { PatchedInputElementMap } from './patched-input-element-map.ts';
-import { PluginSettingsComponent } from './plugin-settings-component.ts';
-import { PluginSettingsTab } from './plugin-settings-tab.ts';
+} from './settings/advanced-rename-and-delete-handler.ts';
+import { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
+import { PluginSettingsTab } from './settings/plugin-settings-tab.ts';
 
 export class Plugin extends PluginBase {
   protected override async onloadImpl(): Promise<void> {
