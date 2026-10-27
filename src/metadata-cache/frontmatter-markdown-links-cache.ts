@@ -120,8 +120,8 @@ export class FrontmatterMarkdownLinksCache {
 
   public async init(app: App): Promise<void> {
     const request = window.indexedDB.open(`${app.appId}/frontmatter-markdown-links`, DB_VERSION);
-    request.addEventListener('upgradeneeded', (event) => {
-      if (event.newVersion !== 1) {
+    request.addEventListener('upgradeneeded', ($event) => {
+      if ($event.newVersion !== 1) {
         return;
       }
       const database = request.result;

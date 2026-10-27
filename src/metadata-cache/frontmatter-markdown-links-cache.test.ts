@@ -73,9 +73,9 @@ function buildCacheWithMockDatabase(): CacheWithMockDatabase {
 function makeIdbOpenRequest(database: IDBDatabase, upgradeNewVersion?: number): IDBOpenDBRequest {
   const handlers: Partial<Record<string, ($event?: unknown) => void>> = {};
   const request: Record<string, unknown> = {
-    addEventListener: vi.fn().mockImplementation((event: string, handler: ($event?: unknown) => void) => {
-      handlers[event] = handler;
-      if (event !== 'success') {
+    addEventListener: vi.fn().mockImplementation(($event: string, handler: ($event?: unknown) => void) => {
+      handlers[$event] = handler;
+      if ($event !== 'success') {
         return;
       }
 
@@ -92,8 +92,8 @@ function makeIdbOpenRequest(database: IDBDatabase, upgradeNewVersion?: number): 
 }
 function makeIdbRequest(result: unknown): IDBRequest {
   return castTo<IDBRequest>({
-    addEventListener: vi.fn().mockImplementation(function mockAddEventListener(this: IDBRequest, event: string, handler: () => void) {
-      if (event !== 'success') {
+    addEventListener: vi.fn().mockImplementation(function mockAddEventListener(this: IDBRequest, $event: string, handler: () => void) {
+      if ($event !== 'success') {
         return;
       }
 
@@ -487,8 +487,8 @@ describe('FrontmatterMarkdownLinksCache', () => {
 
     it('should reject when IDBRequest fires an error event with an error object', async () => {
       const openMock = vi.fn().mockReturnValue({
-        addEventListener: vi.fn().mockImplementation(function mockAddEventListener(this: IDBOpenDBRequest, event: string, handler: () => void) {
-          if (event !== 'error') {
+        addEventListener: vi.fn().mockImplementation(function mockAddEventListener(this: IDBOpenDBRequest, $event: string, handler: () => void) {
+          if ($event !== 'error') {
             return;
           }
 
@@ -506,8 +506,8 @@ describe('FrontmatterMarkdownLinksCache', () => {
 
     it('should reject with fallback message when error event has null error', async () => {
       const openMock = vi.fn().mockReturnValue({
-        addEventListener: vi.fn().mockImplementation(function mockAddEventListener(this: IDBOpenDBRequest, event: string, handler: () => void) {
-          if (event !== 'error') {
+        addEventListener: vi.fn().mockImplementation(function mockAddEventListener(this: IDBOpenDBRequest, $event: string, handler: () => void) {
+          if ($event !== 'error') {
             return;
           }
 
