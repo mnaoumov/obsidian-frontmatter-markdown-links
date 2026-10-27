@@ -32,6 +32,7 @@ import {
 } from 'vitest';
 
 import type { LinkFixer } from './bases/link-fixer.ts';
+import type { FrontmatterMarkdownLinksCache } from './metadata-cache/frontmatter-markdown-links-cache.ts';
 import type { PatchedInputElementMap } from './properties/patched-input-element-map.ts';
 import type { PluginSettingsComponent } from './settings/plugin-settings-component.ts';
 
@@ -180,14 +181,17 @@ const { createMockCacheInstance, mockCacheConstructor } = vi.hoisted(() => {
   function buildMockCacheInstance(): object {
     return {
       add: vi.fn(),
+      adoptSeeds: vi.fn().mockResolvedValue(undefined),
       delete: vi.fn(),
       deleteKey: vi.fn(),
+      dispose: vi.fn().mockResolvedValue(undefined),
       getFilePaths: vi.fn().mockReturnValue([]),
       getKeys: vi.fn().mockReturnValue([]),
       getLinks: vi.fn().mockReturnValue([]),
       getTrackedFilePaths: vi.fn().mockReturnValue([]),
       init: vi.fn().mockResolvedValue(undefined),
       isCacheValid: vi.fn().mockReturnValue(false),
+      publishSeeds: vi.fn().mockResolvedValue(undefined),
       rename: vi.fn(),
       updateFile: vi.fn()
     };
@@ -432,6 +436,23 @@ describe('FrontmatterMarkdownLinksComponent', () => {
         pluginSettingsComponent
       });
     }
+
+    it('cancels publication and drains the current cache when unloaded', async () => {
+      vi.useFakeTimers();
+      try {
+        const { app, registerEditorExtension } = createLifecycleApp();
+        const component = createLifecycleComponent(app, strictProxy<EditorExtensionRegistrar>({ registerEditorExtension }));
+        component.load();
+        await component['processAllNotes']();
+        const cache = component['frontmatterMarkdownLinksCache'];
+        component.unload();
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(cache.dispose).toHaveBeenCalledOnce();
+        expect(cache.publishSeeds).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
 
     it('should register the editor extension and refresh markdown views on load', () => {
       const { app, registerEditorExtension, synchronize } = createLifecycleApp();
@@ -1607,3 +1628,104 @@ function createSourceModeView(): MarkdownView {
     getState: vi.fn().mockReturnValue({ source: true })
   });
 }
+
+describe('cache connection ownership', () => {
+  it('disposes replaced caches and publishes only the current cache on the delayed schedule', async () => {
+    vi.useFakeTimers();
+    try {
+      const component = createComponent();
+      const original = component['frontmatterMarkdownLinksCache'];
+      await component['processAllNotes']();
+      const first = component['frontmatterMarkdownLinksCache'];
+      await component['processAllNotes']();
+      const second = component['frontmatterMarkdownLinksCache'];
+      expect(original.dispose).toHaveBeenCalledOnce();
+      expect(first.dispose).toHaveBeenCalledOnce();
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(first.publishSeeds).not.toHaveBeenCalled();
+      expect(second.publishSeeds).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('rebuilds through the ordinary loop and reports both local persistence and optional sharing errors', async () => {
+    const asyncFunctions = await import('@mnaoumov/typescript-lib/async');
+    const component = createComponent();
+    const next = castTo<FrontmatterMarkdownLinksCache>(createMockCacheInstance());
+    const localFailure = new Error('local unavailable');
+    const sharingFailure = new Error('sharing unavailable');
+    vi.mocked(next.init).mockRejectedValue(localFailure);
+    vi.mocked(next.adoptSeeds).mockRejectedValue(sharingFailure);
+    mockCacheConstructor.mockImplementationOnce(function nextCache(this: object) {
+      Object.assign(this, next);
+      return this;
+    });
+    const reports: Promise<unknown>[] = [];
+    const report = vi.spyOn(asyncFunctions, 'invokeAsyncSafely').mockImplementation((callback) => {
+      const result = callback();
+      if (result instanceof Promise) {
+        reports.push(result.catch((error: unknown) => error));
+      }
+    });
+    await component['processAllNotes']();
+    expect(await Promise.all(reports)).toEqual([localFailure, sharingFailure]);
+    expect(loop).toHaveBeenCalled();
+    report.mockRestore();
+  });
+
+  it.each(['init', 'adoptSeeds'] as const)('stops metadata hydration if unload occurs during %s', async (method) => {
+    const controller = new AbortController();
+    const component = createComponent({ abortSignalComponent: strictProxy<AbortSignalComponent>({ abortSignal: controller.signal }) });
+    const next = castTo<FrontmatterMarkdownLinksCache>(createMockCacheInstance());
+    vi.mocked(next[method]).mockImplementationOnce(async () => {
+      controller.abort();
+      await noopAsync();
+    });
+    mockCacheConstructor.mockImplementationOnce(function nextCache(this: object) {
+      Object.assign(this, next);
+      return this;
+    });
+    vi.mocked(loop).mockClear();
+    await component['processAllNotes']();
+    expect(loop).not.toHaveBeenCalled();
+    if (method === 'init') {
+      expect(next.dispose).toHaveBeenCalledOnce();
+    }
+  });
+
+  it('does not reap unvisited records when unload interrupts the startup loop', async () => {
+    const controller = new AbortController();
+    const component = createComponent({ abortSignalComponent: strictProxy<AbortSignalComponent>({ abortSignal: controller.signal }) });
+    vi.mocked(loop).mockImplementationOnce(async () => {
+      controller.abort();
+      await noopAsync();
+    });
+    await component['processAllNotes']();
+    expect(component['frontmatterMarkdownLinksCache'].delete).not.toHaveBeenCalled();
+    expect(component['seedTimer']).toBeNull();
+  });
+
+  it('ignores metadata changes after unload so links cannot be reinserted', async () => {
+    const component = createComponent({ abortSignalComponent: strictProxy<AbortSignalComponent>({ abortSignal: AbortSignal.abort() }) });
+    await component['processFrontmatterLinksInFile']({ cache: {}, file: makeTFile('alpha.md') });
+    expect(component['frontmatterMarkdownLinksCache'].updateFile).not.toHaveBeenCalled();
+  });
+
+  it('does not announce changes after unload interrupts a note read', async () => {
+    const controller = new AbortController();
+    const component = createComponent({ abortSignalComponent: strictProxy<AbortSignalComponent>({ abortSignal: controller.signal }) });
+    const app = getApp(component);
+    vi.mocked(app.vault.read).mockImplementationOnce(async () => {
+      controller.abort();
+      await noopAsync();
+      return '';
+    });
+    await component['processFrontmatterLinksInFile']({
+      cache: { frontmatter: castTo<FrontMatterCache>({ related: '[Alpha](alpha.md) and [Bravo](bravo.md)' }) },
+      file: makeTFile('alpha.md')
+    });
+    expect(app.metadataCache.trigger).not.toHaveBeenCalledWith('changed', expect.anything(), expect.anything(), expect.anything());
+    expect(component['currentlyProcessingFiles'].size).toBe(0);
+  });
+});

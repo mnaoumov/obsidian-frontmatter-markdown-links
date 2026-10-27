@@ -44,6 +44,24 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
             });
           });
         }
+      }),
+      this.settingEx({
+        desc: 'Share validated cache seeds with other devices. Optional; takes effect after reloading the plugin.',
+        name: 'Share frontmatter cache',
+        render: (setting) => {
+          setting.addToggle((toggle) => {
+            this.bind({ propertyName: 'shouldShareCache', valueComponent: toggle });
+          });
+        }
+      }),
+      this.settingEx({
+        desc: 'Non-dot vault folder for Markdown seeds. Markdown syncs with default Sync file types. Excluded files hides it from search, graph and switcher, but metadata parsing still runs. Reload after changing.',
+        name: 'Cache sharing folder',
+        render: (setting) => {
+          setting.addText((text) => {
+            this.bind({ propertyName: 'cacheSharingFolder', valueComponent: text });
+          });
+        }
       })
     ];
   }
