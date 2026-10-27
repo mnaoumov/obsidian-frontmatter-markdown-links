@@ -51,10 +51,14 @@ On a rename, Obsidian itself updates a property whose whole value is one link, m
 
 This plugin offers to install it, once, and carries your old `Should handle renames` value over for you to approve. Declining costs you nothing else: every feature above keeps working.
 
-## Similar plugins
+## See also
 
-- [`Frontmatter Links`](https://github.com/Trikzon/obsidian-frontmatter-links) — renders the links, wikilinks and markdown links in a note's frontmatter as links; its repository is archived and it is no longer in the community directory, while this plugin also splits a value holding several links and makes each one resolve and count as a backlink.
-- [`Frontmatter Link Repair`](https://community.obsidian.md/plugins/frontmatter-link-repair) — finds unquoted wikilinks in raw frontmatter and, after a preview you check, rewrites the notes with the links quoted so Obsidian reads them; it changes the files once, while this plugin changes no note text and makes the links already there work.
+[My other Obsidian resources](https://github.com/mnaoumov/obsidian-resources)
+
+| Plugin | Features | How `Frontmatter Markdown Links` differs |
+| --- | --- | --- |
+| [`Frontmatter Link Repair`](https://community.obsidian.md/plugins/frontmatter-link-repair) | Finds unquoted frontmatter wikilinks; previewed file rewrites | Complementary repair: makes existing links work without rewriting note text |
+| [`Frontmatter Links`](https://github.com/Trikzon/obsidian-frontmatter-links) | Archived/unlisted; renders frontmatter links | Broader link support: splits multi-link values; resolves each target and counts backlinks |
 
 Last searched for similar plugins on 2026-10-26.
 
@@ -91,10 +95,6 @@ Contributions are welcome — see [CONTRIBUTING](./CONTRIBUTING.md) to get set u
 <a href="https://www.buymeacoffee.com/mnaoumov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="60" width="217"></a>
 
 <!-- markdownlint-enable MD033 -->
-
-## My other Obsidian resources
-
-[See my other Obsidian resources](https://github.com/mnaoumov/obsidian-resources).
 
 ## License
 
