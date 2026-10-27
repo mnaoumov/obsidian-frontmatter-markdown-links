@@ -19,10 +19,12 @@ import {
 import { MultiLinkPropertyUpdatePatchComponent } from './multi-link-property-update-patch-component.ts';
 
 interface FileManagerAccess {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   updateAllLinks: (linkUpdates: LinkUpdate[]) => Promise<void>;
 }
 
 interface MetadataCacheAccess {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   updateInternalLinks: (updates: unknown) => Promise<void>;
 }
 
@@ -33,8 +35,8 @@ interface Scenario {
 }
 
 interface UpdaterAccess {
-  fileManager: FileManagerAccess;
-  metadataCache: MetadataCacheAccess;
+  readonly fileManager: FileManagerAccess;
+  readonly metadataCache: MetadataCacheAccess;
 }
 
 const SOURCE_PATH = 'source.md';

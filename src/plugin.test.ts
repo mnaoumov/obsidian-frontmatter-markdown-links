@@ -18,10 +18,11 @@ import {
 import type { MigratableSettings } from './settings/advanced-rename-and-delete-handler.ts';
 
 interface ComponentModuleActual {
-  Component: new () => object;
+  readonly Component: new () => object;
 }
 
 interface PluginsLike {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   manifests: Record<string, unknown>;
 }
 

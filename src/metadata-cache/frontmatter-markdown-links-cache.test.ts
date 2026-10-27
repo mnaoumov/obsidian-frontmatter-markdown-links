@@ -13,25 +13,25 @@ import {
 import { FrontmatterMarkdownLinksCache } from './frontmatter-markdown-links-cache.ts';
 
 interface CacheWithMockDatabase {
-  cache: FrontmatterMarkdownLinksCache;
-  flushStoreActions: () => void;
-  getStore: (storeName: string) => MockObjectStore;
-  objectStoreMock: ReturnType<typeof vi.fn>;
-  transactionMock: ReturnType<typeof vi.fn>;
+  readonly cache: FrontmatterMarkdownLinksCache;
+  readonly flushStoreActions: () => void;
+  readonly getStore: (storeName: string) => MockObjectStore;
+  readonly objectStoreMock: ReturnType<typeof vi.fn>;
+  readonly transactionMock: ReturnType<typeof vi.fn>;
 }
 
 interface MockObjectStore {
-  delete: ReturnType<typeof vi.fn>;
-  put: ReturnType<typeof vi.fn>;
+  readonly delete: ReturnType<typeof vi.fn>;
+  readonly put: ReturnType<typeof vi.fn>;
 }
 
 interface MockTFileLike {
-  path: string;
-  stat: MockTFileStat;
+  readonly path: string;
+  readonly stat: MockTFileStat;
 }
 
 interface MockTFileStat {
-  mtime: number;
+  readonly mtime: number;
 }
 
 // A cache wired to a mock database, with one mock object store PER store name so a test can assert

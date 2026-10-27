@@ -17,20 +17,20 @@ import { attachLinkData } from '../links/link-data.ts';
 import { EditorGetClickableTokenAtPatchComponent } from './editor-get-clickable-token-at-patch-component.ts';
 
 interface EditorCmHolder {
-  cm: Editor['cm'];
+  readonly cm: Editor['cm'];
 }
 
 interface EditorPrototype {
-  getClickableTokenAt: (this: unknown, pos: EditorPosition) => unknown;
-  offsetToPos: (offset: number) => EditorPosition;
-  posToOffset: (pos: EditorPosition) => number;
+  readonly getClickableTokenAt: (this: unknown, pos: EditorPosition) => unknown;
+  readonly offsetToPos: (offset: number) => EditorPosition;
+  readonly posToOffset: (pos: EditorPosition) => number;
 }
 
 type EditorWithCm = Editor & EditorCmHolder;
 
 interface EditorWithPrototype {
-  $prototype: EditorPrototype;
-  editor: Editor;
+  readonly $prototype: EditorPrototype;
+  readonly editor: Editor;
 }
 
 type GetClickableTokenAtFunction = (this: unknown, pos: EditorPosition) => unknown;

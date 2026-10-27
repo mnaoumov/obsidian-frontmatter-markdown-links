@@ -27,25 +27,26 @@ import {
 const vault = getTemporaryVault();
 
 interface CollectedLinkTexts {
-  linkDataTexts: string[];
-  metadataLinkTexts: string[];
+  readonly linkDataTexts: string[];
+  readonly metadataLinkTexts: string[];
 }
 
 interface Context {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The test fixture reassigns this member during setup or scenario changes.
   sourceFile: TFile;
 }
 
 interface FrontmatterLinkCacheOffsets {
-  endOffset?: number;
-  startOffset?: number;
+  readonly endOffset?: number;
+  readonly startOffset?: number;
 }
 
 interface FrontmatterLinkDump {
-  displayText: string | undefined;
-  endOffset: number | undefined;
-  key: string;
-  link: string;
-  startOffset: number | undefined;
+  readonly displayText: string | undefined;
+  readonly endOffset: number | undefined;
+  readonly key: string;
+  readonly link: string;
+  readonly startOffset: number | undefined;
 }
 
 const contextId = new ContextId<Context>();

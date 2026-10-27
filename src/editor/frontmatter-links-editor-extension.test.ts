@@ -17,32 +17,32 @@ import {
 import { FrontMatterLinksViewPlugin } from './frontmatter-links-editor-extension.ts';
 
 interface DecorationWidget {
-  toDOM: () => HTMLElement;
+  readonly toDOM: () => HTMLElement;
 }
 
 interface DecorationWidgetArgument {
-  widget: DecorationWidget;
+  readonly widget: DecorationWidget;
 }
 
 interface IterateConfig {
-  enter: (node: SyntaxNode) => void;
-  from: number;
-  to: number;
+  readonly enter: (node: SyntaxNode) => void;
+  readonly from: number;
+  readonly to: number;
 }
 
 interface SelectionRange {
-  from: number;
-  to: number;
+  readonly from: number;
+  readonly to: number;
 }
 
 interface SyntaxNode {
-  from: number;
-  name: string;
-  to: number;
+  readonly from: number;
+  readonly name: string;
+  readonly to: number;
 }
 
 interface ViewPluginDefineConfig {
-  decorations?: (pluginValue: unknown) => unknown;
+  readonly decorations?: (pluginValue: unknown) => unknown;
 }
 
 type ViewPluginFactory = (view: object) => ViewPluginFactoryResult;
@@ -53,10 +53,10 @@ interface ViewPluginFactoryResult {
 }
 
 interface ViewPluginUpdate {
-  docChanged: boolean;
-  selectionSet: boolean;
-  view: object;
-  viewportChanged: boolean;
+  readonly docChanged: boolean;
+  readonly selectionSet: boolean;
+  readonly view: object;
+  readonly viewportChanged: boolean;
 }
 
 const { mockDecoration, mockSyntaxTreeFactory, mockViewPluginDefine } = vi.hoisted(() => {

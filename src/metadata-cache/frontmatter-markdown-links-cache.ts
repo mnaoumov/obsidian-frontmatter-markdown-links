@@ -8,13 +8,13 @@ import { filterInPlace } from '@mnaoumov/typescript-lib/array';
 import { debounce } from 'obsidian';
 
 interface FileMtimeEntry {
-  filePath: string;
-  mtime: number;
+  readonly filePath: string;
+  readonly mtime: number;
 }
 
 interface FrontmatterLinkEntry {
-  filePath: string;
-  links: FrontmatterLinkCache[];
+  readonly filePath: string;
+  readonly links: FrontmatterLinkCache[];
 }
 
 interface FrontmatterMarkdownLinksCacheDeleteKeyParams {
@@ -23,8 +23,8 @@ interface FrontmatterMarkdownLinksCacheDeleteKeyParams {
 }
 
 interface StoreAction {
-  action: (store: IDBObjectStore) => void;
-  storeName: string;
+  readonly action: (store: IDBObjectStore) => void;
+  readonly storeName: string;
 }
 
 const DB_VERSION = 1;

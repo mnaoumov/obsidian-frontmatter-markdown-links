@@ -15,7 +15,7 @@ import { BasesNoteGetPatchComponent } from './bases-note-get-patch-component.ts'
 import { LinkFixer } from './link-fixer.ts';
 
 interface ComponentModuleActual {
-  Component: new () => object;
+  readonly Component: new () => object;
 }
 
 // Stub the plugin's own sibling child components so note-get's coverage is isolated.
@@ -35,13 +35,13 @@ vi.mock('./string-value-render-to-patch-component.ts', async () => {
 });
 
 interface BasesNoteData {
-  data: Record<string, unknown>;
+  readonly data: Record<string, unknown>;
 }
 
 type GetFunction = (this: BasesNoteData, key: string) => unknown;
 
 interface GetPrototype {
-  get: GetFunction;
+  readonly get: GetFunction;
 }
 
 let loadedComponent: BasesNoteGetPatchComponent | null = null;

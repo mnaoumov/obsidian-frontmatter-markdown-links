@@ -14,7 +14,7 @@ import { TextPropertyWidgetComponentRenderPatchComponent } from './text-property
 type RenderFunction = (this: TextPropertyWidgetComponent) => void;
 
 interface RenderPrototype {
-  render: RenderFunction;
+  readonly render: RenderFunction;
 }
 
 let loadedComponent: null | TextPropertyWidgetComponentRenderPatchComponent = null;

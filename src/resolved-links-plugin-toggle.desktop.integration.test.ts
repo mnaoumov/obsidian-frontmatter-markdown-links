@@ -19,24 +19,24 @@ import {
  */
 
 interface BacklinkDomInternals {
-  resultDomLookup: Map<TFile, unknown>;
+  readonly resultDomLookup: Map<TFile, unknown>;
 }
 
 interface BacklinkInternals {
-  backlinkDom: BacklinkDomInternals;
+  readonly backlinkDom: BacklinkDomInternals;
 }
 
 interface BacklinkViewInternals {
-  backlink: BacklinkInternals;
-  file: null | TFile;
+  readonly backlink: BacklinkInternals;
+  readonly file: null | TFile;
 }
 
 interface ToggleStep {
-  counts: string;
-  frontmatterLinks: string;
-  isPluginLoaded: boolean;
-  paneSources: string[];
-  step: string;
+  readonly counts: string;
+  readonly frontmatterLinks: string;
+  readonly isPluginLoaded: boolean;
+  readonly paneSources: string[];
+  readonly step: string;
 }
 
 const vault = getTemporaryVault();

@@ -13,12 +13,12 @@ import {
 } from './link-fixer.ts';
 
 interface AnchorInContainer {
-  aEl: HTMLAnchorElement;
-  containerEl: HTMLDivElement;
+  readonly aEl: HTMLAnchorElement;
+  readonly containerEl: HTMLDivElement;
 }
 
 interface LinkFixerInternals {
-  externalLinks: Map<number, ParseLinkResult>;
+  readonly externalLinks: Map<number, ParseLinkResult>;
 }
 
 function createAnchorIn(href: string): AnchorInContainer {

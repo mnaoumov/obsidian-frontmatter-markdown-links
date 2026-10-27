@@ -1,13 +1,14 @@
 import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 
 interface Dataset {
+  // eslint-disable-next-line typescript-dev-toolkit/readonly-interface-members -- The link cache is populated and refreshed on the patched element.
   frontmatterMarkdownLinksLinkData: string;
 }
 
 interface LinkData {
-  isExternalUrl: boolean;
-  isWikilink: boolean;
-  url: string;
+  readonly isExternalUrl: boolean;
+  readonly isWikilink: boolean;
+  readonly url: string;
 }
 
 export function attachLinkData(el: HTMLElement, linkData: LinkData): void {

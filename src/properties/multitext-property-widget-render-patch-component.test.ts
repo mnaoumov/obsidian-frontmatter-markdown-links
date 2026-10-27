@@ -18,7 +18,7 @@ import {
 import { MultitextPropertyWidgetRenderPatchComponent } from './multitext-property-widget-render-patch-component.ts';
 
 interface ComponentModuleActual {
-  Component: new () => object;
+  readonly Component: new () => object;
 }
 
 // Stub the plugin's own sibling child component so this component's coverage is isolated.
