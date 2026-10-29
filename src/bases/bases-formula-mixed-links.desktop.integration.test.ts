@@ -1,5 +1,6 @@
 import type { WorkspaceLeaf } from 'obsidian';
 
+import dedent from 'dedent';
 import {
   ContextId,
   evalInObsidian
@@ -22,19 +23,18 @@ interface Context {
 
 const contextId = new ContextId<Context>();
 
-const BASE_CONTENT = [
-  'formulas:',
-  '  mappedList: \'note.key\'',
-  '  mixedScalar: \'"text [[target]]"\'',
-  'views:',
-  '  - type: table',
-  '    name: Test',
-  '    order:',
-  '      - file.name',
-  '      - formula.mappedList',
-  '      - formula.mixedScalar',
-  ''
-].join('\n');
+const BASE_CONTENT = dedent`
+  formulas:
+    mappedList: 'note.key'
+    mixedScalar: '"text [[target]]"'
+  views:
+    - type: table
+      name: Test
+      order:
+        - file.name
+        - formula.mappedList
+        - formula.mixedScalar\n
+`;
 
 beforeAll(async () => {
   vault.populate({
