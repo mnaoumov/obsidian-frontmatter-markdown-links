@@ -1,5 +1,11 @@
 # AGENTS.md
 
+## Filing an issue (for AI agents and humans)
+
+Open issues through the [issue forms](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/new/choose), not as blank issues.
+
+Filing from the CLI or the API (`gh issue create --body`, or an AI agent filing for you) skips the form, and `gh issue create --template` cannot load an issue form. In that case, open the matching form in [`.github/ISSUE_TEMPLATE/`](https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/tree/HEAD/.github/ISSUE_TEMPLATE), copy every field as a `### <label>` heading in the form's order, and fill in each one. Always state the plugin version, the Obsidian version and your operating system.
+
 ## Cache persistence
 
 The frontmatter cache uses `LocalDataStore`, scoped by `app.appId`, the manifest id and `frontmatter-links-v1`. Each `file:` record holds links and the processed mtime together. `legacy-import-v1` commits atomically with imported rows; the old IndexedDB stores remain intact. A malformed row rebuilds through the normal parser, and a failed import is retried on a later startup.
