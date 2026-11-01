@@ -97,6 +97,9 @@ export const config = defineObsidianPluginVitestConfig({
           globalSetup: ['./scripts/demo-vault-global-setup.ts'],
           include: [DEMO_VAULT_TEST_FILES],
           name: 'integration-tests:demo-vault',
+          // The demo vault does not seed the integration-test harness plugin, so it keeps the plain setup rather
+          // Than the desktop project's harness resolver, which fails when the harness library is not on `window`.
+          setupFiles: ['obsidian-integration-testing/vitest-setup'],
           testTimeout: DEMO_VAULT_TIMEOUT_IN_MILLISECONDS
         }
       }
