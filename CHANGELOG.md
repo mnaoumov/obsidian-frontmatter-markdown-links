@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 3.1.0
+
+- test: keep the plain setup in the demo-vault project
+- docs(readme): point bug reports at the Report a bug command
+- feat: add a Report a bug command
+- docs: add issue-filing instructions for AI agents
+- chore(github): give the bug form the field ids bug-report links prefill
+- build(deps): override re2js to ^2.9.1 for GHSA-gg6h-894w-4m9c
+- build(deps): bump typescript-dev-toolkit to ^5.2.0 and apply prefer-dedent
+- build(deps): bump @mnaoumov/typescript-dev-toolkit to ^5.1.0
+- feat(cache): migrate to local records and validated shared seeds
+- chore(deps): patch vulnerable development dependencies
+- chore: adopt keyword identifier lint rule
+- refactor: adopt readonly interface members
+- docs(readme): combine related resources and plugin comparisons
+- refactor: group src files into subject folders
+- docs: list similar plugins in the README
+
 ## 3.0.4
 
 - fix(deps): read a frontmatter link whose caption holds an unbalanced [ as one link
