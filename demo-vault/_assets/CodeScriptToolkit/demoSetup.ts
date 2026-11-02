@@ -19,7 +19,8 @@ const SOURCE_MODE_RENDER_POLL_IN_MILLISECONDS = 100;
 
 /**
  * Opens the note that only the multi-link `seeAlso` property of `02 Backlinks` points at, and reveals its
- * Backlinks pane.
+ * Backlinks pane. Reuses a Backlinks pane already showing that note: the command opens a new pane on every
+ * run, so a second click would otherwise list each backlink twice, once per pane.
  *
  * Manual equivalent: open `Targets/Third target.md`, then run **Backlinks: Show backlinks**.
  */
@@ -31,6 +32,12 @@ export async function showThirdTargetBacklinks(app: App): Promise<void> {
   }
 
   await app.workspace.getLeaf(false).openFile(note);
+  const existingPane = app.workspace.getLeavesOfType('backlink').find((leaf) => leaf.getViewState().state?.['file'] === THIRD_TARGET_PATH);
+  if (existingPane) {
+    await app.workspace.revealLeaf(existingPane);
+    return;
+  }
+
   app.commands.executeCommandById('backlink:open-backlinks');
 }
 
