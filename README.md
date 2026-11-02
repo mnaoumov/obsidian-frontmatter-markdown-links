@@ -53,7 +53,7 @@ This plugin offers to install it, once, and carries your old `Should handle rena
 
 ## See also
 
-[My other Obsidian resources](https://github.com/mnaoumov/obsidian-resources)
+[My other Obsidian resources](https://mnaoumov.dev/obsidian/)
 
 | Plugin | Features | How `Frontmatter Markdown Links` differs |
 | --- | --- | --- |
