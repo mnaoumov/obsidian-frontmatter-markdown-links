@@ -44,6 +44,9 @@ describe('the 02 Backlinks buttons', () => {
       async callback({ app, RENDER_SETTLE_IN_MS: settleMs, TARGET_NOTE_PATH: targetNotePath, THIRD_TARGET_PATH: thirdTargetPath }) {
         const demoSetup = (window.require as (id: string) => DemoSetup)('/demoSetup.ts');
 
+        // The demo vault is shared by every file of this project, and the button suite clicks the same button,
+        // So a pane it left open would list each backlink a second time.
+        closeBacklinkPanes();
         await demoSetup.showThirdTargetBacklinks(app);
         await sleep(settleMs);
         const on = snapshot();
@@ -54,10 +57,14 @@ describe('the 02 Backlinks buttons', () => {
         await sleep(settleMs);
         const onAgain = snapshot();
 
-        for (const leaf of app.workspace.getLeavesOfType('backlink')) {
-          leaf.detach();
-        }
+        closeBacklinkPanes();
         return { off, on, onAgain };
+
+        function closeBacklinkPanes(): void {
+          for (const leaf of app.workspace.getLeavesOfType('backlink')) {
+            leaf.detach();
+          }
+        }
 
         function snapshot(): BacklinksSnapshot {
           return {
