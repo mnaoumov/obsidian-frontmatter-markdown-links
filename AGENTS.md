@@ -14,4 +14,4 @@ The cache owns debounced writes and connection disposal. Replacement and unload 
 
 ## Desktop test setup
 
-The desktop project uses `scripts/cache-integration-global-setup.ts` and `scripts/cache-integration-setup.ts` to install the toolkit's integration helper plugin and register its library resolver. The restart regression needs the real `LocalDataStore` through the serialized callback's `lib` bag. Other standard projects retain their shared setup.
+The desktop projects use `scripts/cache-integration-global-setup.ts` for startup and `scripts/cache-integration-after-layout-ready-global-setup.ts` for enabling the plugin after layout ready. Both install the toolkit's integration helper plugin and share `scripts/cache-integration-setup.ts` to register its library resolver. The restart regression needs the real `LocalDataStore` through the serialized callback's `lib` bag. `npm run test:integration:desktop` runs both timings. Other standard projects retain their shared setup.

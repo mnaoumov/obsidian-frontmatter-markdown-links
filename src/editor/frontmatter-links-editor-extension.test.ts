@@ -119,7 +119,7 @@ afterEach(() => {
  * CodeMirror's do. The quoting tests need it: they turn on how the extension reads the raw line
  * around a node, which the fixed-`sliceString` view above cannot express.
  */
-function createDocumentMockView(docText: string, selectionRanges: SelectionRange[] = []): object {
+function createDocumentMockView(docText: string): object {
   const lines = docText.split('\n');
   const lineStartOffsets: number[] = [];
   let offset = 0;
@@ -144,7 +144,7 @@ function createDocumentMockView(docText: string, selectionRanges: SelectionRange
         },
         sliceString: (from: number, to: number): string => docText.slice(from, to)
       },
-      selection: { ranges: selectionRanges }
+      selection: { ranges: [] }
     },
     visibleRanges: [{ from: 0, to: docText.length }]
   };

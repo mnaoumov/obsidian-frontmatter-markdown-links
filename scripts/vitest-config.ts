@@ -108,5 +108,6 @@ export const config = defineObsidianPluginVitestConfig({
   editContext(context): void {
     context.desktop.globalSetup = ['./scripts/cache-integration-global-setup.ts'];
     context.desktop.setupFiles = ['./scripts/cache-integration-setup.ts'];
+    context.desktopAfterLayoutReadyGlobalSetup = ['./scripts/cache-integration-after-layout-ready-global-setup.ts'];
   }
 });

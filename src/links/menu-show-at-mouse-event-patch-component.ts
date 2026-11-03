@@ -30,11 +30,7 @@ export class MenuShowAtMouseEventPatchComponent extends MonkeyAroundComponent {
         }
 
         const linkData = getLinkData(target);
-        if (!linkData) {
-          return fallback();
-        }
-
-        if (menu.items.some((menuItem: MenuItem | MenuSeparator) => (menuItem instanceof MenuItem) && menuItem.section === 'open')) {
+        if (!linkData || menu.items.some((menuItem: MenuItem | MenuSeparator) => (menuItem instanceof MenuItem) && menuItem.section === 'open')) {
           return fallback();
         }
         if (linkData.isExternalUrl) {

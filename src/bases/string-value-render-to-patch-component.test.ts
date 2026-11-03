@@ -13,7 +13,6 @@ import {
 
 import { StringValueRenderToPatchComponent } from './string-value-render-to-patch-component.ts';
 
-type GetFirstLinkpathDestination = App['metadataCache']['getFirstLinkpathDest'];
 type RenderToFunction = (this: StringValueLike, containerEl: HTMLElement) => void;
 
 interface RenderToPrototype {
@@ -51,11 +50,11 @@ function createStringValue(prototype: RenderToPrototype, data: string): StringVa
   return stringValue;
 }
 
-function loadPatch(prototype: RenderToPrototype, getFirstLinkpathDestination: GetFirstLinkpathDestination = vi.fn().mockReturnValue(null)): void {
+function loadPatch(prototype: RenderToPrototype): void {
   const app = strictProxy<App>({
     metadataCache: {
       // eslint-disable-next-line unicorn/name-replacements -- `getFirstLinkpathDest` is an Obsidian `MetadataCache` method name.
-      getFirstLinkpathDest: getFirstLinkpathDestination
+      getFirstLinkpathDest: vi.fn().mockReturnValue(null)
     },
     workspace: {
       getActiveFile: vi.fn().mockReturnValue(null)

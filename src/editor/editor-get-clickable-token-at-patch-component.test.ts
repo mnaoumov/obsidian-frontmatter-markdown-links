@@ -26,14 +26,10 @@ interface EditorPrototype {
   readonly posToOffset: (pos: EditorPosition) => number;
 }
 
-type EditorWithCm = Editor & EditorCmHolder;
-
 interface EditorWithPrototype {
   readonly $prototype: EditorPrototype;
   readonly editor: Editor;
 }
-
-type GetClickableTokenAtFunction = (this: unknown, pos: EditorPosition) => unknown;
 
 type LinkData = Parameters<typeof attachLinkData>[1];
 
@@ -46,6 +42,8 @@ afterEach(() => {
 });
 
 function createEditor(node: Node, fallbackToken: ClickableToken | null): EditorWithPrototype {
+  type EditorWithCm = Editor & EditorCmHolder;
+
   const prototype: EditorPrototype = {
     getClickableTokenAt: vi.fn().mockReturnValue(fallbackToken),
     offsetToPos: vi.fn().mockReturnValue(createPos()),
@@ -77,6 +75,8 @@ function createPos(): EditorPosition {
 }
 
 function invoke(prototype: EditorPrototype, editor: Editor): unknown {
+  type GetClickableTokenAtFunction = (this: unknown, pos: EditorPosition) => unknown;
+
   return castTo<GetClickableTokenAtFunction>(prototype.getClickableTokenAt).call(editor, createPos());
 }
 

@@ -86,11 +86,10 @@ describe('the plugin toggled off and on twice', () => {
             }
             lists.add([...view.backlink.backlinkDom.resultDomLookup.keys()].map((file) => file.path).sort().join(','));
           }
-          if (lists.size === 0) {
-            // No pane on target A at all: name the backlink leaves there were, so a failure says why.
-            return app.workspace.getLeavesOfType('backlink').map((backlinkLeafToDescribe) => `no pane on target A; a backlink leaf has ${JSON.stringify(backlinkLeafToDescribe.getViewState())}`);
-          }
-          return [...lists];
+          // If no pane is on target A, name the backlink leaves there were so a failure says why.
+          return lists.size === 0
+            ? app.workspace.getLeavesOfType('backlink').map((backlinkLeafToDescribe) => `no pane on target A; a backlink leaf has ${JSON.stringify(backlinkLeafToDescribe.getViewState())}`)
+            : [...lists];
         }
 
         // A Backlinks view of its own beside target A. An unlinked Backlinks view follows the active note, and

@@ -35,8 +35,6 @@ interface MenuItemSectionAccess {
   section: string;
 }
 
-type ShowAtMouseEventFunction = (this: unknown, $event: MouseEvent) => unknown;
-
 let loadedComponent: MenuShowAtMouseEventPatchComponent | null = null;
 
 afterEach(() => {
@@ -46,6 +44,8 @@ afterEach(() => {
 });
 
 function callShowAtMouseEvent(menu: MenuType, $event: MouseEvent): unknown {
+  type ShowAtMouseEventFunction = (this: unknown, $event: MouseEvent) => unknown;
+
   return castTo<ShowAtMouseEventFunction>(Menu.prototype.showAtMouseEvent).call(menu, $event);
 }
 
@@ -56,9 +56,9 @@ function createLinkTarget(linkData: LinkDataShape): HTMLElement {
   return target;
 }
 
-function createMenu(items: unknown[] = []): MenuType {
+function createMenu(): MenuType {
   const menu = Menu.create2__();
-  castTo<MenuItemsAccess>(menu).items = items;
+  castTo<MenuItemsAccess>(menu).items = [];
   return castTo<MenuType>(menu);
 }
 

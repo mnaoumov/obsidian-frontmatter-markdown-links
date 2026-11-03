@@ -81,12 +81,12 @@ class FakeArrayDict<T> {
   }
 }
 
-function createLink(startOffset: number, endOffset: number, original = VALUE): FrontmatterLinkCacheWithOffsets {
+function createLink(startOffset: number, endOffset: number): FrontmatterLinkCacheWithOffsets {
   return {
     endOffset,
     key: 'multipleLinks',
-    link: original.slice(startOffset, endOffset),
-    original,
+    link: VALUE.slice(startOffset, endOffset),
+    original: VALUE,
     startOffset
   };
 }
