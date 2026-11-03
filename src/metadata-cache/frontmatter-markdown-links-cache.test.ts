@@ -77,8 +77,8 @@ function makeFile(path: string, mtime = 10): TFile {
   return strictProxy<TFile>({ path, stat: { ctime: 1, mtime, size: 20 } });
 }
 
-async function openStore(vaultId = 'alpha'): Promise<LocalDataStore> {
-  return await LocalDataStore.open({ pluginId: 'frontmatter-markdown-links', storeId: 'frontmatter-links-v1', vaultId });
+async function openStore(): Promise<LocalDataStore> {
+  return await LocalDataStore.open({ pluginId: 'frontmatter-markdown-links', storeId: 'frontmatter-links-v1', vaultId: 'alpha' });
 }
 
 describe('file records', () => {

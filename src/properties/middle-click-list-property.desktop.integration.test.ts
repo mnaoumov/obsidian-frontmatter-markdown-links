@@ -104,29 +104,21 @@ describe('middle-clicking a markdown link in a List property', () => {
           return sourceLeaf.view.containerEl.querySelector<HTMLElement>(LINK_DATA_SELECTOR);
         }
 
-        function getElementAtPillCenter(pill: HTMLElement): Element | null {
-          const rect = pill.getBoundingClientRect();
-          return pill.doc.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-        }
-
         app.workspace.setActiveLeaf(sourceLeaf, { focus: true });
 
         await waitUntil({
           message: 'the markdown-link pill did not render in the source note',
           predicate: () => findPill() !== null
         });
-        const pill = findPill();
-        if (!pill) {
-          throw new Error('The markdown-link pill disappeared from the source note');
-        }
+        const pill = getPill();
 
         try {
           await waitUntil({
-            predicate: () => pill.contains(getElementAtPillCenter(pill))
+            predicate: () => pill.contains(getElementAtPillCenter())
           });
         } catch (error) {
           throw new Error(
-            `The markdown-link pill never came on top: the point at its center belongs to ${describeElement(getElementAtPillCenter(pill))}`,
+            `The markdown-link pill never came on top: the point at its center belongs to ${describeElement(getElementAtPillCenter())}`,
             { cause: error }
           );
         }
@@ -170,6 +162,19 @@ describe('middle-clicking a markdown link in a List property', () => {
         return {
           opened: countTargetLeaves() - before
         };
+
+        function getElementAtPillCenter(): Element | null {
+          const rect = pill.getBoundingClientRect();
+          return pill.doc.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        }
+
+        function getPill(): HTMLElement {
+          const pillElement = findPill();
+          if (!pillElement) {
+            throw new Error('The markdown-link pill disappeared from the source note');
+          }
+          return pillElement;
+        }
       },
       contextId,
       input: { targetPath: 'target.md' },

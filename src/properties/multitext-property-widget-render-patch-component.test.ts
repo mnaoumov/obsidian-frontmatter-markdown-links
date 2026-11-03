@@ -27,8 +27,6 @@ vi.mock('./multi-text-property-component-render-values-patch-component.ts', asyn
   return { MultiTextPropertyComponentRenderValuesPatchComponent: class extends obsidianModule.Component {} };
 });
 
-type RenderFunction = (this: PropertyWidget<MultitextPropertyWidgetComponent>, containerEl: HTMLElement, data: unknown, context: PropertyRenderContext) => MultitextPropertyWidgetComponent;
-
 let loadedComponent: MultitextPropertyWidgetRenderPatchComponent | null = null;
 
 afterEach(() => {
@@ -58,6 +56,8 @@ function loadPatch(widget: PropertyWidget<MultitextPropertyWidgetComponent>): vo
 }
 
 describe('MultitextPropertyWidgetRenderPatchComponent', () => {
+  type RenderFunction = (this: PropertyWidget<MultitextPropertyWidgetComponent>, containerEl: HTMLElement, data: unknown, context: PropertyRenderContext) => MultitextPropertyWidgetComponent;
+
   it('should patch the widget on the first render and create the render-values child', () => {
     const renderImpl = vi.fn((): MultitextPropertyWidgetComponent => createMultiTextPropertyComponent());
     const widget = castTo<PropertyWidget<MultitextPropertyWidgetComponent>>({ render: renderImpl });

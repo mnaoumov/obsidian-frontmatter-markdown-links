@@ -12,8 +12,6 @@ import {
 import { BasesListRenderToPatchComponent } from './bases-list-render-to-patch-component.ts';
 import { LinkFixer } from './link-fixer.ts';
 
-type RenderToFunction = (this: unknown, containerEl: HTMLElement) => unknown;
-
 let loadedComponent: BasesListRenderToPatchComponent | null = null;
 
 afterEach(() => {
@@ -24,6 +22,8 @@ afterEach(() => {
 
 describe('BasesListRenderToPatchComponent', () => {
   it('should call the original renderTo and then fix external links in the container', () => {
+    type RenderToFunction = (this: unknown, containerEl: HTMLElement) => unknown;
+
     const originalRenderTo = vi.fn();
     const prototype = { renderTo: originalRenderTo };
     const basesList = castTo<BasesList>(Object.create(prototype));

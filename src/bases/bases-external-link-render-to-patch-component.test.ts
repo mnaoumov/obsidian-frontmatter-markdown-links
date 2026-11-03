@@ -12,8 +12,6 @@ import {
 import { BasesExternalLinkRenderToPatchComponent } from './bases-external-link-render-to-patch-component.ts';
 import { LinkFixer } from './link-fixer.ts';
 
-type RenderToFunction = (this: unknown, containerEl: HTMLElement) => unknown;
-
 let loadedComponent: BasesExternalLinkRenderToPatchComponent | null = null;
 
 afterEach(() => {
@@ -24,6 +22,8 @@ afterEach(() => {
 
 describe('BasesExternalLinkRenderToPatchComponent', () => {
   it('should call the original renderTo and then fix external links in the container', () => {
+    type RenderToFunction = (this: unknown, containerEl: HTMLElement) => unknown;
+
     const originalRenderTo = vi.fn();
     const prototype = { renderTo: originalRenderTo };
     const basesExternalLink = castTo<BasesExternalLink>(Object.create(prototype));

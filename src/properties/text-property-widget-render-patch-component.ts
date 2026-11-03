@@ -115,12 +115,12 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
     const widget = originalMethod(containerEl, $string, contextWithRerenderOnChange);
     if (hasMultipleLinks) {
       widget.inputEl.hide();
-      hideMetadataLink(widget);
+      hideMetadataLink();
       containerEl.append(childWidgetsContainerEl);
 
       widget.inputEl.addEventListener('blur', () => {
         widget.inputEl.hide();
-        hideMetadataLink(widget);
+        hideMetadataLink();
         childWidgetsContainerEl.show();
       });
 
@@ -129,8 +129,8 @@ export class TextPropertyWidgetRenderPatchComponent extends MonkeyAroundComponen
 
     return widget;
 
-    function hideMetadataLink(widget2: TextPropertyWidgetComponent): void {
-      const metadataLinkEl = widget2.containerEl.find('.metadata-link') as HTMLElement | null;
+    function hideMetadataLink(): void {
+      const metadataLinkEl = widget.containerEl.find('.metadata-link') as HTMLElement | null;
       metadataLinkEl?.hide();
     }
 

@@ -64,8 +64,8 @@ async function createCache(app: App): Promise<FrontmatterMarkdownLinksCache> {
   return cache;
 }
 
-function file(path = 'alpha.md', mtime = 10, size = 20): TFile {
-  return strictProxy<TFile>({ path, stat: { ctime: 1, mtime, size } });
+function file(path = 'alpha.md', mtime = 10): TFile {
+  return strictProxy<TFile>({ path, stat: { ctime: 1, mtime, size: 20 } });
 }
 
 const DEFAULT_SEED_VALUE = { compatibility: COMPATIBILITY, links: [LINK] };
