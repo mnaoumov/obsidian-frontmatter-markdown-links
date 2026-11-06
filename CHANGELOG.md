@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 3.1.1
+
+- chore(deps): adopt `obsidian-dev-toolkit` 8.2 and its tool-name-as-code Markdown rule
+- chore(github): add the plugin-version id to the feature request form
+- docs: make issue attachments optional and strongly encouraged
+- test: cover desktop cache setup after layout ready
+- docs: link to the Obsidian resources page
+- fix(demo-vault): stop the Third target button opening a second Backlinks pane
+
 ## 3.1.0
 
 - test: keep the plain setup in the demo-vault project
