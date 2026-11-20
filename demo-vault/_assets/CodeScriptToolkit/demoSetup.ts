@@ -18,27 +18,18 @@ const SOURCE_MODE_RENDER_TIMEOUT_IN_MILLISECONDS = 5000;
 const SOURCE_MODE_RENDER_POLL_IN_MILLISECONDS = 100;
 
 /**
- * Opens the note that only the multi-link `seeAlso` property of `02 Backlinks` points at, and reveals its
- * Backlinks pane. Reuses a Backlinks pane already showing that note: the command opens a new pane on every
- * run, so a second click would otherwise list each backlink twice, once per pane.
+ * Closes the Source mode copy of `01 Frontmatter markdown links` that the buttons above opened, leaving
+ * every other pane alone.
  *
- * Manual equivalent: open `Targets/Third target.md`, then run **Backlinks: Show backlinks**.
+ * Manual equivalent: close that pane.
  */
-export async function showThirdTargetBacklinks(app: App): Promise<void> {
-  const note = app.vault.getFileByPath(THIRD_TARGET_PATH);
-  if (!note) {
-    new Notice('The third target note is missing from Targets/.');
-    return;
+export function closeFrontmatterLinksNoteSourceMode(app: App): void {
+  const leaves = findSourceModeLeaves(app);
+  for (const leaf of leaves) {
+    leaf.detach();
   }
 
-  await app.workspace.getLeaf(false).openFile(note);
-  const existingPane = app.workspace.getLeavesOfType('backlink').find((leaf) => leaf.getViewState().state?.['file'] === THIRD_TARGET_PATH);
-  if (existingPane) {
-    await app.workspace.revealLeaf(existingPane);
-    return;
-  }
-
-  app.commands.executeCommandById('backlink:open-backlinks');
+  new Notice(leaves.length === 0 ? 'No Source mode copy was open.' : 'Source mode copy closed.');
 }
 
 /**
@@ -65,26 +56,6 @@ export async function disablePlugin(app: App, message = 'Plugin off. Look at the
 export async function enablePlugin(app: App, message = 'Plugin on. The backlink is back.'): Promise<void> {
   await app.plugins.enablePluginAndSave(PLUGIN_ID);
   new Notice(message);
-}
-
-/**
- * Opens `01 Frontmatter markdown links` a second time, in Source mode, in a split beside the current
- * pane, so its frontmatter shows as the raw YAML the plugin makes clickable. Reuses that split when it is
- * already open.
- *
- * The buttons stay in the original pane: Source mode shows a ```` ```code-button ```` fence as code, not
- * as a button.
- *
- * Manual equivalent: open the note in a new pane and switch it to Source mode (**Toggle Live Preview/Source
- * mode**, or the editing-mode setting).
- */
-export async function openFrontmatterLinksNoteInSourceMode(app: App): Promise<void> {
-  const leaf = await getOrOpenSourceModeLeaf(app);
-  if (!leaf) {
-    return;
-  }
-
-  new Notice(`Source mode copy open. ${getModifierName()}-click the markdownLink value in it to follow the link.`);
 }
 
 /**
@@ -123,18 +94,47 @@ export async function modifierClickMarkdownLinkInSourceMode(app: App): Promise<v
 }
 
 /**
- * Closes the Source mode copy of `01 Frontmatter markdown links` that the buttons above opened, leaving
- * every other pane alone.
+ * Opens `01 Frontmatter markdown links` a second time, in Source mode, in a split beside the current
+ * pane, so its frontmatter shows as the raw YAML the plugin makes clickable. Reuses that split when it is
+ * already open.
  *
- * Manual equivalent: close that pane.
+ * The buttons stay in the original pane: Source mode shows a ```` ```code-button ```` fence as code, not
+ * as a button.
+ *
+ * Manual equivalent: open the note in a new pane and switch it to Source mode (**Toggle Live Preview/Source
+ * mode**, or the editing-mode setting).
  */
-export function closeFrontmatterLinksNoteSourceMode(app: App): void {
-  const leaves = findSourceModeLeaves(app);
-  for (const leaf of leaves) {
-    leaf.detach();
+export async function openFrontmatterLinksNoteInSourceMode(app: App): Promise<void> {
+  const leaf = await getOrOpenSourceModeLeaf(app);
+  if (!leaf) {
+    return;
   }
 
-  new Notice(leaves.length === 0 ? 'No Source mode copy was open.' : 'Source mode copy closed.');
+  new Notice(`Source mode copy open. ${getModifierName()}-click the markdownLink value in it to follow the link.`);
+}
+
+/**
+ * Opens the note that only the multi-link `seeAlso` property of `02 Backlinks` points at, and reveals its
+ * Backlinks pane. Reuses a Backlinks pane already showing that note: the command opens a new pane on every
+ * run, so a second click would otherwise list each backlink twice, once per pane.
+ *
+ * Manual equivalent: open `Targets/Third target.md`, then run **Backlinks: Show backlinks**.
+ */
+export async function showThirdTargetBacklinks(app: App): Promise<void> {
+  const note = app.vault.getFileByPath(THIRD_TARGET_PATH);
+  if (!note) {
+    new Notice('The third target note is missing from Targets/.');
+    return;
+  }
+
+  await app.workspace.getLeaf(false).openFile(note);
+  const existingPane = app.workspace.getLeavesOfType('backlink').find((leaf) => leaf.getViewState().state?.['file'] === THIRD_TARGET_PATH);
+  if (existingPane) {
+    await app.workspace.revealLeaf(existingPane);
+    return;
+  }
+
+  app.commands.executeCommandById('backlink:open-backlinks');
 }
 
 function findSourceModeLeaves(app: App): WorkspaceLeaf[] {
@@ -142,7 +142,7 @@ function findSourceModeLeaves(app: App): WorkspaceLeaf[] {
     leaf.view instanceof MarkdownView
     && leaf.view.file?.path === FRONTMATTER_LINKS_NOTE_PATH
     && leaf.view.getMode() === 'source'
-    && leaf.view.getState()['source'] === true
+    && leaf.view.getState().source
   );
 }
 
@@ -176,11 +176,13 @@ async function waitForSourceModeLinkEl(leaf: WorkspaceLeaf, propertyKey: string)
   const deadline = Date.now() + SOURCE_MODE_RENDER_TIMEOUT_IN_MILLISECONDS;
   for (;;) {
     for (const lineEl of leaf.view.containerEl.querySelectorAll('.cm-line')) {
-      if (lineEl.textContent.startsWith(`${propertyKey}:`)) {
-        const linkEl = lineEl.querySelector<HTMLElement>(LINK_DATA_SELECTOR);
-        if (linkEl) {
-          return linkEl;
-        }
+      if (!lineEl.textContent.startsWith(`${propertyKey}:`)) {
+        continue;
+      }
+
+      const linkEl = lineEl.querySelector<HTMLElement>(LINK_DATA_SELECTOR);
+      if (linkEl) {
+        return linkEl;
       }
     }
 

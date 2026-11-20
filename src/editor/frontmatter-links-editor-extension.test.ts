@@ -173,10 +173,10 @@ function createMockView(valueText: string, selectionRanges: SelectionRange[] = [
   };
 }
 
-function getViewPluginFactory(app: App): undefined | ViewPluginFactory {
+function getViewPluginFactory(app: App): null | ViewPluginFactory {
   mockViewPluginDefine.mockClear();
   FrontMatterLinksViewPlugin.createEditorExtension(app);
-  return castTo<undefined | ViewPluginFactory>(mockViewPluginDefine.mock.calls[0]?.[0]);
+  return castTo<undefined | ViewPluginFactory>(mockViewPluginDefine.mock.calls[0]?.[0]) ?? null;
 }
 
 function setupSyntaxTreeWithNodes(nodes: SyntaxNode[]): void {

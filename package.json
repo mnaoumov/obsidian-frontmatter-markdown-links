@@ -47,17 +47,17 @@
     "typescript": "6.0.3"
   },
   "dependencies": {
-    "@mnaoumov/obsidian-lib": "^10.5.0",
-    "@mnaoumov/typescript-lib": "^2.0.0"
+    "@mnaoumov/obsidian-lib": "^11.0.0",
+    "@mnaoumov/typescript-lib": "^4.1.0"
   },
   "devDependencies": {
     "@codemirror/language": "6.12.3",
     "@codemirror/state": "6.7.6",
     "@codemirror/view": "6.43.13",
     "@commitlint/cli": "^21.2.4",
-    "@mnaoumov/obsidian-dev-toolkit": "^8.2.1",
-    "@mnaoumov/typescript-dev-toolkit": "^6.1.0",
-    "@mnaoumov/typescript-test-toolkit": "^1.0.2",
+    "@mnaoumov/obsidian-dev-toolkit": "^12.2.0",
+    "@mnaoumov/typescript-dev-toolkit": "^8.2.0",
+    "@mnaoumov/typescript-test-toolkit": "^1.1.0",
     "@obsidian-typings/obsidian-public-latest": "^6.50.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/strictest": "^2.0.8",

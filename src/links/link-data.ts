@@ -32,7 +32,7 @@ export function getDataAttributes(linkData: LinkData | null): Record<string, str
 
 export function getLinkData(el: HTMLElement): LinkData | null {
   const parentEl = el.closest('[data-frontmatter-markdown-links-link-data]');
-  if (!(parentEl instanceof HTMLElement)) {
+  if (!parentEl?.instanceOf(HTMLElement)) {
     return null;
   }
 
