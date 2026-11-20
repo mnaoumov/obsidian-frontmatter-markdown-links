@@ -103,7 +103,7 @@ describe('MenuShowAtMouseEventPatchComponent', () => {
     loadPatch(app);
 
     const menu = createMenu();
-    const openItem = MenuItem.create__(menu);
+    const openItem = MenuItem.create__(castTo<Menu>(menu));
     castTo<MenuItemSectionAccess>(openItem).section = 'open';
     castTo<MenuItemsAccess>(menu).items = [openItem];
 

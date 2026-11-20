@@ -74,13 +74,6 @@
       "expect": "^0.16.0",
       "manualCheck": "The check reads the range micromark-extension-math declares. When it admits 0.18.2 or later the override and this entry can both go."
     },
-    "moment": {
-      "section": "overrides",
-      "why": "Clears GHSA-4p3w-j4w9-5jqw (moment path traversal via a crafted non-string locale name, >=2.29.2 <2.31.0), which also carried the advisories on obsidian 1.12.3, eslint-plugin-obsidianmd and @mnaoumov/obsidian-dev-toolkit. Reached through eslint-plugin-obsidianmd -> obsidian@1.12.3, which pins moment at the exact 2.29.4, and through obsidian-test-mocks, which pins the same 2.29.4. The direct obsidian@1.14.4 already uses 2.31.0, so the override collapses the tree onto that one copy rather than adding a version; it is a minor move within 2.x. Mirrors the same override in obsidian-patterns.",
-      "check": "node -e \"const fs=require('node:fs');process.stdout.write(JSON.parse(fs.readFileSync('node_modules/eslint-plugin-obsidianmd/node_modules/obsidian/package.json','utf8')).dependencies.moment)\"",
-      "expect": "2.29.4",
-      "manualCheck": "The check reads the exact moment pin of the obsidian copy eslint-plugin-obsidianmd brings (it declares obsidian 1.12.3 exactly). When eslint-plugin-obsidianmd moves to an obsidian whose moment is 2.31.0 or later, or that nested copy disappears and the check fails to read it, re-run `npm audit` without the override and drop both if it stays clean; check obsidian-test-mocks' own moment pin at the same time."
-    },
     "typescript": {
       "section": "overrides",
       "why": "TypeScript 7 (tsgo) breaks this toolchain: @typescript-eslint's parser crashes on the native API, so type-aware ESLint cannot run on 7. @typescript-eslint peer-requires the range below, so 6.x is the last usable major. Hold until @mnaoumov/typescript-dev-toolkit migrates.",
