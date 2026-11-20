@@ -328,10 +328,11 @@ This release has maintenance changes only. 1 maintenance commit (tests, build, C
 
 ## 2.6.18
 
-- fix: compilation
-- chore: update libs
-- fix: spaces around links in Bases
-  - re #24
+This release has 1 fix. 2 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Fixed
+
+- keep the spaces around links in Bases cells (#24)
 
 ## 2.6.17
 
