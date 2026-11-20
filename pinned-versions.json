@@ -32,6 +32,13 @@
       "check": "node -e \"process.stdout.write(require('obsidian/package.json').peerDependencies['@codemirror/view'])\"",
       "expect": "6.43.13"
     },
+    "@microsoft/eslint-plugin-sdl": {
+      "section": "overrides",
+      "why": "Scoped override: forces eslint-plugin-n ^17.24.0 under @microsoft/eslint-plugin-sdl only, to clear GHSA-g3hv-75wg-m249 (minimatch ReDoS, >=7.0.0 <11.0.1). sdl 1.1.0 (its latest, reached through obsidian-dev-toolkit -> eslint-plugin-obsidianmd) pins eslint-plugin-n 17.10.3, which depends on minimatch 9. eslint-plugin-n 17.24.0 is the same major and depends on no minimatch at all. Dev-only: lint tooling, never shipped in main.js.",
+      "check": "node -e \"const fs=require('node:fs');process.stdout.write(JSON.parse(fs.readFileSync('node_modules/@microsoft/eslint-plugin-sdl/package.json','utf8')).dependencies['eslint-plugin-n'])\"",
+      "expect": "17.10.3",
+      "manualCheck": "Remove the override when sdl declares an eslint-plugin-n of 17.22 or later. Re-run npm audit and lint."
+    },
     "@puppeteer/browsers": {
       "section": "overrides",
       "why": "Clears GHSA-jmr9-qjv8-65gv (extract-zip unvalidated symlink path traversal, 8 high advisories) and nothing else. extract-zip is vulnerable at every published version, so there is no patched version to override it to, and the direct dependency cannot be bumped either: obsidian-integration-testing is already latest and pins webdriverio, and even the newest webdriverio still reaches extract-zip through @wdio/utils -> @puppeteer/browsers ^2.x. @puppeteer/browsers@3 replaced extract-zip with modern-tar, so forcing 3.x on @wdio/utils - the only consumer left on 2.x - removes the subtree entirely. It also dedupes: puppeteer-core already brings 3.2.0 into this tree, so the override collapses two copies into one rather than adding anything. The major bump is safe because @wdio/utils imports only install, canDownload, resolveBuildId, detectBrowserPlatform, Browser, ChromeReleaseChannel, computeExecutablePath and the InstallOptions type, all still exported by 3.x with compatible signatures, and both packages are ESM-only. NEVER take the `npm audit fix --force` remedy here: it downgrades obsidian-integration-testing from 10.x to 1.1.2.",
@@ -45,6 +52,20 @@
       "check": "node -e \"const fs=require('node:fs');process.stdout.write(JSON.parse(fs.readFileSync('node_modules/@wdio/utils/package.json','utf8')).dependencies['deepmerge-ts'])\"",
       "expect": "^7.0.3",
       "manualCheck": "The check reads the range @wdio/utils declares, not a version, because that range is what forces the override. When it moves to ^8 or later the override and this entry can both go. Before lifting it, re-run the deepmergeCustom probe rather than trusting the range alone: @wdio/config passes a handler that reads `meta.key`, and that is precisely the API 8.0.0 renamed, so a regression there would be silent rather than a crash."
+    },
+    "eslint-plugin-tsdoc": {
+      "section": "overrides",
+      "why": "Scoped override: forces minimatch ^11.0.5 under eslint-plugin-tsdoc only, to clear GHSA-g3hv-75wg-m249 (minimatch ReDoS, >=7.0.0 <11.0.1). eslint-plugin-tsdoc 0.5.4 pins @typescript-eslint/utils ~8.56.0, whose typescript-estree 8.56.1 keeps minimatch 10. It is safe because typescript-estree 8.56 only calls minimatch(filePath, pattern, { dot: true }), which minimatch 11 keeps. Dev-only: lint tooling, never shipped in main.js.",
+      "check": "node -e \"const fs=require('node:fs');process.stdout.write(JSON.parse(fs.readFileSync('node_modules/eslint-plugin-tsdoc/package.json','utf8')).dependencies['@typescript-eslint/utils'])\"",
+      "expect": "~8.56.0",
+      "manualCheck": "Remove the override when eslint-plugin-tsdoc admits @typescript-eslint/utils 8.73 or later (whose typescript-estree takes minimatch 11). Re-run npm audit and lint."
+    },
+    "glob": {
+      "section": "overrides",
+      "why": "Clears GHSA-3g3m-2fjr-6pw4 (AbortSignal cancellation bypass, glob >=9 <=14.0.1; patched 14.0.2). obsidian-integration-testing pins webdriverio 9, whose @wdio/config and archiver-utils still require glob ^10.2.2 and ^10.0.0, so no direct dependency update reaches the fix. Both call only the retained sync API (sync/globSync), which glob 14 keeps with its CommonJS build. Never use npm audit fix --force: it proposes downgrading the integration harness to 1.1.2.",
+      "check": "node -e \"const fs=require('node:fs');for(const p of ['@wdio/config','archiver-utils'])console.log(JSON.parse(fs.readFileSync('node_modules/'+p+'/package.json','utf8')).dependencies.glob)\"",
+      "expect": "^10.2.2\n^10.0.0",
+      "manualCheck": "Remove the override when both consumers admit >=14.0.2. Re-run npm audit, the project gate and the @wdio/config / archiver-utils glob smoke checks."
     },
     "katex": {
       "section": "overrides",
