@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 3.1.2
+
+This release has 3 documentation changes. 4 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
+
+### Documentation
+
+- **readme:** switch to the plugin badge line
+- **changelog:** rewrite the 2.6.18 release notes for readers
+- **changelog:** regroup the published release notes for readers
+
 ## 3.1.1
 
 This release has 1 fix and 2 documentation changes. 3 maintenance commits (tests, build, CI, refactoring, dependencies) are not listed.
