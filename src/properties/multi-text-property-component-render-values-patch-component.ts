@@ -3,7 +3,10 @@ import type { App } from 'obsidian';
 
 import { MonkeyAroundComponent } from '@mnaoumov/obsidian-lib/components/monkey-around-component';
 import { parseLinks } from '@mnaoumov/obsidian-lib/parse-link';
-import { getPrototypeOf } from '@mnaoumov/typescript-lib/object-utils';
+import {
+  castTo,
+  getPrototypeOf
+} from '@mnaoumov/typescript-lib/object-utils';
 import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 
 import { renderLinkChild } from '../links/render-links.ts';
@@ -75,7 +78,9 @@ export class MultiTextPropertyComponentRenderValuesPatchComponent extends Monkey
           }, { capture: true });
 
           parentEl.addEventListener('click', ($event) => {
-            if (!($event.target instanceof Element) || $event.target.closest('.multi-select-pill-remove-button')) {
+            // A click listener on an element only ever receives a node as its target.
+            const targetNode = castTo<Node | null>($event.target);
+            if (!targetNode?.instanceOf(Element) || targetNode.closest('.multi-select-pill-remove-button')) {
               return;
             }
             $event.stopPropagation();

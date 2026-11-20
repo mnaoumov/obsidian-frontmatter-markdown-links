@@ -93,7 +93,7 @@ describe('optional seeds', () => {
   it('does no sharing I/O while sharing is disabled or local persistence is unavailable', async () => {
     const app = createApp();
     const cache = await createCache(app);
-    const read = vi.spyOn(DataStoreSeeds.prototype, 'readLatest').mockResolvedValue(undefined);
+    const read = vi.spyOn(DataStoreSeeds.prototype, 'readLatest').mockResolvedValue(null);
     await cache.adoptSeeds({ app, settings: { ...settings, shouldShareCache: false } });
     await cache.publishSeeds({ app, settings: { ...settings, shouldShareCache: false } });
     const uninitialized = new FrontmatterMarkdownLinksCache();
@@ -107,7 +107,7 @@ describe('optional seeds', () => {
   it('gives partial or absent delivery the ordinary rebuild path', async () => {
     const app = createApp();
     const cache = await createCache(app);
-    vi.spyOn(DataStoreSeeds.prototype, 'readLatest').mockResolvedValue(undefined);
+    vi.spyOn(DataStoreSeeds.prototype, 'readLatest').mockResolvedValue(null);
     await cache.adoptSeeds({ app, settings });
     expect(cache.isCacheValid(file())).toBe(false);
   });

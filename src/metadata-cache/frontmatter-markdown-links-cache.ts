@@ -184,6 +184,10 @@ export class FrontmatterMarkdownLinksCache {
     if (!params.settings.shouldShareCache || !this.store || this.isDisposed) {
       return null;
     }
+    // Obsidian Sync skips dot folders, so a seed there would never reach another device.
+    if (params.settings.cacheSharingFolder.split('/').some((part) => part.startsWith('.'))) {
+      throw new Error('The cache sharing folder must be a non-dot vault folder');
+    }
     return new DataStoreSeeds({
       local: this.store,
       share: true,
@@ -453,7 +457,6 @@ async function getResult<T>(request: IDBRequest<T>): Promise<T> {
 async function hashText(text: string): Promise<string> {
   const HEX_RADIX = 16;
   const HEX_BYTE_LENGTH = 2;
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- This is the Obsidian renderer Web Crypto API.
   const hash = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return Array.from(new Uint8Array(hash), (byte) => byte.toString(HEX_RADIX).padStart(HEX_BYTE_LENGTH, '0')).join('');
 }
